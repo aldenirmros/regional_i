@@ -205,17 +205,21 @@ select.sel:focus{border-color:var(--blue);}
   .ni svg{width:20px;height:20px;}
   .tip{display:none!important;}
   .main{margin-left:0;}
-  .topbar{padding:10px 14px;flex-wrap:wrap;gap:8px;}
-  .topbar-brand h1{font-size:14px;}
-  .topbar-brand p{font-size:10px;}
+  /* Topbar: scroll horizontal em vez de wrapping */
+  .topbar{padding:0 10px;height:52px;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;gap:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .topbar::-webkit-scrollbar{display:none;}
+  .topbar-brand h1{font-size:13px;white-space:nowrap;}
+  .topbar-brand p{display:none;}
   .dot,.live-t{display:none;}
   #saved-badge{font-size:10px;}
   .cloud-pill span{display:none;}
-  .user-badge{gap:7px;}
+  .user-badge{gap:7px;flex-shrink:0;}
   .user-badge-name{font-size:12px;}
   .user-badge-role{font-size:10px;}
-  .logout-btn{padding:4px 7px;font-size:10px;}
-  .chpw-btn{padding:4px 7px;font-size:10px;}
+  .logout-btn{padding:4px 7px;font-size:10px;white-space:nowrap;}
+  .chpw-btn{padding:4px 7px;font-size:10px;white-space:nowrap;}
+  .topbar .btn{font-size:11px;padding:5px 9px;white-space:nowrap;flex-shrink:0;}
+  /* Page */
   .page{padding:12px 10px 80px;}
   /* KPIs: 2 col no mobile */
   .kpi-row{grid-template-columns:repeat(2,1fr);gap:10px;}
@@ -235,20 +239,20 @@ select.sel:focus{border-color:var(--blue);}
   .ov-kpi-row{grid-template-columns:repeat(2,1fr);}
   /* dias config */
   .dias-config{flex-direction:column;align-items:flex-start;gap:10px;}
-  /* topbar buttons */
-  .topbar .btn{font-size:11px;padding:6px 10px;}
   /* filter */
   .dash-filter{flex-wrap:wrap;gap:8px;}
   .dash-filter select{min-width:120px;font-size:11px;}
   /* QE grid */
   .qe-grid{grid-template-columns:1fr;}
-  /* rg-grid */
-  .rg-grid{grid-template-columns:1fr;}
+  /* rg-grid: 1 col, cards completos visíveis */
+  .rg-grid{grid-template-columns:1fr!important;}
   /* modal */
-  .modal-box{padding:20px 16px;}
+  .modal-box{padding:20px 16px;max-height:92vh;overflow-y:auto;}
   .chart-modal-box{width:98vw;height:85vh;padding:14px;}
   /* seller meta edit */
   .seller-meta-edit{flex-wrap:wrap;}
+  /* user items: stack em mobile */
+  .um-user-item{flex-wrap:wrap;gap:8px;}
 }
 
 @media(max-width:480px){
@@ -2320,7 +2324,7 @@ function renderUserList(){
   if(u?.role==='regional'){
     const tids=(DB.times||[]).filter(t=>t.regionalId===u.regionalId).map(t=>t.id);
     users=users.filter(x=>x.role==='supervisor'&&tids.includes(x.timeId));
-  } else if(u?.role!=='gerente'){ users=[]; }
+  } else if(!isGerente(u)){ users=[]; }
   if(!users.length){ el.innerHTML='<div style="color:var(--tl);text-align:center;padding:20px">Nenhum usuário</div>'; return; }
   const labels={gerente:'Gerente',regional:'Admin Regional',supervisor:'Supervisor'};
   const classes={gerente:'role-gerente',regional:'role-regional',supervisor:'role-supervisor'};
@@ -3689,6 +3693,8 @@ function saveEditUser(){
   saveDB();
   closeEditUserModal();
   renderUserList();
+  // Atualiza modal de listagem se estiver aberto
+  if(document.getElementById('ver-usuarios-modal')?.classList.contains('show')) renderVerUsuarios();
   toast(`✅ Usuário @${x.username} atualizado para ${({gerente:'Gerente',regional:'Admin Regional',supervisor:'Supervisor'}[role]||role)}!`);
 }
 
@@ -3746,6 +3752,7 @@ function saveAldenirUser(){
   });
   saveDB();
   closeAldenirUserModal();
+  renderUserList();
   toast(`✅ Usuário @${username} criado como ${role==='gerente'?'Gerente':'Supervisor'}!`);
 }
 
