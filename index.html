@@ -2015,85 +2015,58 @@ function buildBar(stats, sid, duPass, duTotal){
       animation:{duration:700}}});
 }
 
-function buildLine(ymKey,y,m,sid){
-  const ctx=document.getElementById('ch-line').getContext('2d');
-  if(chartLine) chartLine.destroy();
-  const dias=getDiasCorridos(y,m), t=today();
-  const labels=dias.map(d=>`${d.getDate()}/${m+1}`);
-  const dataReal=dias.map(d=>{
-    if(d>t) return null;
-    return totalByDay(ymKey,fmtD(d),sid);
-  });
+// ── Helpers compartilhados: gráfico de linha com bolinhas numeradas ──
+let _lineParams = null; // guarda dados para o modal maximizado
 
-  // Escala de cor: vermelho (0) → laranja → dourado (máx)
-  const validVals = dataReal.filter(v=>v!==null);
-  const maxVal    = validVals.length ? Math.max(...validVals) : 1;
-  function lerpColor(t){
-    // t: 0=vermelho #dc2626, 0.5=laranja #f97316, 1=dourado #d97706→#eab308
-    const r0=[220,38,38], r1=[251,146,60], r2=[234,179,8];
-    let r,g,b;
-    if(t<=0.5){ const s=t*2; r=r0[0]+(r1[0]-r0[0])*s; g=r0[1]+(r1[1]-r0[1])*s; b=r0[2]+(r1[2]-r0[2])*s; }
-    else       { const s=(t-0.5)*2; r=r1[0]+(r2[0]-r1[0])*s; g=r1[1]+(r2[1]-r1[1])*s; b=r1[2]+(r2[2]-r1[2])*s; }
-    return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+function linePointColor(val, maxVal){
+  if(val===null||val===undefined) return 'transparent';
+  const t = maxVal>0 ? val/maxVal : 0;
+  // vermelho #dc2626 → amarelo #eab308 → verde #16a34a
+  const r0=[220,38,38], r1=[234,179,8], r2=[22,163,74];
+  let r,g,b;
+  if(t<=0.5){ const s=t*2; r=r0[0]+(r1[0]-r0[0])*s; g=r0[1]+(r1[1]-r0[1])*s; b=r0[2]+(r1[2]-r0[2])*s; }
+  else       { const s=(t-.5)*2; r=r1[0]+(r2[0]-r1[0])*s; g=r1[1]+(r2[1]-r1[1])*s; b=r1[2]+(r2[2]-r1[2])*s; }
+  return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+}
+
+const numberLabelPlugin = {
+  id:'numberLabel',
+  afterDatasetsDraw(chart){
+    const {ctx} = chart;
+    const meta  = chart.getDatasetMeta(0);
+    const vals  = chart.data.datasets[0].data;
+    const pClrs = chart.data.datasets[0].pointBackgroundColor;
+    vals.forEach((val,i)=>{
+      if(val===null||val===undefined) return;
+      const pt = meta.data[i]; if(!pt) return;
+      const c = Array.isArray(pClrs)?pClrs[i]:pClrs;
+      ctx.save();
+      ctx.shadowColor='rgba(0,0,0,.18)'; ctx.shadowBlur=4;
+      ctx.beginPath(); ctx.arc(pt.x,pt.y,12,0,Math.PI*2);
+      ctx.fillStyle=c; ctx.fill();
+      ctx.shadowBlur=0;
+      ctx.lineWidth=2; ctx.strokeStyle='#fff'; ctx.stroke();
+      ctx.fillStyle='#fff';
+      ctx.font=`700 ${val>=10?9:10.5}px "JetBrains Mono",monospace`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(val,pt.x,pt.y);
+      ctx.restore();
+    });
   }
-  const pointColors = dataReal.map(v=>{
-    if(v===null) return 'transparent';
-    return lerpColor(maxVal>0 ? v/maxVal : 0);
-  });
+};
 
-  // Plugin customizado: desenha número dentro de cada bolinha
-  const numberLabelPlugin = {
-    id:'numberLabel',
-    afterDatasetsDraw(chart){
-      const {ctx,data} = chart;
-      const ds = chart.getDatasetMeta(0);
-      data.datasets[0].data.forEach((val,i)=>{
-        if(val===null||val===undefined) return;
-        const pt = ds.data[i];
-        if(!pt) return;
-        const c = pointColors[i];
-        ctx.save();
-        // Sombra suave
-        ctx.shadowColor='rgba(0,0,0,.18)';
-        ctx.shadowBlur=4;
-        // Círculo preenchido
-        ctx.beginPath();
-        ctx.arc(pt.x,pt.y,12,0,Math.PI*2);
-        ctx.fillStyle=c;
-        ctx.fill();
-        ctx.shadowBlur=0;
-        // Borda branca
-        ctx.lineWidth=2;
-        ctx.strokeStyle='#fff';
-        ctx.stroke();
-        // Número
-        ctx.fillStyle='#fff';
-        ctx.font=`700 ${val>=10?9:10.5}px "JetBrains Mono",monospace`;
-        ctx.textAlign='center';
-        ctx.textBaseline='middle';
-        ctx.fillText(val, pt.x, pt.y);
-        ctx.restore();
-      });
-    }
-  };
-
-  const lineCor = '#94a3b8'; // linha neutra — a cor fica nos pontos
-  chartLine=new Chart(ctx,{
+function makeLineConfig(labels, dataReal, pointColors){
+  return {
     type:'line',
-    data:{
-      labels,
-      datasets:[{
-        label:'Vendas',data:dataReal,
-        borderColor:lineCor+'88',backgroundColor:'rgba(148,163,184,.06)',
-        borderWidth:1.5,
-        pointRadius:12,pointHoverRadius:14,
-        pointBackgroundColor:pointColors,
-        pointBorderColor:'#fff',pointBorderWidth:2,
-        tension:0.3,fill:true,spanGaps:false
-      }]
-    },
+    data:{ labels, datasets:[{
+      label:'Vendas', data:dataReal,
+      borderColor:'#94a3b888', backgroundColor:'rgba(148,163,184,.06)',
+      borderWidth:1.5, pointRadius:12, pointHoverRadius:14,
+      pointBackgroundColor:pointColors, pointBorderColor:'#fff', pointBorderWidth:2,
+      tension:0.3, fill:true, spanGaps:false
+    }]},
     options:{
-      responsive:true,maintainAspectRatio:false,
+      responsive:true, maintainAspectRatio:false,
       plugins:{
         legend:{display:false},
         tooltip:{callbacks:{label:c=>`Vendas: ${c.raw??'—'}`}},
@@ -2106,7 +2079,19 @@ function buildLine(ymKey,y,m,sid){
       animation:{duration:800}
     },
     plugins:[numberLabelPlugin]
-  });
+  };
+}
+
+function buildLine(ymKey,y,m,sid){
+  const ctx=document.getElementById('ch-line').getContext('2d');
+  if(chartLine) chartLine.destroy();
+  const dias=getDiasCorridos(y,m), t=today();
+  const labels=dias.map(d=>`${d.getDate()}/${m+1}`);
+  const dataReal=dias.map(d=>{ if(d>t) return null; return totalByDay(ymKey,fmtD(d),sid); });
+  const maxVal = Math.max(0,...dataReal.filter(v=>v!==null));
+  const pointColors = dataReal.map(v=>linePointColor(v,maxVal));
+  _lineParams = {labels, dataReal, pointColors};
+  chartLine = new Chart(ctx, makeLineConfig(labels, dataReal, pointColors));
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2613,8 +2598,21 @@ function maximizeChart(type){
 
   if(_modalChart){ _modalChart.destroy(); _modalChart=null; }
 
-  // Copia config do gráfico original
   const canvas = document.getElementById('ch-modal');
+
+  // Gráfico de linha: reconstrói com bolinhas numeradas e escala vermelho→verde
+  if(type==='line'){
+    const cfg = _lineParams
+      ? makeLineConfig(_lineParams.labels, _lineParams.dataReal, _lineParams.pointColors)
+      : JSON.parse(JSON.stringify(src.config));
+    cfg.options.maintainAspectRatio = false;
+    cfg.options.responsive = true;
+    if(cfg.options.plugins) cfg.options.plugins.legend = {display:true};
+    _modalChart = new Chart(canvas, cfg);
+    return;
+  }
+
+  // Copia config do gráfico original (donut/bar)
   const origCfg = src.config;
 
   // Deep clone via JSON (remove funções, reapplica depois)
@@ -2630,11 +2628,6 @@ function maximizeChart(type){
     newCfg.options.plugins = newCfg.options.plugins||{};
     newCfg.options.plugins.legend = {display:true, position:'right', labels:{font:{size:13},color:'#475569'}};
     newCfg.options.plugins.tooltip = {callbacks:{label:c=>{const l=['Realizado','Restante'];return ` ${l[c.dataIndex]}: ${c.raw}`;}}};
-  }
-  if(type==='line'){
-    newCfg.options.plugins = newCfg.options.plugins||{};
-    newCfg.options.plugins.legend = {display:true};
-    newCfg.options.plugins.tooltip = {callbacks:{label:c=>`Vendas: ${c.raw??'—'}`}};
   }
   _modalChart = new Chart(canvas, newCfg);
 }
