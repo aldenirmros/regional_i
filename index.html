@@ -211,7 +211,7 @@ select.sel:focus{border-color:var(--blue);}
 .ptd{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
 .ptd-input{width:100%;min-width:100px;background:transparent;border:none;outline:none;font-family:var(--font);font-size:12.5px;color:var(--td);resize:none;min-height:34px;}
 .ptd-input:focus{background:var(--bg);border-radius:5px;padding:2px 5px;}
-.hc-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.hc-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);position:relative;overflow:hidden;flex:0 0 auto;min-width:200px;}
 .hc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--hc-accent,var(--blue));}
 .hc-title{font-size:13px;font-weight:700;color:var(--td);margin-bottom:12px;display:flex;align-items:center;gap:7px;}
 .hc-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
@@ -795,6 +795,14 @@ select.sel:focus{border-color:var(--blue);}
   <div class="ni" onclick="goPage('psv',this)" id="nav-psv">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
     <div class="tip">PSV</div>
+  </div>
+  <div class="ni" onclick="window.open('https://fortsun-bi.up.railway.app','_blank')" title="BI Fortsun" style="cursor:pointer">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    <div class="tip">BI Fortsun</div>
+  </div>
+  <div class="ni" onclick="window.open('https://portal-processos-fortsun.vercel.app','_blank')" title="Portal de Processos" style="cursor:pointer">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    <div class="tip">Portal de Processos</div>
   </div>
   <div class="sb-spacer"></div>
   <div class="ni" onclick="exportBk()" style="margin-bottom:6px">
@@ -1433,11 +1441,8 @@ select.sel:focus{border-color:var(--blue);}
       <button class="btn-sm btn-sm-g" onclick="document.getElementById('psv-df-regional').value='';document.getElementById('psv-df-time').value='';renderPSV()">✕ Limpar</button>
     </div>
 
-    <!-- 1. HC + KPIs todos na mesma linha -->
-    <div id="psv-top-row" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;align-items:stretch">
-      <div id="psv-hc-grid" style="display:contents"></div>
-      <div id="psv-kpis" style="display:contents"></div>
-    </div>
+    <!-- FAIXA TOPO: HC + KPIs + SAFRA numa só linha -->
+    <div id="psv-top-row" style="display:grid;grid-template-columns:1.6fr repeat(6,1fr) 1.8fr;gap:8px;margin-bottom:16px;align-items:stretch"></div>
 
     <!-- 2. Donut + Vendas por Dia lado a lado, ponta a ponta -->
     <div style="display:grid;grid-template-columns:240px 1fr;gap:16px;margin-bottom:16px">
@@ -2432,7 +2437,15 @@ function renderLancar(){
   setDefaultDate();
   const ymKey=currentYM, {y,m}=ymToYM(ymKey);
   document.getElementById('hist-period').textContent=`${MESES[m]} ${y}`;
-  const vs=[...getVendas(ymKey)].sort((a,b)=>b.ts.localeCompare(a.ts));
+
+  // Supervisor vê só os lançamentos do seu time
+  const u = currentUser;
+  let vs=[...getVendas(ymKey)].sort((a,b)=>b.ts.localeCompare(a.ts));
+  if(u?.role==='supervisor'){
+    const myIds = new Set(getScopedSellers().map(s=>s.id));
+    vs = vs.filter(v=>myIds.has(v.sellerId));
+  }
+
   document.getElementById('hist-count').textContent=`${vs.length} registro${vs.length!==1?'s':''}`;
   let html='';
   if(vs.length===0){
@@ -4416,7 +4429,7 @@ function _renderPSVFilter(){
 }
 
 function _renderPSVKpis(ymKey, y, m, sellers){
-  const el = document.getElementById('psv-kpis'); if(!el) return;
+  const row = document.getElementById('psv-top-row'); if(!row) return;
   const t = today(), dias = getDiasCorridos(y,m);
   const duPass = dias.filter(d=>d<=t).length, duTotal=dias.length;
   const real  = sellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
@@ -4463,64 +4476,85 @@ function _renderPSVKpis(ymKey, y, m, sellers){
 
   function tpvColor(v){ if(!v||v<15000) return '#dc2626'; if(v<20000) return '#d97706'; return '#059669'; }
 
-  const safraCd = `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rs);box-shadow:var(--sh);overflow:hidden;flex:0 0 auto;min-width:280px;display:flex;flex-direction:column">
-    <div style="padding:9px 14px 7px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--tl);border-bottom:1px solid var(--border)">🌾 SAFRA</div>
+  // ── Células KPI (6 células) ──
+  kpis.forEach(k=>{
+    const d=document.createElement('div');
+    d.style.cssText=`background:var(--white);border:1px solid var(--border);border-radius:var(--rs);padding:10px 10px 10px;box-shadow:var(--sh);border-top:3px solid ${k.color};min-width:0;display:flex;flex-direction:column;justify-content:space-between`;
+    d.innerHTML=`
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px">${k.lbl}</div>
+      <div style="font-size:26px;font-weight:900;color:${k.color};font-family:var(--mono);line-height:1">${k.val}</div>`;
+    row.appendChild(d);
+  });
+
+  // ── Célula SAFRA ──
+  const safraCd=document.createElement('div');
+  safraCd.style.cssText='background:var(--white);border:1px solid var(--border);border-radius:var(--rs);box-shadow:var(--sh);overflow:hidden;min-width:0;border-top:3px solid #78716c;display:flex;flex-direction:column';
+  safraCd.innerHTML=`
+    <div style="padding:7px 10px 5px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tl);border-bottom:1px solid var(--border)">🌾 SAFRA</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;flex:1">
       ${safraCols.map(s=>`
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 6px 10px;background:${s.bg};border-right:1px solid ${s.border}">
-          <div style="font-size:38px;font-weight:900;font-family:var(--mono);color:${s.c};line-height:1">${s.v||0}</div>
-          <div style="font-size:11px;font-weight:800;letter-spacing:.8px;color:${s.c};margin-top:4px;opacity:.85">${s.k}</div>
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;background:${s.bg};border-right:1px solid ${s.border}">
+          <div style="font-size:24px;font-weight:900;font-family:var(--mono);color:${s.c};line-height:1">${s.v||0}</div>
+          <div style="font-size:9px;font-weight:800;letter-spacing:.8px;color:${s.c};margin-top:2px;opacity:.85">${s.k}</div>
         </div>`).join('')}
     </div>
     <div style="border-top:1px solid var(--border);background:var(--bg)">
-      <div style="padding:5px 14px 4px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tl)">TPV Médio</div>
+      <div style="padding:3px 8px 2px;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl)">TPV Médio</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
         ${safraCols.map(s=>{
-          const cur = tpvD[s.k]||'';
-          const c   = tpvColor(cur);
-          return `<div style="padding:4px 6px 10px;border-right:1px solid ${s.border};text-align:center">
-            <div style="font-size:10px;font-weight:600;color:var(--tl);margin-bottom:3px">R$</div>
-            <input type="number" min="0" step="100"
-              id="psv-tpv-${s.k}"
-              value="${cur}"
-              placeholder="0"
-              style="width:100%;text-align:center;border:1.5px solid var(--border);border-radius:5px;padding:5px 3px;font-family:var(--mono);font-size:16px;font-weight:800;color:${c};background:var(--white);outline:none;"
-              oninput="savePsvTpv(this,'${s.k}','${ymKey}')"
-              onkeydown="if(event.key==='Enter')this.blur()"
-            >
+          const cur=tpvD[s.k]||''; const c=tpvColor(cur);
+          return `<div style="padding:3px 4px 6px;border-right:1px solid ${s.border};text-align:center">
+            <input type="number" min="0" step="100" id="psv-tpv-${s.k}" value="${cur}" placeholder="0"
+              style="width:100%;text-align:center;border:1px solid var(--border);border-radius:4px;padding:3px 1px;font-family:var(--mono);font-size:11px;font-weight:800;color:${c};background:var(--white);outline:none;"
+              oninput="savePsvTpv(this,'${s.k}','${ymKey}')" onkeydown="if(event.key==='Enter')this.blur()">
           </div>`;
         }).join('')}
       </div>
-    </div>
-  </div>`;
-
-  el.innerHTML = kpis.map(k=>`
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rs);padding:12px 16px;box-shadow:var(--sh);border-left:4px solid ${k.color};flex:1 1 0;min-width:110px;max-width:170px">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tl);margin-bottom:6px;white-space:nowrap">${k.lbl}</div>
-      <div style="font-size:34px;font-weight:900;color:${k.color};font-family:var(--mono);line-height:1">${k.val}</div>
-    </div>`).join('')+safraCd;
+    </div>`;
+  row.appendChild(safraCd);
 }
 
 function _renderHCGrid(sellers){
-  const grid = document.getElementById('psv-hc-grid'); if(!grid) return;
-  const times = (DB.times||[]).filter(t=>sellers.some(s=>s.timeId===t.id));
-  if(!times.length){ grid.innerHTML='<div style="color:var(--tl);font-size:13px;padding:12px">Nenhum HUB.</div>'; return; }
-  const matColors={m0:'#2563eb',m1:'#7c3aed',m2:'#d97706',full:'#059669'};
-  const matLabels={m0:'M0',m1:'M1',m2:'M2',full:'Full'};
-  grid.innerHTML = times.map(t=>{
-    const ts = sellers.filter(s=>s.timeId===t.id);
-    const counts={m0:0,m1:0,m2:0,full:0};
-    ts.forEach(s=>{ counts[sellerMaturity(s)]++; });
-    const rg=(DB.regionais||[]).find(r=>r.id===t.regionalId);
-    const accent=rg?.color||t.color||'#2563eb';
-    return `<div class="hc-card" style="--hc-accent:${accent};flex:0 0 auto;min-width:200px">
-      <div class="hc-title"><div style="width:8px;height:8px;border-radius:50%;background:${accent};flex-shrink:0"></div>${t.nome}<span style="font-size:10px;font-weight:400;color:var(--tl)">${rg?'· '+rg.nome:''}</span></div>
-      <div class="hc-total"><div class="hc-total-val" style="color:${accent}">${ts.length}</div><div class="hc-total-lbl">HC total</div></div>
-      <div class="hc-stats">
-        ${['m0','m1','m2','full'].map(k=>`<div class="hc-stat"><div class="hc-stat-val" style="color:${matColors[k]}">${counts[k]}</div><div class="hc-stat-lbl">${matLabels[k]}</div></div>`).join('')}
-      </div>
-    </div>`;
-  }).join('');
+  // Renderiza o card HC — _renderPSVKpis vai completar os demais cells
+  const row = document.getElementById('psv-top-row'); if(!row) return;
+  row.innerHTML=''; // limpa tudo; será reconstruído aqui + em _renderPSVKpis
+
+  const times  = (DB.times||[]).filter(t=>sellers.some(s=>s.timeId===t.id));
+  const mC     = {m0:'#2563eb',m1:'#7c3aed',m2:'#d97706',full:'#059669'};
+
+  // ── Card 1: HC ──
+  let hcBody='';
+  if(!times.length){
+    hcBody='<div style="font-size:11px;color:var(--tl)">Nenhum HUB</div>';
+  } else {
+    times.forEach(t=>{
+      const ts=sellers.filter(s=>s.timeId===t.id);
+      const cnt={m0:0,m1:0,m2:0,full:0};
+      ts.forEach(s=>cnt[sellerMaturity(s)]++);
+      const rg=(DB.regionais||[]).find(r=>r.id===t.regionalId);
+      const ac=rg?.color||'#2563eb';
+      hcBody+=`<div style="margin-bottom:8px">
+        <div style="font-size:11px;font-weight:800;color:${ac};display:flex;align-items:center;gap:4px;margin-bottom:4px">
+          <div style="width:6px;height:6px;border-radius:50%;background:${ac};flex-shrink:0"></div>
+          ${t.nome}
+          <span style="font-size:16px;font-weight:900;font-family:var(--mono);color:${ac};margin-left:3px">${ts.length}</span>
+          <span style="font-size:9px;color:var(--tl)">HC</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${['m0','m1','m2','full'].map(k=>`
+            <div style="text-align:center;background:${mC[k]}14;border-radius:5px;padding:2px 6px;border:1px solid ${mC[k]}33">
+              <div style="font-size:15px;font-weight:900;font-family:var(--mono);color:${mC[k]};line-height:1.1">${cnt[k]}</div>
+              <div style="font-size:8px;font-weight:700;text-transform:uppercase;color:${mC[k]};opacity:.8">${k}</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    });
+  }
+
+  const hcEl=document.createElement('div');
+  hcEl.style.cssText='background:var(--white);border:1px solid var(--border);border-radius:var(--rs);box-shadow:var(--sh);padding:10px 12px;border-top:3px solid #059669;min-width:0;overflow:hidden';
+  hcEl.innerHTML=`<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#059669;margin-bottom:8px">👥 HC por Safra</div>${hcBody}`;
+  row.appendChild(hcEl);
 }
 
 function _renderPSVCharts(ymKey,y,m,sellers){
