@@ -162,6 +162,25 @@ select.sel:focus{border-color:var(--blue);}
 .cal-legend-dot{width:7px;height:7px;border-radius:50%;}
 .cal-total{margin-left:auto;font-size:11px;font-weight:700;color:var(--td);}
 .cal-wrap{position:relative;}
+/* ── M0/M1/M2 indicator cells ── */
+.m-cell{text-align:center;position:relative;}
+.m-val{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:26px;border-radius:6px;font-family:var(--mono);font-size:12px;font-weight:800;padding:0 7px;cursor:pointer;transition:all .15s;border:1.5px solid transparent;}
+.m-val.m-red{background:rgba(220,38,38,.12);color:var(--red);border-color:rgba(220,38,38,.25);}
+.m-val.m-yellow{background:rgba(217,119,6,.12);color:var(--orange);border-color:rgba(217,119,6,.25);}
+.m-val.m-green{background:rgba(5,150,105,.12);color:var(--green);border-color:rgba(5,150,105,.25);}
+.m-val.m-empty{background:var(--bg);color:var(--tl);border-color:var(--border);}
+.m-val.editable:hover{box-shadow:0 0 0 2px var(--blue);border-color:var(--blue);}
+.m-popup{display:none;position:fixed;z-index:200;background:#fff;border:2px solid var(--blue);border-radius:10px;box-shadow:0 6px 24px rgba(37,99,235,.2);padding:8px 10px;flex-direction:column;gap:6px;min-width:120px;}
+.m-popup.show{display:flex;}
+.m-popup label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tl);}
+.m-popup input{border:1.5px solid var(--border);border-radius:6px;padding:5px 8px;font-family:var(--mono);font-size:14px;font-weight:800;text-align:center;color:var(--td);outline:none;width:100%;}
+.m-popup input:focus{border-color:var(--blue);}
+.m-popup-btns{display:flex;gap:5px;}
+.m-popup-save{flex:1;background:var(--blue);color:#fff;border:none;border-radius:6px;padding:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);}
+.m-popup-save:hover{background:var(--blue-l);}
+.m-popup-cancel{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:11px;cursor:pointer;color:var(--tl);font-family:var(--font);}
+
+/* ── CHART MAXIMIZE ── */
 .chart-maximize-btn{background:transparent;border:none;cursor:pointer;color:var(--tl);padding:3px;border-radius:5px;display:flex;align-items:center;transition:all .12s;flex-shrink:0;}
 .chart-maximize-btn:hover{background:var(--bg);color:var(--blue);}
 .chart-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:700;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
@@ -772,8 +791,8 @@ select.sel:focus{border-color:var(--blue);}
         <div style="overflow-x:auto">
           <table class="dt">
             <thead><tr>
-              <th>Vendedor</th><th>Meta</th><th>Realizado</th>
-              <th style="min-width:110px">% Meta</th><th>GAP</th><th>Projeção</th><th>Patente</th>
+              <th>Vendedor</th><th>Compromisso</th><th>Realizado</th>
+              <th style="min-width:110px">% Compromisso</th><th>GAP</th><th>Projeção</th><th>Patente</th>
             </tr></thead>
             <tbody id="main-tb"></tbody>
           </table>
@@ -1151,6 +1170,9 @@ select.sel:focus{border-color:var(--blue);}
           <thead><tr>
             <th>Regional</th><th> HUB</th><th>Vendedores</th><th>Realizado</th><th>Meta</th>
             <th style="min-width:110px">% Meta</th><th>GAP</th><th>Ativações</th><th>% Ativação</th>
+            <th style="min-width:70px;text-align:center">M0</th>
+            <th style="min-width:70px;text-align:center">M1</th>
+            <th style="min-width:70px;text-align:center">M2</th>
           </tr></thead>
           <tbody id="ov-tb"></tbody>
         </table>
@@ -1173,6 +1195,16 @@ select.sel:focus{border-color:var(--blue);}
     <div class="chart-modal-canvas">
       <canvas id="ch-modal"></canvas>
     </div>
+  </div>
+</div>
+
+<!-- ══ M-VALUES POPUP ══ -->
+<div class="m-popup" id="m-popup" onmouseleave="closeMPopup()">
+  <label id="m-popup-lbl">M0 — HUB</label>
+  <input type="number" id="m-popup-input" min="0" placeholder="0">
+  <div class="m-popup-btns">
+    <button class="m-popup-cancel" onclick="closeMPopup()">✕</button>
+    <button class="m-popup-save" onclick="saveMValue()">Salvar</button>
   </div>
 </div>
 
@@ -1268,6 +1300,7 @@ function loadDB() {
       if(!d.regionais)      d.regionais=[];
       if(!d.times)          d.times=[];
       if(!d.hubMetas)       d.hubMetas={};
+      if(!d.mValues)        d.mValues={}; // {ymKey: {timeId: {M0,M1,M2}}}
       if(!d.users)          d.users=[];
       // Migra usuários antigos
       d.users = d.users.map(u=>({
@@ -1300,7 +1333,7 @@ function loadDB() {
       {id:6,name:'THEO',     cpf:'',          meta:14,color:'#0891b2',timeId:tmId},
     ],
     nextId:7,
-    vendas:{}, metas:{}, diasConfig:{}, sellerMetas:{}, ativacaoManual:{}, hubMetas:{},
+    vendas:{}, metas:{}, diasConfig:{}, sellerMetas:{}, ativacaoManual:{}, hubMetas:{}, mValues:{},
     regionais:[{id:rgId, nome:'Regional I', color:'#2563eb'}],
     times:[{id:tmId, nome:'CE 06', regionalId:rgId, color:'#2563eb'}],
     users:[
@@ -1378,21 +1411,19 @@ function getAllDias(y,m){
   return r;
 }
 function getMeta(ymKey){
-  // Meta total = sempre a soma das metas dos HUBs cadastrados
+  // Meta total = soma das metas definidas manualmente nos HUBs
   if(DB.times?.length){
     const soma=(DB.times||[]).reduce((a,t)=>a+getHubMeta(ymKey,t.id),0);
-    if(soma>0) return soma;
+    return soma; // retorna 0 se nenhum HUB tem meta definida (sem fallback para vendedores)
   }
-  // Fallback se não há HUBs: soma metas individuais dos vendedores
-  return DB.sellers.filter(s=>!s.inativo).reduce((a,s)=>a+s.meta,0)||0;
+  return 0;
 }
 function getSellerMeta(ymKey, sid){
   return (DB.sellerMetas[ymKey]||{})[sid] ?? (DB.sellers.find(s=>s.id===sid)?.meta || 0);
 }
 function getHubMeta(ymKey, timeId){
   const hm=(DB.hubMetas||{})[ymKey]?.[timeId];
-  if(hm!=null) return hm;
-  return DB.sellers.filter(s=>s.timeId===timeId&&!s.inativo).reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0)||0;
+  return hm!=null ? hm : 0;
 }
 function getScopedMeta(ymKey){ return getMeta(ymKey); }
 function getVendas(ymKey){ return DB.vendas[ymKey] || []; }
@@ -1423,13 +1454,6 @@ function getScopedSellers(includeInativo=false){
   return [];
 }
 function getScopedSids(){ return getScopedSellers().map(s=>s.id); }
-
-// Meta total scoped
-function getScopedMeta(ymKey){
-  if(DB.metas[ymKey]) return DB.metas[ymKey];
-  const sm=DB.sellerMetas[ymKey]||{};
-  return getScopedSellers().reduce((a,s)=>a+(sm[s.id]??s.meta),0)||0;
-}
 
 // ── Filtro do Gerente no Dashboard ──
 function populateDashFilter(){
@@ -1630,10 +1654,29 @@ function renderDash(){
   const hc=scopedSellers.length;
   const sid=selectedSeller;
 
-  // meta filtrada (pro vendedor selecionado ou todos)
-  const metaFilt = sid
-    ? getSellerMeta(ymKey, sid)
-    : metaTotal;
+  // Meta exibida no KPI conforme seleção ativa
+  let metaFilt, metaLabel;
+  if(sid){
+    // Vendedor selecionado → compromisso individual
+    metaFilt  = getSellerMeta(ymKey, sid);
+    const sn  = DB.sellers.find(s=>s.id===sid);
+    metaLabel = `Compromisso: ${sn?.name||''}`;
+  } else if(scopeFilter.timeId){
+    // HUB filtrado → meta definida para o HUB
+    metaFilt  = getHubMeta(ymKey, scopeFilter.timeId);
+    const tn  = (DB.times||[]).find(t=>t.id===scopeFilter.timeId);
+    metaLabel = `Meta HUB: ${tn?.nome||''}`;
+  } else if(scopeFilter.regionalId){
+    // Regional filtrada → soma das metas dos HUBs da regional
+    const tids= (DB.times||[]).filter(t=>t.regionalId===scopeFilter.regionalId).map(t=>t.id);
+    metaFilt  = tids.reduce((a,id)=>a+getHubMeta(ymKey,id),0);
+    const rn  = (DB.regionais||[]).find(r=>r.id===scopeFilter.regionalId);
+    metaLabel = `Meta Regional: ${rn?.nome||''}`;
+  } else {
+    // Sem filtro → soma de todas as metas dos HUBs
+    metaFilt  = metaTotal;
+    metaLabel = 'Soma das metas dos HUBs';
+  }
 
   const realFilt = totalRealizado(ymKey, sid);
   const gap = Math.max(0, metaFilt-realFilt);
@@ -1653,7 +1696,7 @@ function renderDash(){
 
   // KPIs
   document.getElementById('k-meta').textContent=metaFilt;
-  document.getElementById('k-meta-s').textContent=sid?'Meta individual':'Meta total da equipe';
+  document.getElementById('k-meta-s').textContent=metaLabel;
   document.getElementById('k-real').textContent=realFilt;
   document.getElementById('k-rpf').style.width=Math.min(100,realPct*100).toFixed(1)+'%';
   document.getElementById('k-rs').textContent=(realPct*100).toFixed(1)+'% da meta atingido';
@@ -1715,10 +1758,12 @@ function renderDash(){
       <td>${patenteHTML(s.pat)}</td>
     </tr>`;
   });
-  const tR=stats.reduce((a,s)=>a+s.real,0), tM=stats.reduce((a,s)=>a+s.meta,0);
-  const tG=stats.reduce((a,s)=>a+s.gap,0), tP=tM>0?tR/tM:0;
+  const tR=stats.reduce((a,s)=>a+s.real,0);
+  const tC=stats.reduce((a,s)=>a+s.meta,0); // soma dos compromissos individuais
+  const tM=getMeta(ymKey); // meta dos HUBs (usada no GAP e %)
+  const tG=Math.max(0,tM-tR), tP=tM>0?tR/tM:0;
   const tPr=duPass>0?tR/duPass*duTotal:0;
-  tb+=`<tr class="tr-tot"><td>TOTAL EQUIPE</td><td class="mono">${tM}</td><td class="mono">${tR}</td>
+  tb+=`<tr class="tr-tot"><td>TOTAL EQUIPE</td><td class="mono" title="Soma dos compromissos">${tC}</td><td class="mono">${tR}</td>
     <td><div class="pw"><div class="pt"><div class="pf pb" style="width:${Math.min(100,tP*100).toFixed(1)}%"></div></div><span class="pp fg-b">${(tP*100).toFixed(1)}%</span></div></td>
     <td><span class="gb ${tG===0?'gz':'gn'}">${tG===0?'✓':'-'+tG}</span></td>
     <td class="mono">${tPr.toFixed(0)}</td><td>—</td>
@@ -2627,6 +2672,7 @@ async function cloudPull(){
     if(!rec.diasConfig)   rec.diasConfig={};
     if(!rec.sellerMetas)  rec.sellerMetas={};
     if(!rec.hubMetas)     rec.hubMetas={};
+    if(!rec.mValues)      rec.mValues={};
     if(!rec.ativacaoManual) rec.ativacaoManual={};
     if(!rec.regionais)    rec.regionais=[];
     if(!rec.times)        rec.times=[];
@@ -2789,7 +2835,13 @@ function applySession(){
   document.getElementById('user-badge').style.display='flex';
   const navRegionais=document.getElementById('nav-regionais');
   if(navRegionais) navRegionais.style.display=isGerente(u)?'':'none';
-  // Mostra filtro no dashboard apenas para gerente
+
+  // Aldenir sempre abre filtrado no HUB CE 06
+  if(u.username==='aldenir'){
+    const ce06 = (DB.times||[]).find(t=>t.nome==='CE 06');
+    if(ce06) scopeFilter = {regionalId: ce06.regionalId, timeId: ce06.id};
+  }
+
   populateDashFilter();
 }
 
@@ -2884,7 +2936,7 @@ function renderOverview(){
       <td><div class="pw"><div class="pt"><div class="pf ${rgPct>=1?'pg':rgPct>=0.6?'py':'pr'}" style="width:${Math.min(100,rgPct*100).toFixed(1)}%"></div></div>
           <span class="pp" style="color:${pcColor}">${(rgPct*100).toFixed(1)}%</span></div></td>
       <td><span class="gb ${rgGap===0?'gz':'gn'}">${rgGap===0?'✓':'-'+rgGap}</span></td>
-      <td colspan="2" style="color:var(--tl);font-size:11px">${rgTimes.length} HUB(s)</td>
+      <td colspan="5" style="color:var(--tl);font-size:11px">${rgTimes.length} HUB(s)</td>
     </tr>`;
 
     // Linhas dos times
@@ -2892,6 +2944,16 @@ function renderOverview(){
       const st = timeStats(tm);
       const pc = st.pct>=1?'var(--green)':st.pct>=0.6?'var(--orange)':'var(--red)';
       const sup = DB.users?.find(u=>u.role==='supervisor'&&u.timeId===tm.id);
+      const canEditM = currentUser?.role==='regional' || isGerente();
+      // M0/M1/M2
+      const mData = (DB.mValues||{})[ymKey]?.[tm.id] || {};
+      const mCells = ['M0','M1','M2'].map(mk=>{
+        const v = mData[mk];
+        let cls='m-empty';
+        if(v!=null){ cls = v<26?'m-red': v<=29?'m-yellow': 'm-green'; }
+        const editAttr = canEditM ? `class="m-val ${cls} editable" onclick="openMPopup(event,${tm.id},'${mk}','${ymKey}')" title="Clique para editar"` : `class="m-val ${cls}"`;
+        return `<td class="m-cell"><span ${editAttr}>${v!=null?v:'—'}</span></td>`;
+      }).join('');
       tb+=`<tr>
         <td></td>
         <td>
@@ -2911,11 +2973,12 @@ function renderOverview(){
         <td><span class="gb ${st.gap===0?'gz':'gn'}">${st.gap===0?'✓':'-'+st.gap}</span></td>
         <td class="mono fw7" style="color:var(--teal)">${st.atv}</td>
         <td class="mono fw7" style="color:var(--teal)">${(st.atvP*100).toFixed(1)}%</td>
+        ${mCells}
       </tr>`;
     });
   });
 
-  if(!rgCount) tb=`<tr><td colspan="9" style="text-align:center;padding:28px;color:var(--tl)">Nenhuma regional / time no escopo</td></tr>`;
+  if(!rgCount) tb=`<tr><td colspan="12" style="text-align:center;padding:28px;color:var(--tl)">Nenhuma regional / time no escopo</td></tr>`;
 
   // Linha de total geral
   tb+=`<tr class="tr-tot">
@@ -2927,14 +2990,69 @@ function renderOverview(){
     <td><span class="gb ${tGap===0?'gz':'gn'}">${tGap===0?'✓':'-'+tGap}</span></td>
     <td class="mono" style="color:var(--teal)">${tAtv}</td>
     <td class="mono" style="color:var(--teal)">${(tAtvP*100).toFixed(1)}%</td>
+    <td colspan="3"></td>
   </tr>`;
 
   document.getElementById('ov-tb').innerHTML=tb;
 }
 
 // ══════════════════════════════════════════════════════════
-//  TROCAR SENHA
+//  M0 / M1 / M2 — Indicadores por HUB
 // ══════════════════════════════════════════════════════════
+let _mCtx = null; // {timeId, key, ymKey}
+
+function openMPopup(evt, timeId, key, ymKey){
+  evt.stopPropagation();
+  const pop = document.getElementById('m-popup');
+  const inp = document.getElementById('m-popup-input');
+  const lbl = document.getElementById('m-popup-lbl');
+  const tm  = (DB.times||[]).find(t=>t.id===timeId);
+
+  lbl.textContent = `${key} — ${tm?.nome||'HUB'}`;
+  const cur = (DB.mValues||{})[ymKey]?.[timeId]?.[key];
+  inp.value = cur!=null ? cur : '';
+  inp.placeholder = '0';
+
+  // Posiciona perto do elemento clicado
+  const rect = evt.currentTarget.getBoundingClientRect();
+  pop.style.top  = (rect.bottom + window.scrollY + 4) + 'px';
+  pop.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 150) + 'px';
+  pop.classList.add('show');
+  inp.focus();
+  inp.select();
+
+  _mCtx = {timeId, key, ymKey};
+}
+
+function closeMPopup(){
+  document.getElementById('m-popup')?.classList.remove('show');
+  _mCtx = null;
+}
+
+function saveMValue(){
+  if(!_mCtx) return;
+  const {timeId, key, ymKey} = _mCtx;
+  const v = document.getElementById('m-popup-input').value.trim();
+  const n = v==='' ? null : parseInt(v);
+
+  if(!DB.mValues) DB.mValues={};
+  if(!DB.mValues[ymKey]) DB.mValues[ymKey]={};
+  if(!DB.mValues[ymKey][timeId]) DB.mValues[ymKey][timeId]={};
+
+  if(n===null) delete DB.mValues[ymKey][timeId][key];
+  else DB.mValues[ymKey][timeId][key] = n;
+
+  saveDB();
+  closeMPopup();
+  renderOverview();
+  toast(`${key} atualizado: ${n!=null?n:'—'}`);
+}
+
+// Fecha popup ao clicar fora
+document.addEventListener('click', e=>{
+  if(!e.target.closest('#m-popup') && !e.target.closest('.m-val'))
+    closeMPopup();
+});
 function openChangePwModal(){
   if(!currentUser){ toast('Faça login primeiro','⚠️'); return; }
   document.getElementById('chpw-user-label').textContent=`Usuário: @${currentUser.username}`;
@@ -3093,7 +3211,12 @@ function syncCalToBI(){
 populateMes();
 populateQESellers();
 setDefaultDate();
-loadRemembered(); // preenche login se "lembrar" estava ativo
+loadRemembered();
+// M-popup Enter key
+document.getElementById('m-popup-input').addEventListener('keydown', e=>{
+  if(e.key==='Enter') saveMValue();
+  if(e.key==='Escape') closeMPopup();
+}); // preenche login se "lembrar" estava ativo
 
 (async () => {
   // Garante master key no cfg ao iniciar
