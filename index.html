@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BI Vendas</title>
+<title>Acompanhamento de Vendas</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -223,10 +223,10 @@ select.sel:focus{border-color:var(--blue);}
 .hc-total-lbl{font-size:12px;color:var(--tl);}
 .photo-slot{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;}
 .photo-slot input[type=file]{display:none;}
-.photo-avatar{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--border);transition:border-color .15s;}
+.photo-avatar{width:80px;height:80px;border-radius:10px;object-fit:cover;border:2px solid var(--border);transition:border-color .15s;}
 .photo-slot:hover .photo-avatar{border-color:var(--blue);}
-.photo-name{font-size:9px;font-weight:700;color:var(--tl);text-align:center;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.photo-badge{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;border:2px dashed rgba(255,255,255,.3);}
+.photo-name{font-size:10px;font-weight:700;color:var(--tl);text-align:center;max-width:86px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.photo-badge{width:80px;height:80px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;border:2px dashed rgba(255,255,255,.3);}
    ══════════════════════════════════════════════════════════ */
 
 /* ── 768 px: tablet / celular médio ── */
@@ -724,7 +724,7 @@ select.sel:focus{border-color:var(--blue);}
     <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
   </div>
   <div style="text-align:center">
-    <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:6px">BI Vendas</div>
+    <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:6px">Acompanhamento de Vendas</div>
     <div id="loading-msg" style="color:rgba(255,255,255,.5);font-size:13px">Conectando ao banco de dados…</div>
   </div>
   <!-- Spinner -->
@@ -739,7 +739,7 @@ select.sel:focus{border-color:var(--blue);}
 <div class="login-ov hidden" id="login-ov">
   <div class="login-box">
     <div class="login-logo"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></div>
-    <div class="login-title">BI Vendas</div>
+    <div class="login-title">Acompanhamento de Vendas</div>
     <div class="login-sub">Acompanhamento de Vendas · Faça login para continuar</div>
     <!-- Aviso quando banco não foi encontrado automaticamente -->
     <div id="login-sync-warn" style="display:none;background:rgba(217,119,6,.15);border:1px solid rgba(217,119,6,.4);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#fbbf24">
@@ -2496,12 +2496,20 @@ function renderSellers(){
   if(u?.role==='supervisor'){
     const t=(DB.times||[]).find(x=>x.id===u.timeId);
     if(banner){ banner.style.display='flex'; lbl.textContent=`HUB: ${t?.nome||'—'}`; }
+    // Supervisor pode cadastrar vendedores — mostra o form mas oculta abas de times/usuários
     const fw=document.getElementById('seller-form-wrap');
-    if(fw) fw.style.display='none';
+    if(fw) fw.style.display='';
     const tbt=document.getElementById('tab-btn-times');
     const tbu=document.getElementById('tab-btn-users');
     if(tbt) tbt.style.display='none';
     if(tbu) tbu.style.display='none';
+    // Pré-seleciona o HUB do supervisor no form
+    const vtEl2=document.getElementById('v-time');
+    if(vtEl2 && u.timeId){
+      vtEl2.innerHTML=`<option value="${u.timeId}">${t?.nome||'Meu HUB'}</option>`;
+      vtEl2.value=u.timeId;
+      vtEl2.disabled=true;
+    }
   } else if(u?.role==='regional'){
     const rg=(DB.regionais||[]).find(x=>x.id===u.regionalId);
     if(banner){ banner.style.display='flex'; lbl.textContent=`Regional: ${rg?.nome||'—'}`; }
@@ -4454,30 +4462,29 @@ function _renderPSVKpis(ymKey, y, m, sellers){
   const tpvD = DB.psvData.tpv[ymKey];
 
   function tpvColor(v){ if(!v||v<15000) return '#dc2626'; if(v<20000) return '#d97706'; return '#059669'; }
-  function tpvFmt(v){ return v ? 'R$ '+Number(v).toLocaleString('pt-BR') : ''; }
 
-  const safraCd = `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rs);box-shadow:var(--sh);overflow:hidden;flex:0 0 auto;min-width:280px">
+  const safraCd = `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rs);box-shadow:var(--sh);overflow:hidden;flex:0 0 auto;min-width:280px;display:flex;flex-direction:column">
     <div style="padding:9px 14px 7px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--tl);border-bottom:1px solid var(--border)">🌾 SAFRA</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;flex:1">
       ${safraCols.map(s=>`
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 6px 10px;background:${s.bg};border-right:1px solid ${s.border}">
           <div style="font-size:38px;font-weight:900;font-family:var(--mono);color:${s.c};line-height:1">${s.v||0}</div>
           <div style="font-size:11px;font-weight:800;letter-spacing:.8px;color:${s.c};margin-top:4px;opacity:.85">${s.k}</div>
         </div>`).join('')}
     </div>
-    <!-- TPV médio -->
     <div style="border-top:1px solid var(--border);background:var(--bg)">
       <div style="padding:5px 14px 4px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tl)">TPV Médio</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
         ${safraCols.map(s=>{
           const cur = tpvD[s.k]||'';
           const c   = tpvColor(cur);
-          return `<div style="padding:4px 6px 8px;border-right:1px solid ${s.border};text-align:center">
+          return `<div style="padding:4px 6px 10px;border-right:1px solid ${s.border};text-align:center">
+            <div style="font-size:10px;font-weight:600;color:var(--tl);margin-bottom:3px">R$</div>
             <input type="number" min="0" step="100"
               id="psv-tpv-${s.k}"
               value="${cur}"
               placeholder="0"
-              style="width:100%;text-align:center;border:1.5px solid var(--border);border-radius:5px;padding:5px 3px;font-family:var(--mono);font-size:12px;font-weight:700;color:${c};background:var(--white);outline:none;"
+              style="width:100%;text-align:center;border:1.5px solid var(--border);border-radius:5px;padding:5px 3px;font-family:var(--mono);font-size:16px;font-weight:800;color:${c};background:var(--white);outline:none;"
               oninput="savePsvTpv(this,'${s.k}','${ymKey}')"
               onkeydown="if(event.key==='Enter')this.blur()"
             >
@@ -4595,8 +4602,8 @@ function _renderPhotosRow(sellers){
   row.innerHTML=sellers.map(s=>{
     const ph=_psvPhotos[s.id];
     const img=ph
-      ? `<img src="${ph}" class="photo-avatar" style="width:44px;height:44px;border-color:${s.color||'#2563eb'}">`
-      : `<div class="photo-badge" style="width:44px;height:44px;font-size:14px;background:${s.color||'#2563eb'}">${s.name[0]}</div>`;
+      ? `<img src="${ph}" class="photo-avatar" style="border-color:${s.color||'#2563eb'}">`
+      : `<div class="photo-badge" style="background:${s.color||'#2563eb'}">${s.name[0]}</div>`;
     return `<div class="photo-slot" style="flex:1;min-width:0;align-items:center;padding-bottom:8px" onclick="document.getElementById('psv-photo-${s.id}').click()" title="Clique para adicionar foto">
       <input type="file" id="psv-photo-${s.id}" accept="image/*" onchange="psvUploadPhoto(event,${s.id})">
       <div class="photo-name" style="font-size:10px;font-weight:700;color:var(--tl);text-align:center;margin-bottom:5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</div>
