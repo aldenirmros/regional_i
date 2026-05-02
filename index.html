@@ -399,6 +399,30 @@ select.sel:focus{border-color:var(--blue);}
 .role-admin{background:rgba(124,58,237,.1);color:var(--purple);border:1px solid rgba(124,58,237,.2);}
 .role-user{background:var(--blue-g);color:var(--blue);border:1px solid rgba(37,99,235,.2);}
 
+/* inactive seller */
+.seller-item.inativo{opacity:.55;}
+.seller-item.inativo .seller-ic{filter:grayscale(1);}
+.inativo-badge{background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;border-radius:4px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:5px;}
+.btn-inativo{background:rgba(100,116,139,.08);border:1px solid rgba(100,116,139,.25);color:#64748b;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .12s;}
+.btn-inativo:hover{background:#64748b;color:#fff;}
+.btn-ativar{background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.25);color:var(--green);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .12s;}
+.btn-ativar:hover{background:var(--green);color:#fff;}
+
+/* hub meta inline */
+.hub-meta-row{display:flex;align-items:center;gap:6px;margin-top:4px;}
+.hub-meta-row label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);white-space:nowrap;}
+.hub-meta-row input{width:70px;background:var(--bg);border:1.5px solid var(--border);border-radius:5px;padding:3px 7px;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--td);outline:none;transition:border-color .14s;}
+.hub-meta-row input:focus{border-color:var(--blue);}
+.hub-meta-row .save-meta-btn{background:var(--blue);color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .12s;}
+
+/* remember me */
+.login-remember{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tl);margin-top:-4px;margin-bottom:4px;cursor:pointer;}
+.login-remember input{width:15px;height:15px;accent-color:var(--blue);cursor:pointer;}
+
+/* change password btn */
+.chpw-btn{background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:10.5px;font-weight:600;color:var(--tl);cursor:pointer;font-family:var(--font);transition:all .12s;white-space:nowrap;}
+.chpw-btn:hover{border-color:var(--blue);color:var(--blue);}
+
 @media(max-width:1000px){.kpi-row,.dias-row,.charts-row,.ov-kpi-row{grid-template-columns:1fr 1fr;}.dash-layout,.sellers-grid,.um-grid{grid-template-columns:1fr;}.qe-grid{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
@@ -418,6 +442,9 @@ select.sel:focus{border-color:var(--blue);}
       <label>Senha</label>
       <input type="password" id="li-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
+    <label class="login-remember">
+      <input type="checkbox" id="li-remember"> Lembrar usuário e senha
+    </label>
     <button class="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="li-err">Usuário ou senha incorretos.</div>
   </div>
@@ -438,7 +465,7 @@ select.sel:focus{border-color:var(--blue);}
   </div>
   <div class="ni" onclick="goPage('sellers',this)" id="nav-sellers">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>
-    <div class="tip">Vendedores / Times</div>
+    <div class="tip">Vendedores / HUBs</div>
   </div>
   <div class="ni" onclick="goPage('regionais',this)" id="nav-regionais" style="display:none">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -487,6 +514,7 @@ select.sel:focus{border-color:var(--blue);}
     <div class="user-badge" id="user-badge" style="display:none">
       <div class="user-avatar" id="ub-avatar" style="background:#2563eb">A</div>
       <div><div class="user-badge-name" id="ub-name">—</div><div class="user-badge-role" id="ub-role">—</div></div>
+      <button class="chpw-btn" onclick="openChangePwModal()" title="Trocar senha">🔑</button>
       <button class="logout-btn" onclick="doLogout()" title="Sair">⏏ Sair</button>
     </div>
     <select class="sel" id="mes-sel" onchange="onMesChange()"></select>
@@ -508,7 +536,7 @@ select.sel:focus{border-color:var(--blue);}
         <option value="">🏠 Todas as Regionais</option>
       </select>
       <select id="df-time" onchange="onDashFilterTime()">
-        <option value="">🏢 Todos os Times</option>
+        <option value="">🏢 Todos os HUBs</option>
       </select>
       <div class="dash-filter-sep"></div>
       <span class="dash-filter-info" id="df-info">Exibindo toda a equipe</span>
@@ -734,7 +762,7 @@ select.sel:focus{border-color:var(--blue);}
 
   </div><!-- /lancar -->
 
-  <!-- ══ PAGE: SELLERS (Vendedores / Times) ══ -->
+  <!-- ══ PAGE: SELLERS (Vendedores / HUBs) ══ -->
   <div id="page-sellers" class="page">
     <div id="scope-banner-sellers" class="scope-banner" style="display:none">
       🔒 Exibindo dados de: <span id="scope-label">—</span>
@@ -743,7 +771,7 @@ select.sel:focus{border-color:var(--blue);}
     <!-- Tabs: Vendedores | Times | Usuários (visibilidade por role) -->
     <div class="tabs" id="sellers-tabs">
       <button class="tab-btn on" onclick="switchTab('tab-vendedores',this)">👤 Vendedores</button>
-      <button class="tab-btn" id="tab-btn-times" onclick="switchTab('tab-times',this)">🏢 Times</button>
+      <button class="tab-btn" id="tab-btn-times" onclick="switchTab('tab-times',this)">🏢 HUBs</button>
       <button class="tab-btn" id="tab-btn-users" onclick="switchTab('tab-usuarios',this)">🔑 Usuários</button>
     </div>
 
@@ -760,7 +788,7 @@ select.sel:focus{border-color:var(--blue);}
               <input type="text" class="form-inp" id="v-cpf" placeholder="Opcional">
               <label class="form-lbl">Meta Individual (vendas/mês)</label>
               <input type="number" class="form-inp" id="v-meta" value="14" min="1">
-              <label class="form-lbl">Time *</label>
+              <label class="form-lbl">HUB *</label>
               <select class="form-sel" id="v-time"></select>
               <label class="form-lbl">Cor</label>
               <select class="form-sel" id="v-cor">
@@ -798,10 +826,10 @@ select.sel:focus{border-color:var(--blue);}
       <div class="sellers-grid">
         <div>
           <div class="card" style="overflow:visible">
-            <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--purple)"></div>Criar Time</div></div>
+            <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--purple)"></div>Criar HUB</div></div>
             <div style="padding:18px">
               <label class="form-lbl">Nome do Time *</label>
-              <input type="text" class="form-inp" id="time-nome" placeholder="Ex: Time Norte">
+              <input type="text" class="form-inp" id="time-nome" placeholder="Ex: HUB Norte">
               <label class="form-lbl">Regional</label>
               <select class="form-sel" id="time-regional"></select>
               <label class="form-lbl">Cor</label>
@@ -814,6 +842,8 @@ select.sel:focus{border-color:var(--blue);}
                 <option value="#0891b2">🩵 Ciano</option>
                 <option value="#db2777">🩷 Rosa</option>
               </select>
+              <label class="form-lbl">Meta do HUB (vendas/mês)</label>
+              <input type="number" class="form-inp" id="time-meta" value="84" min="1">
               <div class="sep"></div>
               <div style="background:rgba(5,150,105,.06);border:1px solid rgba(5,150,105,.2);border-radius:var(--rs);padding:12px;margin-bottom:10px;font-size:11.5px;color:#166534">
                 <strong>Criar login do Supervisor junto:</strong>
@@ -824,13 +854,13 @@ select.sel:focus{border-color:var(--blue);}
               <input type="password" class="form-inp" id="time-sup-pass" placeholder="mínimo 4 caracteres">
               <label class="form-lbl">Nome Completo</label>
               <input type="text" class="form-inp" id="time-sup-nome" placeholder="Ex: Carlos Silva">
-              <button class="btn" style="width:100%;justify-content:center" onclick="addTime()">+ Criar Time e Supervisor</button>
+              <button class="btn" style="width:100%;justify-content:center" onclick="addTime()">+ Criar HUB e Supervisor</button>
             </div>
           </div>
         </div>
         <div>
           <div class="card">
-            <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--purple)"></div>Times Cadastrados</div></div>
+            <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--purple)"></div>HUBs Cadastrados</div></div>
             <div style="padding:12px 14px" id="times-list"></div>
           </div>
         </div>
@@ -855,7 +885,7 @@ select.sel:focus{border-color:var(--blue);}
                 <option value="supervisor">Supervisor (acesso ao time)</option>
                 <option value="regional">Admin Regional (acesso à regional)</option>
               </select>
-              <label class="form-lbl">Vincular ao Time</label>
+              <label class="form-lbl">Vincular ao HUB</label>
               <select class="form-sel" id="um-time"><option value="">— Selecione —</option></select>
               <label class="form-lbl">Vincular à Regional</label>
               <select class="form-sel" id="um-regional"><option value="">— Selecione —</option></select>
@@ -912,7 +942,7 @@ select.sel:focus{border-color:var(--blue);}
             <div class="sep"></div>
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--tl);margin-bottom:10px">2. ADMIN DA REGIONAL</div>
             <div style="background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.2);border-radius:var(--rs);padding:10px 12px;margin-bottom:10px;font-size:11.5px;color:#1e3a8a">
-              Login do Admin Regional — gerencia todos os times desta regional
+              Login do Admin Regional — gerencia todos os HUBs desta regional
             </div>
             <label class="form-lbl">Usuário do Admin *</label>
             <input type="text" class="form-inp" id="rg-admin-user" placeholder="ex: admin.norte">
@@ -936,7 +966,7 @@ select.sel:focus{border-color:var(--blue);}
             <input type="text" class="form-inp" id="rg-sup-nome" placeholder="Ex: Carlos Souza">
 
             <button class="btn btn-green" style="width:100%;justify-content:center;margin-top:4px" onclick="addRegional()">
-              🏠 Criar Regional + Admin + Time
+              🏠 Criar Regional + Admin + HUB
             </button>
           </div>
         </div>
@@ -983,7 +1013,7 @@ select.sel:focus{border-color:var(--blue);}
       <div style="overflow-x:auto">
         <table class="dt">
           <thead><tr>
-            <th>Regional</th><th>Time</th><th>Vendedores</th><th>Realizado</th><th>Meta</th>
+            <th>Regional</th><th> HUB</th><th>Vendedores</th><th>Realizado</th><th>Meta</th>
             <th style="min-width:110px">% Meta</th><th>GAP</th><th>Ativações</th><th>% Ativação</th>
           </tr></thead>
           <tbody id="ov-tb"></tbody>
@@ -995,6 +1025,32 @@ select.sel:focus{border-color:var(--blue);}
 </div><!-- /main -->
 
 <div class="toast" id="toast"><span id="t-ico">✅</span><span id="t-msg">OK</span></div>
+
+<!-- ══ MODAL TROCAR SENHA ══ -->
+<div class="modal-ov" id="chpw-modal" onclick="if(event.target===this)closeChangePwModal()">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-x" onclick="closeChangePwModal()">✕</div>
+    <div class="modal-h">🔑 Trocar Senha</div>
+    <div class="modal-s" id="chpw-user-label">—</div>
+    <div class="mf">
+      <label>Senha Atual *</label>
+      <input type="password" id="chpw-old" placeholder="Senha atual" autocomplete="current-password">
+    </div>
+    <div class="mf">
+      <label>Nova Senha *</label>
+      <input type="password" id="chpw-new" placeholder="Mínimo 4 caracteres">
+    </div>
+    <div class="mf">
+      <label>Confirmar Nova Senha *</label>
+      <input type="password" id="chpw-confirm" placeholder="Repita a nova senha">
+    </div>
+    <div class="modal-warn" id="chpw-warn"></div>
+    <div class="modal-acts">
+      <button class="btn btn-g" onclick="closeChangePwModal()">Cancelar</button>
+      <button class="btn btn-green" onclick="doChangePassword()">💾 Salvar Nova Senha</button>
+    </div>
+  </div>
+</div>
 
 <!-- ══ MODAL NUVEM ══ -->
 <div class="modal-ov" id="cloud-modal" onclick="if(event.target===this)closeCloudModal()">
@@ -1059,6 +1115,7 @@ function loadDB() {
       if(!d.ativacaoManual) d.ativacaoManual={};
       if(!d.regionais)      d.regionais=[];
       if(!d.times)          d.times=[];
+      if(!d.hubMetas)       d.hubMetas={};
       if(!d.users)          d.users=[];
       // Migra usuários antigos
       d.users = d.users.map(u=>({
@@ -1091,12 +1148,12 @@ function loadDB() {
       {id:6,name:'THEO',     cpf:'',          meta:14,color:'#0891b2',timeId:tmId},
     ],
     nextId:7,
-    vendas:{}, metas:{}, diasConfig:{}, sellerMetas:{}, ativacaoManual:{},
+    vendas:{}, metas:{}, diasConfig:{}, sellerMetas:{}, ativacaoManual:{}, hubMetas:{},
     regionais:[{id:rgId, nome:'Regional I', color:'#2563eb'}],
     times:[{id:tmId, nome:'CE 06', regionalId:rgId, color:'#2563eb'}],
     users:[
       {id:1,   username:'gerente', password:'gerente123', role:'gerente',  nome:'Gerente Geral', regionalId:null, timeId:null, color:'#7c3aed'},
-      {id:1002,username:'aldenir', password:'aldenir123', role:'regional', superAdmin:true, nome:'Aldenir', regionalId:rgId, timeId:null, color:'#2563eb'},
+      {id:1002,username:'aldenir', password:'@RThur20', role:'regional', superAdmin:true, nome:'Aldenir', regionalId:rgId, timeId:null, color:'#2563eb'},
     ]
   };
 }
@@ -1116,7 +1173,7 @@ function migrateToDefaultRegional(d){
   }
   // Cria Aldenir se não existir
   if(!d.users.find(u=>u.username==='aldenir')){
-    d.users.push({id:1002,username:'aldenir',password:'aldenir123',role:'regional',superAdmin:true,nome:'Aldenir',regionalId:rg.id,timeId:null,color:'#2563eb'});
+    d.users.push({id:1002,username:'aldenir',password:'@RThur20',role:'regional',superAdmin:true,nome:'Aldenir',regionalId:rg.id,timeId:null,color:'#2563eb'});
   } else {
     // Garante superAdmin no usuário existente
     const a=d.users.find(u=>u.username==='aldenir');
@@ -1167,21 +1224,29 @@ function getAllDias(y,m){
 }
 function getMeta(ymKey){
   if(DB.metas[ymKey]) return DB.metas[ymKey];
-  // Sum per-seller monthly metas or fall back to seller default
-  const sm = DB.sellerMetas[ymKey] || {};
-  return DB.sellers.reduce((a,s) => a + (sm[s.id] ?? s.meta), 0) || 0;
+  // Soma metas dos HUBs se configuradas
+  if(DB.times?.length){
+    const s=(DB.times||[]).reduce((a,t)=>a+getHubMeta(ymKey,t.id),0);
+    if(s>0) return s;
+  }
+  return DB.sellers.filter(s=>!s.inativo).reduce((a,s)=>a+s.meta,0)||0;
 }
 function getSellerMeta(ymKey, sid){
   return (DB.sellerMetas[ymKey]||{})[sid] ?? (DB.sellers.find(s=>s.id===sid)?.meta || 0);
 }
+function getHubMeta(ymKey, timeId){
+  const hm=(DB.hubMetas||{})[ymKey]?.[timeId];
+  if(hm!=null) return hm;
+  return DB.sellers.filter(s=>s.timeId===timeId&&!s.inativo).reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0)||0;
+}
+function getScopedMeta(ymKey){ return getMeta(ymKey); }
 function getVendas(ymKey){ return DB.vendas[ymKey] || []; }
 
 // ── SCOPE: filtra sellers pelo papel do usuário logado ──
-function getScopedSellers(){
+function getScopedSellers(includeInativo=false){
   const u = currentUser;
   if(!u) return [];
-
-  let sellers = DB.sellers;
+  let sellers = DB.sellers.filter(s=>includeInativo||!s.inativo);
 
   // Gerente com filtro manual ativo
   if(isGerente(u)){
@@ -1235,7 +1300,7 @@ function populateDashFilterTimes(){
     ? (DB.times||[]).filter(t=>t.regionalId===rgId)
     : (DB.times||[]);
   const prev = parseInt(tmSel.value)||null;
-  const label= rgId ? `🏢 Todos os Times (${times.length})` : `🏢 Todos os Times`;
+  const label= rgId ? `🏢 Todos os HUBs (${times.length})` : `🏢 Todos os HUBs`;
   tmSel.innerHTML=`<option value="">${label}</option>`
     +times.map(t=>{
       const rg=rgId?null:(DB.regionais||[]).find(r=>r.id===t.regionalId);
@@ -1356,7 +1421,7 @@ function goPage(name, el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.getElementById('page-'+name)?.classList.add('active');
   if(el) el.classList.add('on');
-  const lb={dash:'Dashboard — Visão Geral',lancar:'Lançar Vendas',sellers:'Vendedores / Times',regionais:'Gestão de Regionais',overview:'Visão Geral por Regional'};
+  const lb={dash:'Dashboard — Visão Geral',lancar:'Lançar Vendas',sellers:'Vendedores / HUBs',regionais:'Gestão de Regionais',overview:'Visão Geral por Regional'};
   document.getElementById('tb-sub').textContent=lb[name]||'';
   if(name==='dash')      renderDash();
   if(name==='lancar')    renderLancar();
@@ -1707,7 +1772,7 @@ function renderSellers(){
   const lbl    = document.getElementById('scope-label');
   if(u?.role==='supervisor'){
     const t=(DB.times||[]).find(x=>x.id===u.timeId);
-    if(banner){ banner.style.display='flex'; lbl.textContent=`Time: ${t?.nome||'—'}`; }
+    if(banner){ banner.style.display='flex'; lbl.textContent=`HUB: ${t?.nome||'—'}`; }
     const fw=document.getElementById('seller-form-wrap');
     if(fw) fw.style.display='none';
     const tbt=document.getElementById('tab-btn-times');
@@ -1739,26 +1804,37 @@ function renderSellers(){
   const metaGEl=document.getElementById('meta-g');
   if(metaGEl) metaGEl.value=getScopedMeta(ymKey);
 
-  let lh='';
-  [...scopedSel].sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{
+  const scopedAll = getScopedSellers(true); // inclui inativos
+  let lh='', lhInativo='';
+  [...scopedAll].sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{
     const tot=sellerTotal(ymKey,s.id);
     const metaMes=(DB.sellerMetas[ymKey]||{})[s.id]??s.meta;
     const t=(DB.times||[]).find(x=>x.id===s.timeId);
-    lh+=`<div class="seller-item">
+    const inativo=!!s.inativo;
+    const card=`<div class="seller-item${inativo?' inativo':''}">
       <div class="seller-ic" style="background:${s.color}">${s.name[0]}</div>
       <div style="flex:1">
-        <div class="seller-nm">${s.name}</div>
-        <div class="seller-meta-txt">${t?`Time: ${t.nome} · `:''}${s.cpf||'—'} · Realizado: ${tot}</div>
-        <div class="seller-meta-edit">
+        <div class="seller-nm">${s.name}${inativo?'<span class="inativo-badge">INATIVO</span>':''}</div>
+        <div class="seller-meta-txt">${t?`HUB: ${t.nome} · `:''}${s.cpf||'—'} · Realizado: ${tot}</div>
+        ${!inativo?`<div class="seller-meta-edit">
           <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl)">Compromisso ${MESES[m]}:</span>
           <input type="number" id="smeta-${s.id}" value="${metaMes}" min="1">
           <button class="save-meta-btn" onclick="saveSellerMeta(${s.id})">Salvar</button>
-        </div>
+        </div>`:''}
       </div>
-      <button class="del-seller" onclick="delSeller(${s.id})">Remover</button>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+        ${inativo
+          ? `<button class="btn-ativar" onclick="toggleSellerInativo(${s.id},false)">↩ Reativar</button>
+             <button class="del-seller" onclick="delSellerPermanent(${s.id})">Excluir</button>`
+          : `<button class="btn-inativo" onclick="toggleSellerInativo(${s.id},true)">Inativar</button>
+             <button class="del-seller" onclick="delSeller(${s.id})">Remover</button>`
+        }
+      </div>
     </div>`;
+    if(inativo) lhInativo+=card; else lh+=card;
   });
-  document.getElementById('v-list').innerHTML=lh||'<div style="color:var(--tl);text-align:center;padding:20px">Nenhum vendedor</div>';
+  const allHtml=(lh||'')+(lhInativo?`<div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tl);margin-bottom:8px">Inativos</div>${lhInativo}</div>`:'');
+  document.getElementById('v-list').innerHTML=allHtml||'<div style="color:var(--tl);text-align:center;padding:20px">Nenhum vendedor</div>';
 
   renderTimesList();
   renderUserList();
@@ -1775,21 +1851,46 @@ function renderSellers(){
 function renderTimesList(){
   const u=currentUser;
   const el=document.getElementById('times-list'); if(!el) return;
-  const times=u?.role==='regional'?(DB.times||[]).filter(t=>t.regionalId===u.regionalId):(DB.times||[]);
-  if(!times.length){ el.innerHTML='<div style="color:var(--tl);text-align:center;padding:20px">Nenhum time cadastrado</div>'; return; }
+  const ymKey=currentYM, {y,m}=ymToYM(ymKey);
+  const times=isGerente(u)?(DB.times||[]):(u?.role==='regional'?(DB.times||[]).filter(t=>t.regionalId===u.regionalId):(DB.times||[]).filter(t=>t.id===u?.timeId));
+  if(!times.length){ el.innerHTML='<div style="color:var(--tl);text-align:center;padding:20px">Nenhum HUB cadastrado</div>'; return; }
+  const canEdit = isGerente(u)||u?.role==='regional';
   el.innerHTML=times.map(t=>{
     const rg=(DB.regionais||[]).find(r=>r.id===t.regionalId);
-    const cnt=DB.sellers.filter(s=>s.timeId===t.id).length;
+    const cnt=DB.sellers.filter(s=>s.timeId===t.id&&!s.inativo).length;
     const sup=DB.users?.find(u=>u.role==='supervisor'&&u.timeId===t.id);
-    return `<div class="time-item">
-      <div class="time-ic" style="background:${t.color||'#2563eb'}">${t.nome[0]}</div>
-      <div style="flex:1">
-        <div class="time-nm">${t.nome}</div>
-        <div class="time-sub">${rg?`Regional: ${rg.nome} · `:''}${cnt} vendedor(es)${sup?` · Sup: @${sup.username}`:''}</div>
+    const hubMeta=getHubMeta(ymKey,t.id);
+    const real=DB.sellers.filter(s=>s.timeId===t.id&&!s.inativo).reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
+    return `<div class="time-item" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="time-ic" style="background:${t.color||'#2563eb'}">${t.nome[0]}</div>
+        <div style="flex:1">
+          <div class="time-nm">${t.nome}</div>
+          <div class="time-sub">${rg?`Regional: ${rg.nome} · `:''}${cnt} vendedor(es) · Realizado: ${real}${sup?` · Sup: @${sup.username}`:''}</div>
+        </div>
+        <button class="del-seller" onclick="delTime(${t.id})">Remover</button>
       </div>
-      <button class="del-seller" onclick="delTime(${t.id})">Remover</button>
+      ${canEdit?`<div class="hub-meta-row">
+        <label>Meta ${MESES[m]}:</label>
+        <input type="number" id="hmeta-${t.id}" value="${hubMeta||''}" min="1" placeholder="0">
+        <button class="save-meta-btn" onclick="saveHubMeta(${t.id})">Salvar</button>
+        <span style="font-size:10.5px;color:var(--tl);margin-left:4px">${real}/${hubMeta||'?'} vendas</span>
+      </div>`:''}
     </div>`;
   }).join('');
+}
+
+function saveHubMeta(timeId){
+  const el=document.getElementById('hmeta-'+timeId);
+  if(!el) return;
+  const v=parseInt(el.value)||0;
+  if(!DB.hubMetas) DB.hubMetas={};
+  if(!DB.hubMetas[currentYM]) DB.hubMetas[currentYM]={};
+  DB.hubMetas[currentYM][timeId]=v;
+  // Remove meta global manual para que soma dos HUBs seja usada
+  delete DB.metas[currentYM];
+  saveDB(); renderDash();
+  toast(`Meta do HUB atualizada: ${v}`);
 }
 
 function renderUserList(){
@@ -1837,19 +1938,35 @@ function addSeller(){
 
 function delSeller(id){
   const s=DB.sellers.find(s=>s.id===id);
-  if(!s||!confirm(`Remover "${s.name}"?`)) return;
-  DB.sellers=DB.sellers.filter(s=>s.id!==id);
+  if(!s) return;
+  if(confirm(`Inativar "${s.name}" em vez de excluir?\n\nInativar preserva todo o histórico de vendas.\nCancelar e clicar Excluir remove permanentemente.`)){
+    toggleSellerInativo(id,true); return;
+  }
+}
+function delSellerPermanent(id){
+  const s=DB.sellers.find(s=>s.id===id);
+  if(!s||!confirm(`⚠️ Excluir PERMANENTEMENTE "${s.name}"?\nO histórico de vendas será mantido, mas o vendedor não poderá ser restaurado.`)) return;
+  DB.sellers=DB.sellers.filter(x=>x.id!==id);
   if(selectedSeller===id) selectedSeller=null;
   saveDB(); renderSellers(); renderDash(); populateQESellers();
-  toast(`${s.name} removido`,'🗑️');
+  toast(`${s.name} excluído permanentemente`,'🗑️');
+}
+function toggleSellerInativo(id, inativo){
+  const s=DB.sellers.find(x=>x.id===id);
+  if(!s) return;
+  s.inativo=inativo;
+  saveDB(); renderSellers(); renderDash(); populateQESellers();
+  toast(inativo?`${s.name} marcado como inativo`:`${s.name} reativado ✓`);
 }
 
 function saveMeta(){
   const v=parseInt(document.getElementById('meta-g').value);
   if(!v){ toast('Meta inválida','⚠️'); return; }
   DB.metas[currentYM]=v;
-  saveDB(); renderSellers(); renderDash();
-  toast(`Meta definida: ${v}`);
+  // Limpa hubMetas do mês para que a meta manual total prevaleça
+  if(DB.hubMetas?.[currentYM]) delete DB.hubMetas[currentYM];
+  saveDB(); renderSellers(); renderTimesList(); renderDash();
+  toast(`Meta total definida manualmente: ${v}`);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1858,21 +1975,27 @@ function saveMeta(){
 function addTime(){
   const nome     = document.getElementById('time-nome').value.trim();
   const color    = document.getElementById('time-cor').value;
+  const metaHub  = parseInt(document.getElementById('time-meta')?.value)||0;
   const supUser  = document.getElementById('time-sup-user').value.trim().toLowerCase();
   const supPass  = document.getElementById('time-sup-pass').value;
   const supNome  = document.getElementById('time-sup-nome').value.trim();
   const u        = currentUser;
 
-  if(!nome){ toast('Informe o nome do time','⚠️'); return; }
+  if(!nome){ toast('Informe o nome do HUB','⚠️'); return; }
   if(!supUser||!supPass||supPass.length<4){ toast('Usuário/senha do supervisor inválidos','⚠️'); return; }
   if(DB.users?.find(x=>x.username===supUser)){ toast('Usuário já existe','⚠️'); return; }
 
-  // Regional: usa a do próprio usuário; gerente usa o select
   let regionalId = u.role==='regional' ? u.regionalId : parseInt(document.getElementById('time-regional')?.value)||null;
 
-  if(!DB.times) DB.times=[];
+  if(!DB.times)    DB.times=[];
+  if(!DB.hubMetas) DB.hubMetas={};
   const timeId = Date.now();
   DB.times.push({id:timeId, nome, color, regionalId});
+
+  if(metaHub>0){
+    if(!DB.hubMetas[currentYM]) DB.hubMetas[currentYM]={};
+    DB.hubMetas[currentYM][timeId]=metaHub;
+  }
 
   if(!DB.users) DB.users=[];
   DB.users.push({id:Date.now()+1, username:supUser, password:supPass, role:'supervisor',
@@ -1883,17 +2006,17 @@ function addTime(){
   document.getElementById('time-sup-user').value='';
   document.getElementById('time-sup-pass').value='';
   document.getElementById('time-sup-nome').value='';
-  toast(`✅ Time "${nome}" criado com supervisor @${supUser}!`);
+  toast(`✅ HUB "${nome}" criado com supervisor @${supUser}!`);
 }
 
 function delTime(id){
   const t=(DB.times||[]).find(x=>x.id===id);
-  if(!t||!confirm(`Remover time "${t.nome}"? Vendedores vinculados ficam sem time.`)) return;
+  if(!t||!confirm(`Remover HUB "${t.nome}"? Vendedores vinculados ficam sem time.`)) return;
   DB.times=(DB.times||[]).filter(x=>x.id!==id);
   DB.sellers.forEach(s=>{ if(s.timeId===id) s.timeId=null; });
   DB.users=(DB.users||[]).filter(x=>!(x.role==='supervisor'&&x.timeId===id));
   saveDB(); renderSellers();
-  toast(`Time "${t.nome}" removido`,'🗑️');
+  toast(`HUB "${t.nome}" removido`,'🗑️');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1975,12 +2098,12 @@ function renderRegionais(){
       <div class="rg-card-top" style="background:${rg.color}"></div>
       <div class="rg-card-body">
         <div class="rg-card-nm" style="color:${rg.color}">${rg.nome}</div>
-        <div class="rg-card-sub">${adm?`Admin: @${adm.username}`:' sem admin'} · ${times.length} time(s) · ${sellers.length} vendedor(es)</div>
+        <div class="rg-card-sub">${adm?`Admin: @${adm.username}`:' sem admin'} · ${times.length} HUB(s) · ${sellers.length} vendedor(es)</div>
         <div class="rg-stats">
           <div class="rg-stat"><div class="rg-stat-val" style="color:var(--green)">${real}</div><div class="rg-stat-lbl">Realizado</div></div>
           <div class="rg-stat"><div class="rg-stat-val" style="color:var(--blue)">${meta}</div><div class="rg-stat-lbl">Meta</div></div>
           <div class="rg-stat"><div class="rg-stat-val" style="color:${pcColor}">${(pct*100).toFixed(0)}%</div><div class="rg-stat-lbl">Atingido</div></div>
-          <div class="rg-stat"><div class="rg-stat-val">${times.length}</div><div class="rg-stat-lbl">Times</div></div>
+          <div class="rg-stat"><div class="rg-stat-val">${times.length}</div><div class="rg-stat-lbl"> HUBs</div></div>
         </div>
         <div class="rg-actions">
           <button class="btn btn-g" style="font-size:11px;flex:1" onclick="goPage('sellers',document.getElementById('nav-sellers'))">Ver Times</button>
@@ -2325,6 +2448,7 @@ async function cloudPull(){
     if(!rec?.sellers || !rec?.vendas) throw new Error('Estrutura inválida');
     if(!rec.diasConfig)   rec.diasConfig={};
     if(!rec.sellerMetas)  rec.sellerMetas={};
+    if(!rec.hubMetas)     rec.hubMetas={};
     if(!rec.ativacaoManual) rec.ativacaoManual={};
     if(!rec.regionais)    rec.regionais=[];
     if(!rec.times)        rec.times=[];
@@ -2444,15 +2568,21 @@ function clearSession(){ sessionStorage.removeItem('bi_sess'); currentUser=null;
 function doLogin(){
   const uname = document.getElementById('li-user').value.trim().toLowerCase();
   const pass  = document.getElementById('li-pass').value;
+  const remember = document.getElementById('li-remember')?.checked;
   const err   = document.getElementById('li-err');
-  if(!DB.users) DB.users=[{id:1,username:'admin',password:'admin',role:'admin',sellerId:null,displayName:'Administrador'}];
+  if(!DB.users) DB.users=[{id:1,username:'gerente',password:'gerente123',role:'gerente',nome:'Gerente Geral',regionalId:null,timeId:null,color:'#7c3aed'}];
   const user  = DB.users.find(u=>u.username.toLowerCase()===uname && u.password===pass);
   if(!user){ err.classList.add('show'); document.getElementById('li-pass').value=''; return; }
   err.classList.remove('show');
+  // Lembrar login
+  if(remember){
+    localStorage.setItem('bi_remember',JSON.stringify({u:uname,p:pass}));
+  } else {
+    localStorage.removeItem('bi_remember');
+  }
   setSession(user);
   document.getElementById('login-ov').classList.add('hidden');
   applySession();
-  // Redireciona para o dash do usuário
   const navEl = document.querySelector('.ni.on') || document.querySelectorAll('.ni')[0];
   goPage('dash', navEl);
 }
@@ -2542,7 +2672,7 @@ function renderOverview(){
   document.getElementById('ov-real').textContent=tReal;
   document.getElementById('ov-real-s').textContent=`${(tPct*100).toFixed(1)}% da meta`;
   document.getElementById('ov-meta').textContent=tMeta;
-  document.getElementById('ov-meta-s').textContent=`${regionaisVisiveis.length} regional(is) · ${timesVisiveis.length} time(s)`;
+  document.getElementById('ov-meta-s').textContent=`${regionaisVisiveis.length} regional(is) · ${timesVisiveis.length} HUB(s)`;
   document.getElementById('ov-atv').textContent=tAtv;
   document.getElementById('ov-atv-s').textContent=tReal>0?`${(tAtvP*100).toFixed(1)}% do realizado`:'—';
   document.getElementById('ov-gap').textContent=tGap;
@@ -2576,7 +2706,7 @@ function renderOverview(){
       <td><div class="pw"><div class="pt"><div class="pf ${rgPct>=1?'pg':rgPct>=0.6?'py':'pr'}" style="width:${Math.min(100,rgPct*100).toFixed(1)}%"></div></div>
           <span class="pp" style="color:${pcColor}">${(rgPct*100).toFixed(1)}%</span></div></td>
       <td><span class="gb ${rgGap===0?'gz':'gn'}">${rgGap===0?'✓':'-'+rgGap}</span></td>
-      <td colspan="2" style="color:var(--tl);font-size:11px">${rgTimes.length} time(s)</td>
+      <td colspan="2" style="color:var(--tl);font-size:11px">${rgTimes.length} HUB(s)</td>
     </tr>`;
 
     // Linhas dos times
@@ -2624,6 +2754,59 @@ function renderOverview(){
   document.getElementById('ov-tb').innerHTML=tb;
 }
 
+// ══════════════════════════════════════════════════════════
+//  TROCAR SENHA
+// ══════════════════════════════════════════════════════════
+function openChangePwModal(){
+  if(!currentUser){ toast('Faça login primeiro','⚠️'); return; }
+  document.getElementById('chpw-user-label').textContent=`Usuário: @${currentUser.username}`;
+  document.getElementById('chpw-old').value='';
+  document.getElementById('chpw-new').value='';
+  document.getElementById('chpw-confirm').value='';
+  document.getElementById('chpw-warn').style.display='none';
+  document.getElementById('chpw-modal').classList.add('show');
+}
+function closeChangePwModal(){ document.getElementById('chpw-modal').classList.remove('show'); }
+
+function doChangePassword(){
+  const oldPw  = document.getElementById('chpw-old').value;
+  const newPw  = document.getElementById('chpw-new').value;
+  const confPw = document.getElementById('chpw-confirm').value;
+  const warn   = document.getElementById('chpw-warn');
+  const showWarn = msg=>{ warn.style.display='block'; warn.textContent=msg; };
+
+  if(!oldPw||!newPw||!confPw){ showWarn('⚠️ Preencha todos os campos.'); return; }
+  const user = DB.users?.find(u=>u.id===currentUser.id);
+  if(!user){ showWarn('⚠️ Usuário não encontrado.'); return; }
+  if(user.password!==oldPw){ showWarn('⚠️ Senha atual incorreta.'); return; }
+  if(newPw.length<4){ showWarn('⚠️ A nova senha precisa ter no mínimo 4 caracteres.'); return; }
+  if(newPw!==confPw){ showWarn('⚠️ A confirmação não confere com a nova senha.'); return; }
+
+  user.password=newPw;
+  // Atualiza sessão e localStorage de lembrar
+  currentUser={...currentUser,password:newPw};
+  setSession(currentUser);
+  const rem=localStorage.getItem('bi_remember');
+  if(rem){ try{ const r=JSON.parse(rem); if(r.u===user.username) localStorage.setItem('bi_remember',JSON.stringify({u:user.username,p:newPw})); }catch(e){} }
+  saveDB();
+  closeChangePwModal();
+  toast('✅ Senha alterada com sucesso!');
+}
+
+// ══════════════════════════════════════════════════════════
+//  LEMBRAR LOGIN
+// ══════════════════════════════════════════════════════════
+function loadRemembered(){
+  try{
+    const r=JSON.parse(localStorage.getItem('bi_remember')||'null');
+    if(r?.u){
+      document.getElementById('li-user').value=r.u;
+      document.getElementById('li-pass').value=r.p||'';
+      document.getElementById('li-remember').checked=true;
+    }
+  }catch(e){}
+}
+
 function deleteUser(id){
   const u=DB.users?.find(x=>x.id===id);
   if(!u||!confirm(`Remover login "@${u.username}"?`)) return;
@@ -2638,6 +2821,7 @@ function deleteUser(id){
 populateMes();
 populateQESellers();
 setDefaultDate();
+loadRemembered(); // preenche login se "lembrar" estava ativo
 
 (async () => {
   // Garante master key no cfg ao iniciar
