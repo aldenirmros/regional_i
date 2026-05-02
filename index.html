@@ -698,6 +698,16 @@ select.sel:focus{border-color:var(--blue);}
     <div class="login-logo"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></div>
     <div class="login-title">BI Vendas</div>
     <div class="login-sub">Acompanhamento de Vendas · Faça login para continuar</div>
+    <!-- Aviso quando banco não foi encontrado automaticamente -->
+    <div id="login-sync-warn" style="display:none;background:rgba(217,119,6,.15);border:1px solid rgba(217,119,6,.4);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:#fbbf24">
+      <div style="font-weight:700;margin-bottom:6px">⚠️ Banco de dados não encontrado</div>
+      <div style="margin-bottom:10px;color:rgba(255,255,255,.7)">Cole abaixo o <b>Bin ID</b> do computador para acessar os dados:</div>
+      <input type="text" id="login-bin-input" placeholder="Cole o Bin ID aqui…"
+        style="width:100%;background:rgba(255,255,255,.1);border:1.5px solid rgba(217,119,6,.5);border-radius:8px;padding:9px 12px;font-family:monospace;font-size:12px;color:#fff;outline:none;margin-bottom:8px;">
+      <button onclick="applyLoginBinId()" style="width:100%;background:#d97706;color:#fff;border:none;border-radius:8px;padding:9px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer">
+        🔗 Conectar ao banco
+      </button>
+    </div>
     <div class="login-field">
       <label>Usuário</label>
       <input type="text" id="li-user" placeholder="seu.usuario" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
@@ -1527,10 +1537,10 @@ select.sel:focus{border-color:var(--blue);}
     </div>
 
     <div class="modal-hint">
-      <strong>🔄 Para sincronizar no celular:</strong><br>
-      1. No computador, copie o <b>Bin ID</b> acima<br>
-      2. No celular, abra este modal e cole no campo <b>Bin ID</b><br>
-      3. Clique em <b>Conectar</b> — pronto, mesmo banco!
+      <strong>📱 Para abrir o mesmo banco no celular:</strong><br>
+      1. Neste computador, clique em <b>⬇️ Baixar HTML Atualizado</b><br>
+      2. Envie o arquivo baixado para o celular (WhatsApp, e-mail, Drive…)<br>
+      3. Abra o arquivo no celular — <b>todos os dados estarão lá!</b>
     </div>
     <div class="modal-warn" id="cloud-warn"></div>
     <div class="mf">
@@ -1543,6 +1553,10 @@ select.sel:focus{border-color:var(--blue);}
     </div>
     <div class="modal-acts">
       <button class="btn btn-g" onclick="disconnectCloud()">Desconectar</button>
+      <button class="btn" style="background:var(--orange)" onclick="exportHtmlWithBinId()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Baixar HTML Atualizado
+      </button>
       <button class="btn btn-green" onclick="connectCloud()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
         Conectar &amp; Sincronizar
@@ -3013,20 +3027,42 @@ function downloadModeloExcel(){
 
 // ══════════════════════════════════════════════════════════
 //  CLOUD SYNC — JSONbin.io v3
-//  Master Key embutida — dados sempre persistidos na nuvem
 // ══════════════════════════════════════════════════════════
-const CLOUD_LS = 'bi_cloud_v1';
+const CLOUD_LS   = 'bi_cloud_v1';
 const MASTER_KEY = '$2a$10$Keiq/OdX8iGlz92x/Xc3VOp/ieE26yTS91vElxKkiWAIn64JGdpRq';
-// ── Após primeira execução no desktop, cole o Bin ID aqui para sincronizar todos os dispositivos:
-const HARDCODED_BIN_ID = ''; // ex: '64abc1234e3a79451e4ee123'
+// BIN ID gravado diretamente no HTML — mesmo banco em TODOS os dispositivos
+const HARDCODED_BIN_ID = '%%BIN_ID%%';
 
 function getCfg(){
   try{
     const c = JSON.parse(localStorage.getItem(CLOUD_LS)||'{}');
-    // HARDCODED_BIN_ID tem prioridade absoluta — garante o mesmo banco em todos os dispositivos
-    if(HARDCODED_BIN_ID && !c.binId){ c.binId = HARDCODED_BIN_ID; c.key = MASTER_KEY; localStorage.setItem(CLOUD_LS,JSON.stringify(c)); }
+    // HARDCODED_BIN_ID real tem prioridade — sincroniza todos os dispositivos
+    const hid = (HARDCODED_BIN_ID||'').replace(/%%.*%%/,'').trim();
+    if(hid){ c.binId=hid; c.key=MASTER_KEY; }
     return c;
   } catch(e){ return {}; }
+}
+
+// Gera e baixa o HTML com o Bin ID já embutido
+async function exportHtmlWithBinId(){
+  const binId = getCfg().binId || '';
+  if(!binId){ toast('Conecte ao banco primeiro','⚠️'); return; }
+  try{
+    const res  = await fetch(window.location.href);
+    let   html = await res.text();
+    // Substitui o placeholder (ou qualquer valor anterior) pelo binId atual
+    html = html.replace(/const HARDCODED_BIN_ID = '[^']*';/, `const HARDCODED_BIN_ID = '${binId}';`);
+    const blob = new Blob([html],{type:'text/html'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href=url; a.download='BI_Vendas.html'; a.click();
+    URL.revokeObjectURL(url);
+    toast('✅ HTML baixado com Bin ID embutido!');
+  } catch(e){
+    // fallback: não conseguiu buscar o próprio HTML (ex: aberto como file://)
+    toast('Para embutir o Bin ID, cole o código abaixo no arquivo HTML:','⚠️');
+    prompt('Substitua a linha HARDCODED_BIN_ID no HTML por:', `const HARDCODED_BIN_ID = '${binId}';`);
+  }
 }
 function setCfg(c){ localStorage.setItem(CLOUD_LS, JSON.stringify(c)); }
 
@@ -3141,6 +3177,24 @@ async function connectCloud(){
   const c2 = getCfg();
   if(c2.binId){ document.getElementById('m-bin').value = c2.binId; }
   toast('☁️ Nuvem configurada com sucesso!');
+}
+
+// Conecta ao banco pelo Bin ID colado na tela de login (celular sem cache)
+async function applyLoginBinId(){
+  const id = (document.getElementById('login-bin-input')?.value||'').trim();
+  if(!id){ return; }
+  const c = getCfg(); c.binId=id; c.key=MASTER_KEY; setCfg(c);
+  localStorage.setItem(CLOUD_LS, JSON.stringify(c));
+  setCloudUI('sync','Conectando…');
+  const ok = await cloudPull();
+  if(ok){
+    populateMes(); populateQESellers();
+    document.getElementById('login-sync-warn').style.display='none';
+    toast('✅ Banco conectado com sucesso!');
+  } else {
+    toast('❌ Bin ID inválido ou sem acesso','⚠️');
+    const c2=getCfg(); delete c2.binId; setCfg(c2);
+  }
 }
 
 function disconnectCloud(){
@@ -3941,68 +3995,84 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
 }); // preenche login se "lembrar" estava ativo
 
 (async () => {
-  // Garante master key no cfg ao iniciar
   const cfg = getCfg();
   if(!cfg.key){ cfg.key = MASTER_KEY; setCfg(cfg); }
 
-  // Se não tem binId salvo, tenta descobrir o bin existente no JSONbin
+  // ── Tenta descobrir o binId se não estiver salvo localmente ──
   if(!getCfg().binId){
     setCloudUI('sync','Buscando banco…');
     try {
-      const res = await fetch('https://api.jsonbin.io/v3/b?sortBy=createdAt&order=desc', {
-        headers:{ 'X-Master-Key': MASTER_KEY }
+      // Estratégia 1: listar todos os bins com a master key
+      const res = await fetch('https://api.jsonbin.io/v3/b', {
+        headers:{ 'X-Master-Key': MASTER_KEY, 'X-Sort-Order':'desc' }
       });
       if(res.ok){
         const data = await res.json();
-        // JSONbin v3 retorna { result: [...] } OU array direto
-        const items = Array.isArray(data) ? data : (data?.result || []);
-        const found = items.find(b =>
-          b?.snippetMeta?.name === 'BI_Vendas' ||
-          b?.record?.sellers ||
-          b?.snippetMeta?.id
-        );
+        // JSONbin pode retornar array direto ou { result: [...] }
+        const items = Array.isArray(data) ? data
+                    : Array.isArray(data?.result) ? data.result
+                    : Array.isArray(data?.data) ? data.data : [];
+        // Pega o bin mais recente que tenha o nome certo OU qualquer bin
+        const found = items.find(b=>b?.snippetMeta?.name==='BI_Vendas')
+                   || items.find(b=>b?.snippetMeta?.id)
+                   || items[0];
         const id = found?.snippetMeta?.id || found?.id;
         if(id){
-          const c2 = getCfg(); c2.binId = id; c2.key = MASTER_KEY; setCfg(c2);
-          syncLog(`Banco encontrado: ${id}`);
-          // Mostra o Bin ID no painel de sync para o usuário copiar
-          const el = document.getElementById('m-bin');
-          if(el) el.value = id;
+          const c2=getCfg(); c2.binId=id; c2.key=MASTER_KEY; setCfg(c2);
+          syncLog('Banco encontrado: '+id);
         }
       }
-    } catch(e){ syncLog('Discovery falhou: '+e.message); }
+    } catch(e){ syncLog('Discovery: '+e.message); }
   }
 
+  // ── Pull inicial ──
   if(getCfg().binId){
     setCloudUI('sync','Carregando…');
     const ok = await cloudPull();
     if(ok){
-      populateMes();
-      populateQESellers();
-      // Mostra o Bin ID sempre para facilitar cópia em outros dispositivos
-      const el = document.getElementById('m-bin');
-      if(el && !el.value) el.value = getCfg().binId||'';
+      populateMes(); populateQESellers();
+      const c=getCfg(); localStorage.setItem(CLOUD_LS,JSON.stringify(c));
+      const el=document.getElementById('m-bin'); if(el) el.value=c.binId||'';
     }
   } else {
     setCloudUI('sync','Configurando…');
     await cloudPush();
-    // Após criar, exibe o Bin ID gerado
-    const newCfg = getCfg();
-    const el = document.getElementById('m-bin');
-    if(el && newCfg.binId) el.value = newCfg.binId;
-    syncLog('Novo banco criado. Copie o Bin ID acima e cole no campo HARDCODED_BIN_ID do arquivo HTML para sincronizar outros dispositivos.');
+    const nc=getCfg(); localStorage.setItem(CLOUD_LS,JSON.stringify(nc));
+    const el=document.getElementById('m-bin'); if(el&&nc.binId) el.value=nc.binId;
+    syncLog('Banco criado. Abra ☁️ → "Baixar HTML Atualizado" para fixar o ID no arquivo.');
   }
 
-  // Verifica sessão salva
+  // ── Verifica sessão salva ──
   const sess = getSession();
-  if(sess && DB.users && DB.users.find(u=>u.id===sess.id)){
+  if(sess && DB.users?.find(u=>u.id===sess.id)){
     currentUser = sess;
     document.getElementById('login-ov').classList.add('hidden');
-    applySession();
-    renderDash();
+    applySession(); renderDash();
   } else {
     document.getElementById('login-ov').classList.remove('hidden');
+    // Mostra aviso de bin não encontrado se ainda sem binId
+    if(!getCfg().binId){
+      document.getElementById('login-sync-warn').style.display='block';
+    }
   }
+
+  // ── Auto-refresh: mantém todos os dispositivos sincronizados ──
+  // Puxa dados novos a cada 60s se a aba estiver visível
+  setInterval(async ()=>{
+    if(document.hidden) return;           // não atualiza se aba em background
+    if(!getCfg().binId) return;
+    if(!currentUser) return;              // não atualiza se ninguém logado
+    const ok = await cloudPull();
+    if(ok){ populateMes(); populateQESellers(); renderDash(); }
+  }, 60_000);
+
+  // Também atualiza ao voltar para a aba (ex: celular que ficou em background)
+  document.addEventListener('visibilitychange', async ()=>{
+    if(!document.hidden && getCfg().binId && currentUser){
+      const ok = await cloudPull();
+      if(ok){ populateMes(); populateQESellers(); renderDash(); }
+    }
+  });
 })();
 </script>
 </body>
