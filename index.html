@@ -162,7 +162,13 @@ select.sel:focus{border-color:var(--blue);}
 .cal-legend-dot{width:7px;height:7px;border-radius:50%;}
 .cal-total{margin-left:auto;font-size:11px;font-weight:700;color:var(--td);}
 .cal-wrap{position:relative;}
-/* ── M0/M1/M2 indicator cells ── */
+/* ── M inline input ── */
+.m-inline-inp{width:52px;text-align:center;border:1.5px solid var(--border);border-radius:6px;padding:4px 6px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--td);background:var(--bg);outline:none;transition:border-color .14s;}
+.m-inline-inp:focus{border-color:var(--blue);background:#fff;}
+.m-inline-inp.m-red{color:var(--red);}
+.m-inline-inp.m-yellow{color:var(--orange);}
+.m-inline-inp.m-green{color:var(--green);}
+.m-inline-inp.m-empty{color:var(--tl);}
 .m-cell{text-align:center;position:relative;}
 .m-val{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:26px;border-radius:6px;font-family:var(--mono);font-size:12px;font-weight:800;padding:0 7px;cursor:pointer;transition:all .15s;border:1.5px solid transparent;}
 .m-val.m-red{background:rgba(220,38,38,.12);color:var(--red);border-color:rgba(220,38,38,.25);}
@@ -200,8 +206,27 @@ select.sel:focus{border-color:var(--blue);}
   .topbar-actions-row{display:flex;align-items:center;gap:12px;flex:1;}
 }
 
-/* ══════════════════════════════════════════════════════════
-   RESPONSIVO COMPLETO — mobile-first
+/* ══ PSV ══ */
+.pth{padding:10px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);border-bottom:2px solid var(--border);text-align:left;white-space:nowrap;}
+.ptd{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+.ptd-input{width:100%;min-width:100px;background:transparent;border:none;outline:none;font-family:var(--font);font-size:12.5px;color:var(--td);resize:none;min-height:34px;}
+.ptd-input:focus{background:var(--bg);border-radius:5px;padding:2px 5px;}
+.hc-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.hc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--hc-accent,var(--blue));}
+.hc-title{font-size:13px;font-weight:700;color:var(--td);margin-bottom:12px;display:flex;align-items:center;gap:7px;}
+.hc-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.hc-stat{background:var(--bg);border-radius:8px;padding:9px 11px;text-align:center;}
+.hc-stat-val{font-size:22px;font-weight:800;color:var(--td);font-family:var(--mono);line-height:1;}
+.hc-stat-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);margin-top:3px;}
+.hc-total{display:flex;align-items:baseline;gap:6px;margin-bottom:12px;}
+.hc-total-val{font-size:36px;font-weight:800;font-family:var(--mono);line-height:1;}
+.hc-total-lbl{font-size:12px;color:var(--tl);}
+.photo-slot{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;}
+.photo-slot input[type=file]{display:none;}
+.photo-avatar{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--border);transition:border-color .15s;}
+.photo-slot:hover .photo-avatar{border-color:var(--blue);}
+.photo-name{font-size:9px;font-weight:700;color:var(--tl);text-align:center;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.photo-badge{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;border:2px dashed rgba(255,255,255,.3);}
    ══════════════════════════════════════════════════════════ */
 
 /* ── 768 px: tablet / celular médio ── */
@@ -1127,6 +1152,8 @@ select.sel:focus{border-color:var(--blue);}
               <input type="number" class="form-inp" id="v-meta" value="14" min="1">
               <label class="form-lbl">HUB *</label>
               <select class="form-sel" id="v-time"></select>
+              <label class="form-lbl">Data de Admissão</label>
+              <input type="date" class="form-inp" id="v-adm">
               <label class="form-lbl">Cor</label>
               <select class="form-sel" id="v-cor">
                 <option value="#2563eb">🔵 Azul</option>
@@ -1380,19 +1407,134 @@ select.sel:focus{border-color:var(--blue);}
 
   <!-- ══ PAGE: PSV ══ -->
   <div id="page-psv" class="page">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+
+    <!-- Cabeçalho -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
       <div>
-        <h2 style="font-size:20px;font-weight:800;color:var(--td);margin:0">📊 PSV</h2>
-        <div style="font-size:12px;color:var(--tl);margin-top:3px">Em construção — em breve mais informações aqui</div>
+        <h2 style="font-size:22px;font-weight:800;color:var(--td);margin:0">📊 PSV — Apresentação de Resultados</h2>
+        <div id="psv-sub" style="font-size:12px;color:var(--tl);margin-top:3px">—</div>
+      </div>
+      <button class="btn" onclick="renderPSV()" style="background:var(--blue-g);color:var(--blue);border:1px solid rgba(37,99,235,.2)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Atualizar
+      </button>
+    </div>
+
+    <!-- Filtro PSV -->
+    <div id="psv-filter-bar" class="dash-filter" style="display:none;margin-bottom:14px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--tl)" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <span class="dash-filter-label">Filtrar:</span>
+      <select id="psv-df-regional" onchange="_renderPSVFilter();renderPSV()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12.5px;color:var(--td);outline:none;cursor:pointer">
+        <option value="">🏠 Todas as Regionais</option>
+      </select>
+      <select id="psv-df-time" onchange="renderPSV()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12.5px;color:var(--td);outline:none;cursor:pointer">
+        <option value="">🏢 Todos os HUBs</option>
+      </select>
+      <button class="btn-sm btn-sm-g" onclick="document.getElementById('psv-df-regional').value='';document.getElementById('psv-df-time').value='';renderPSV()">✕ Limpar</button>
+    </div>
+
+    <!-- 1. HC + KPIs todos na mesma linha -->
+    <div id="psv-top-row" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;align-items:stretch">
+      <div id="psv-hc-grid" style="display:contents"></div>
+      <div id="psv-kpis" style="display:contents"></div>
+    </div>
+
+    <!-- 2. Donut + Vendas por Dia lado a lado, ponta a ponta -->
+    <div style="display:grid;grid-template-columns:240px 1fr;gap:16px;margin-bottom:16px">
+      <div class="card">
+        <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--green)"></div>Realizado vs Meta</div></div>
+        <div style="padding:14px;height:220px"><canvas id="psv-ch-donut"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--blue)"></div>Vendas por Dia</div></div>
+        <div style="padding:14px;height:220px"><canvas id="psv-ch-line"></canvas></div>
       </div>
     </div>
-    <div class="card" style="padding:60px 24px;text-align:center">
-      <div style="font-size:48px;margin-bottom:16px">🚧</div>
-      <div style="font-size:16px;font-weight:700;color:var(--td);margin-bottom:8px">Página PSV</div>
-      <div style="font-size:13px;color:var(--tl)">Esta página está reservada para os indicadores de PSV.<br>Aguarde as próximas atualizações.</div>
-    </div>
-  </div><!-- /psv -->
 
+    <!-- 3. Vendas & Compromisso — ponta a ponta, fotos abaixo do nome alinhadas com colunas -->
+    <div class="card" style="margin-bottom:24px">
+      <div class="card-head"><div class="card-title"><div class="ctd" style="background:#d97706"></div>Vendas &amp; Compromisso por Vendedor</div></div>
+      <!-- Faixa de fotos: alinhada com as colunas do gráfico via JS -->
+      <div id="psv-photos-row" style="display:flex;padding:10px 20px 0;gap:0;border-bottom:1px solid var(--border)"></div>
+      <div style="padding:14px 20px;height:320px"><canvas id="psv-ch-sellers"></canvas></div>
+    </div>
+
+    <!-- Detrator / Promotor por Safra -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-head"><div class="card-title"><div class="ctd" style="background:#7c3aed"></div>Detrator &amp; Promotor por Safra</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:1px solid var(--border)">
+        ${['M0','M1','M2'].map((mk,i)=>{
+          const mc=['#2563eb','#7c3aed','#d97706'][i];
+          return `<div style="border-right:${i<2?'1px solid var(--border)':'none'};padding:16px 14px">
+            <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:${mc};margin-bottom:14px;display:flex;align-items:center;gap:6px">
+              <div style="width:8px;height:8px;border-radius:50%;background:${mc}"></div>${mk}
+            </div>
+            <!-- Promotor -->
+            <div style="margin-bottom:14px">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#059669;margin-bottom:8px">👍 Promotor</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div id="dp-photo-prom-${mk}" onclick="dpUploadPhoto('prom','${mk}')" style="width:46px;height:46px;border-radius:50%;flex-shrink:0;cursor:pointer;border:2px dashed #059669;display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(5,150,105,.05)" title="Foto promotor">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                </div>
+                <input type="file" id="dp-file-prom-${mk}" accept="image/*" style="display:none" onchange="dpSetPhoto(event,'prom','${mk}')">
+                <div style="flex:1;min-width:0">
+                  <input type="text" placeholder="Nome do promotor" id="dp-name-prom-${mk}"
+                    style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--font);font-size:12px;color:var(--td);background:var(--bg);outline:none;margin-bottom:5px"
+                    oninput="saveDpData('prom','${mk}','name',this.value)">
+                  <input type="number" placeholder="R$ TPV" id="dp-val-prom-${mk}"
+                    style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;font-weight:700;color:#059669;background:var(--bg);outline:none"
+                    oninput="saveDpData('prom','${mk}','val',this.value)">
+                </div>
+              </div>
+            </div>
+            <!-- Detrator -->
+            <div>
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#dc2626;margin-bottom:8px">👎 Detrator</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div id="dp-photo-det-${mk}" onclick="dpUploadPhoto('det','${mk}')" style="width:46px;height:46px;border-radius:50%;flex-shrink:0;cursor:pointer;border:2px dashed #dc2626;display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(220,38,38,.05)" title="Foto detrator">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                </div>
+                <input type="file" id="dp-file-det-${mk}" accept="image/*" style="display:none" onchange="dpSetPhoto(event,'det','${mk}')">
+                <div style="flex:1;min-width:0">
+                  <input type="text" placeholder="Nome do detrator" id="dp-name-det-${mk}"
+                    style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--font);font-size:12px;color:var(--td);background:var(--bg);outline:none;margin-bottom:5px"
+                    oninput="saveDpData('det','${mk}','name',this.value)">
+                  <input type="number" placeholder="R$ TPV" id="dp-val-det-${mk}"
+                    style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626;background:var(--bg);outline:none"
+                    oninput="saveDpData('det','${mk}','val',this.value)">
+                </div>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- 5. PLANO DE AÇÃO -->
+    <div class="card" style="margin-bottom:24px">
+      <div class="card-head" style="justify-content:space-between;align-items:center">
+        <div class="card-title"><div class="ctd" style="background:#dc2626"></div>Plano de Ação</div>
+        <button class="btn" onclick="psvAddRow()" style="font-size:11px;padding:5px 11px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nova Linha
+        </button>
+      </div>
+      <div style="overflow-x:auto;padding:0 0 12px">
+        <table id="psv-plan-table" style="width:100%;border-collapse:collapse;min-width:860px">
+          <thead><tr style="background:var(--bg)">
+            <th class="pth">Indicador</th>
+            <th class="pth">Problema</th>
+            <th class="pth">Causa</th>
+            <th class="pth">Ações</th>
+            <th class="pth" style="min-width:100px">Período</th>
+            <th class="pth">Resultado Esperado</th>
+            <th style="width:36px;border-bottom:2px solid var(--border)"></th>
+          </tr></thead>
+          <tbody id="psv-plan-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /psv -->
 </div><!-- /main -->
 
 <!-- ══ MODAL GRÁFICO MAXIMIZADO ══ -->
@@ -1960,13 +2102,14 @@ function goPage(name, el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.getElementById('page-'+name)?.classList.add('active');
   if(el) el.classList.add('on');
-  const lb={dash:'Dashboard — Visão Geral',lancar:'Lançar Vendas',sellers:'Vendedores / HUBs',regionais:'Gestão de Regionais',overview:'Visão Geral por Regional'};
+  const lb={dash:'Dashboard — Visão Geral',lancar:'Lançar Vendas',sellers:'Vendedores / HUBs',regionais:'Gestão de Regionais',overview:'Visão Geral por Regional',psv:'PSV — Apresentação de Resultados'};
   document.getElementById('tb-sub').textContent=lb[name]||'';
   if(name==='dash')      renderDash();
   if(name==='lancar')    renderLancar();
   if(name==='sellers')   renderSellers();
   if(name==='regionais') renderRegionais();
   if(name==='overview')  renderOverview();
+  if(name==='psv')       setTimeout(renderPSV,50);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2556,7 +2699,8 @@ function addSeller(){
   const cpf=document.getElementById('v-cpf').value.trim();
   const timeIdRaw=document.getElementById('v-time')?.value;
   const timeId=timeIdRaw?parseInt(timeIdRaw):null;
-  DB.sellers.push({id:DB.nextId++,name,cpf,meta,color,timeId});
+  const admDate=document.getElementById('v-adm')?.value||fmtD(today());
+  DB.sellers.push({id:DB.nextId++,name,cpf,meta,color,timeId,admDate});
   saveDB();
   document.getElementById('v-nome').value='';
   document.getElementById('v-cpf').value='';
@@ -3557,14 +3701,24 @@ function renderOverview(){
       const pc = st.pct>=1?'var(--green)':st.pct>=0.6?'var(--orange)':'var(--red)';
       const sup = DB.users?.find(u=>u.role==='supervisor'&&u.timeId===tm.id);
       const canEditM = currentUser?.role==='regional' || isGerente();
-      // M0/M1/M2
+      // M0/M1/M2 — input inline, salva com Enter ou ao sair do campo
       const mData = (DB.mValues||{})[ymKey]?.[tm.id] || {};
       const mCells = ['M0','M1','M2'].map(mk=>{
         const v = mData[mk];
         let cls='m-empty';
         if(v!=null){ cls = v<26?'m-red': v<=29?'m-yellow': 'm-green'; }
-        const editAttr = canEditM ? `class="m-val ${cls} editable" onclick="openMPopup(event,${tm.id},'${mk}','${ymKey}')" title="Clique para editar"` : `class="m-val ${cls}"`;
-        return `<td class="m-cell"><span ${editAttr}>${v!=null?v:'—'}</span></td>`;
+        if(canEditM){
+          return `<td class="m-cell"><input
+            type="number" min="0"
+            class="m-inline-inp ${cls}"
+            value="${v!=null?v:''}"
+            placeholder="—"
+            title="${mk}"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();saveMInline(this,${tm.id},'${mk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();"
+            onblur="saveMInline(this,${tm.id},'${mk}','${ymKey}')"
+          ></td>`;
+        }
+        return `<td class="m-cell"><span class="m-val ${cls}">${v!=null?v:'—'}</span></td>`;
       }).join('');
       tb+=`<tr>
         <td></td>
@@ -3592,7 +3746,19 @@ function renderOverview(){
 
   if(!rgCount) tb=`<tr><td colspan="12" style="text-align:center;padding:28px;color:var(--tl)">Nenhuma regional / time no escopo</td></tr>`;
 
-  // Linha de total geral
+  // Linha de total geral — M0/M1/M2 editáveis manualmente (chave especial: timeId=0)
+  const totMv = (DB.mValues||{})[ymKey]?.['total']||{};
+  const canEditM = currentUser?.role==='regional' || isGerente();
+  const totMCells = ['M0','M1','M2'].map(mk=>{
+    const v = totMv[mk];
+    let cls = v==null?'m-empty':v<26?'m-red':v<=29?'m-yellow':'m-green';
+    if(canEditM) return `<td class="m-cell"><input type="number" min="0" class="m-inline-inp ${cls}" value="${v!=null?v:''}" placeholder="—" title="${mk} Total"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();saveMInline(this,'total','${mk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();"
+      onblur="saveMInline(this,'total','${mk}','${ymKey}')"
+    ></td>`;
+    return `<td class="m-cell"><span class="m-val ${cls}">${v!=null?v:'—'}</span></td>`;
+  }).join('');
+
   tb+=`<tr class="tr-tot">
     <td colspan="3">TOTAL GERAL</td>
     <td class="mono">${tReal}</td>
@@ -3602,7 +3768,7 @@ function renderOverview(){
     <td><span class="gb ${tGap===0?'gz':'gn'}">${tGap===0?'✓':'-'+tGap}</span></td>
     <td class="mono" style="color:var(--teal)">${tAtv}</td>
     <td class="mono" style="color:var(--teal)">${(tAtvP*100).toFixed(1)}%</td>
-    <td colspan="3"></td>
+    ${totMCells}
   </tr>`;
 
   document.getElementById('ov-tb').innerHTML=tb;
@@ -3646,18 +3812,87 @@ function saveMValue(){
   const {timeId, key, ymKey} = _mCtx;
   const v = document.getElementById('m-popup-input').value.trim();
   const n = v==='' ? null : parseInt(v);
-
   if(!DB.mValues) DB.mValues={};
   if(!DB.mValues[ymKey]) DB.mValues[ymKey]={};
   if(!DB.mValues[ymKey][timeId]) DB.mValues[ymKey][timeId]={};
-
   if(n===null) delete DB.mValues[ymKey][timeId][key];
   else DB.mValues[ymKey][timeId][key] = n;
-
   saveDB();
   closeMPopup();
   renderOverview();
   toast(`${key} atualizado: ${n!=null?n:'—'}`);
+}
+
+function savePsvTpv(input, mk, ymKey){
+  const v = parseInt(input.value)||0;
+  if(!DB.psvData) DB.psvData={};
+  if(!DB.psvData.tpv) DB.psvData.tpv={};
+  if(!DB.psvData.tpv[ymKey]) DB.psvData.tpv[ymKey]={};
+  DB.psvData.tpv[ymKey][mk] = v||null;
+  // Atualiza cor do input
+  const c = v<15000?'#dc2626':v<20000?'#d97706':'#059669';
+  input.style.color = c;
+  input.style.fontWeight = v<15000?'700':'900';
+  saveDB();
+}
+
+// Detrator / Promotor
+const _dpPhotos = {}; // {prom_M0: dataURL, det_M0: dataURL, ...}
+const _dpData   = {}; // {prom_M0: {name, val}, ...}
+
+function dpUploadPhoto(type, mk){
+  document.getElementById(`dp-file-${type}-${mk}`)?.click();
+}
+function dpSetPhoto(e, type, mk){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    _dpPhotos[`${type}_${mk}`]=ev.target.result;
+    const slot=document.getElementById(`dp-photo-${type}-${mk}`);
+    if(slot){
+      slot.innerHTML=`<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+      slot.style.border=`2px solid ${type==='prom'?'#059669':'#dc2626'}`;
+    }
+  };
+  r.readAsDataURL(f);
+}
+function saveDpData(type, mk, field, val){
+  const k=`${type}_${mk}`;
+  if(!_dpData[k]) _dpData[k]={};
+  _dpData[k][field]=val;
+}
+function _restoreDpFields(){
+  ['M0','M1','M2'].forEach(mk=>{
+    ['prom','det'].forEach(type=>{
+      const k=`${type}_${mk}`;
+      const d=_dpData[k]||{};
+      const ni=document.getElementById(`dp-name-${type}-${mk}`);
+      const vi=document.getElementById(`dp-val-${type}-${mk}`);
+      if(ni&&d.name) ni.value=d.name;
+      if(vi&&d.val){
+        vi.value=d.val;
+        const v=parseInt(d.val)||0;
+        vi.style.color=type==='prom'?'#059669':'#dc2626';
+      }
+      if(_dpPhotos[k]){
+        const slot=document.getElementById(`dp-photo-${type}-${mk}`);
+        if(slot){ slot.innerHTML=`<img src="${_dpPhotos[k]}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`; slot.style.border=`2px solid ${type==='prom'?'#059669':'#dc2626'}`; }
+      }
+    });
+  });
+}
+  const v = input.value.trim();
+  const n = v==='' ? null : parseInt(v);
+  if(!DB.mValues) DB.mValues={};
+  if(!DB.mValues[ymKey]) DB.mValues[ymKey]={};
+  if(!DB.mValues[ymKey][timeId]) DB.mValues[ymKey][timeId]={};
+  const prev = DB.mValues[ymKey][timeId][key];
+  if(n===prev || (n===null && prev===undefined)) return;
+  if(n===null) delete DB.mValues[ymKey][timeId][key];
+  else DB.mValues[ymKey][timeId][key] = n;
+  input.className = 'm-inline-inp ' + (n==null?'m-empty':n<26?'m-red':n<=29?'m-yellow':'m-green');
+  saveDB();
+  if(document.getElementById('page-psv')?.classList.contains('active')) renderPSV();
 }
 
 // Fecha popup ao clicar fora
@@ -4089,7 +4324,7 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
   setInterval(async ()=>{
     if(document.hidden || !currentUser) return;
     const refreshed = await cloudPull();
-    if(refreshed){ populateMes(); populateQESellers(); renderDash(); }
+    if(refreshed){ populateMes(); populateQESellers(); renderDash(); renderPSV(); }
   }, 60_000);
 
   // ── Atualiza ao voltar do background ──
@@ -4100,6 +4335,353 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
     }
   });
 })();
+
+// ══════════════════════════════════════════════════════════
+//  PSV — Apresentação de Resultados
+// ══════════════════════════════════════════════════════════
+let _psvCharts = {};
+const _psvPhotos = {};
+
+function sellerMaturity(s){
+  if(!s.admDate) return 'full';
+  const adm  = new Date(s.admDate+'T00:00:00');
+  const now  = today();
+  const days = Math.floor((now - adm) / 86400000);
+  if(days < 0)  return 'full';
+  if(days <= 30) return 'm0';
+  if(days <= 60) return 'm1';
+  if(days <= 90) return 'm2';
+  return 'full';
+}
+
+function renderPSV(){
+  if(!document.getElementById('page-psv')?.classList.contains('active')) return;
+  const ymKey = currentYM;
+  const {y,m} = ymToYM(ymKey);
+  // Aplica filtro PSV igual ao dashboard
+  const allSellers = getScopedSellers();
+  const psvRgId  = parseInt(document.getElementById('psv-df-regional')?.value)||null;
+  const psvTmId  = parseInt(document.getElementById('psv-df-time')?.value)||null;
+  let sellers = allSellers;
+  if(psvTmId)       sellers = allSellers.filter(s=>s.timeId===psvTmId);
+  else if(psvRgId)  sellers = allSellers.filter(s=>{ const tm=(DB.times||[]).find(t=>t.id===s.timeId); return tm?.regionalId===psvRgId; });
+
+  const el = document.getElementById('psv-sub');
+  if(el) el.textContent = `${MESES[m]} ${y} · ${sellers.length} HC`;
+  _renderPSVFilter();
+  _renderHCGrid(sellers);
+  _renderPSVKpis(ymKey, y, m, sellers);
+  _renderPSVCharts(ymKey,y,m,sellers);
+  _renderPhotosRow(sellers);
+  _renderPSVSellerChart(ymKey,sellers);
+  _renderPlanTable();
+  setTimeout(_restoreDpFields, 0);
+}
+
+// ── Filtro PSV (mesmas regras do dashboard) ──
+function _renderPSVFilter(){
+  const u = currentUser;
+  const bar = document.getElementById('psv-filter-bar');
+  if(!bar) return;
+  if(!canFilterDash(u)){ bar.style.display='none'; return; }
+  bar.style.display='flex';
+  const rgSel = document.getElementById('psv-df-regional');
+  const tmSel = document.getElementById('psv-df-time');
+  if(u.role==='supervisor'){ bar.style.display='none'; return; }
+  if(u.role==='regional'&&!isGerente(u)){
+    if(rgSel){ const myRg=(DB.regionais||[]).find(r=>r.id===u.regionalId); rgSel.innerHTML=myRg?`<option value="${myRg.id}">${myRg.nome}</option>`:''; rgSel.value=u.regionalId||''; rgSel.style.display='none'; }
+  } else {
+    if(rgSel){ rgSel.style.display=''; const prev=rgSel.value; rgSel.innerHTML=`<option value="">🏠 Todas as Regionais</option>`+(DB.regionais||[]).map(r=>`<option value="${r.id}"${r.id==prev?' selected':''}>${r.nome}</option>`).join(''); }
+  }
+  // HUBs
+  const rgId = u.role==='regional'&&!isGerente(u) ? u.regionalId : (parseInt(rgSel?.value)||null);
+  const times = rgId ? (DB.times||[]).filter(t=>t.regionalId===rgId) : (DB.times||[]);
+  const prevTm = tmSel?.value;
+  if(tmSel) tmSel.innerHTML=`<option value="">🏢 Todos os HUBs</option>`+times.map(t=>`<option value="${t.id}"${t.id==prevTm?' selected':''}>${t.nome}</option>`).join('');
+}
+
+function _renderPSVKpis(ymKey, y, m, sellers){
+  const el = document.getElementById('psv-kpis'); if(!el) return;
+  const t = today(), dias = getDiasCorridos(y,m);
+  const duPass = dias.filter(d=>d<=t).length, duTotal=dias.length;
+  const real  = sellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
+  const meta  = sellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
+  const gap   = Math.max(0, meta-real);
+  const proj  = duPass>0 ? Math.round(real/duPass*duTotal) : 0;
+  const atv   = (DB.ativacaoManual||{})[ymKey] != null
+    ? (DB.ativacaoManual||{})[ymKey]
+    : sellers.reduce((a,s)=>a+totalAtivacao(ymKey,s.id),0);
+  const pct   = meta>0 ? Math.round(real/meta*100) : 0;
+
+  // M0/M1/M2/Full
+  const mc={m0:0,m1:0,m2:0,full:0};
+  sellers.forEach(s=>{ mc[sellerMaturity(s)]++; });
+
+  const kpis = [
+    {lbl:'Realizado', val:real,    color:'#059669'},
+    {lbl:'Meta Total',val:meta,    color:'#2563eb'},
+    {lbl:'GAP',       val:gap,     color:gap>0?'#dc2626':'#059669'},
+    {lbl:'Projeção',  val:proj,    color:'#7c3aed'},
+    {lbl:'Ativado',   val:atv,     color:'#d97706'},
+    {lbl:'% Meta',    val:pct+'%', color:pct>=100?'#059669':pct>=80?'#d97706':'#dc2626'},
+  ];
+  // SAFRA: M0/M1 vêm dos mValues (cadastrados na guia Resultado por Time)
+  const tidsNoScope = [...new Set(sellers.map(s=>s.timeId).filter(Boolean))];
+
+  // Tenta primeiro o total geral manual, senão soma por hub
+  const totMv = (DB.mValues||{})[ymKey]?.['total']||{};
+  let safraM0 = totMv.M0 ?? tidsNoScope.reduce((a,tid)=>a+((DB.mValues||{})[ymKey]?.[tid]?.M0||0),0);
+  let safraM1 = totMv.M1 ?? tidsNoScope.reduce((a,tid)=>a+((DB.mValues||{})[ymKey]?.[tid]?.M1||0),0);
+  let safraM2 = totMv.M2 ?? tidsNoScope.reduce((a,tid)=>a+((DB.mValues||{})[ymKey]?.[tid]?.M2||0),0);
+
+  const safraCols = [
+    {k:'M0', v:safraM0, c:'#2563eb', bg:'rgba(37,99,235,.07)', border:'rgba(37,99,235,.2)'},
+    {k:'M1', v:safraM1, c:'#7c3aed', bg:'rgba(124,58,237,.07)', border:'rgba(124,58,237,.2)'},
+    {k:'M2', v:safraM2, c:'#d97706', bg:'rgba(217,119,6,.07)', border:'rgba(217,119,6,.2)'},
+  ];
+
+  // TPV médio: lê de DB.psvData.tpv[ymKey][k]
+  if(!DB.psvData) DB.psvData={};
+  if(!DB.psvData.tpv) DB.psvData.tpv={};
+  if(!DB.psvData.tpv[ymKey]) DB.psvData.tpv[ymKey]={};
+  const tpvD = DB.psvData.tpv[ymKey];
+
+  function tpvColor(v){ if(!v||v<15000) return '#dc2626'; if(v<20000) return '#d97706'; return '#059669'; }
+  function tpvFmt(v){ return v ? 'R$ '+Number(v).toLocaleString('pt-BR') : ''; }
+
+  const safraCd = `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rs);box-shadow:var(--sh);overflow:hidden;flex:0 0 auto;min-width:280px">
+    <div style="padding:9px 14px 7px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--tl);border-bottom:1px solid var(--border)">🌾 SAFRA</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
+      ${safraCols.map(s=>`
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 6px 10px;background:${s.bg};border-right:1px solid ${s.border}">
+          <div style="font-size:38px;font-weight:900;font-family:var(--mono);color:${s.c};line-height:1">${s.v||0}</div>
+          <div style="font-size:11px;font-weight:800;letter-spacing:.8px;color:${s.c};margin-top:4px;opacity:.85">${s.k}</div>
+        </div>`).join('')}
+    </div>
+    <!-- TPV médio -->
+    <div style="border-top:1px solid var(--border);background:var(--bg)">
+      <div style="padding:5px 14px 4px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tl)">TPV Médio</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
+        ${safraCols.map(s=>{
+          const cur = tpvD[s.k]||'';
+          const c   = tpvColor(cur);
+          return `<div style="padding:4px 6px 8px;border-right:1px solid ${s.border};text-align:center">
+            <input type="number" min="0" step="100"
+              id="psv-tpv-${s.k}"
+              value="${cur}"
+              placeholder="0"
+              style="width:100%;text-align:center;border:1.5px solid var(--border);border-radius:5px;padding:5px 3px;font-family:var(--mono);font-size:12px;font-weight:700;color:${c};background:var(--white);outline:none;"
+              oninput="savePsvTpv(this,'${s.k}','${ymKey}')"
+              onkeydown="if(event.key==='Enter')this.blur()"
+            >
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+
+  el.innerHTML = kpis.map(k=>`
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--rs);padding:12px 16px;box-shadow:var(--sh);border-left:4px solid ${k.color};flex:1 1 0;min-width:110px;max-width:170px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tl);margin-bottom:6px;white-space:nowrap">${k.lbl}</div>
+      <div style="font-size:34px;font-weight:900;color:${k.color};font-family:var(--mono);line-height:1">${k.val}</div>
+    </div>`).join('')+safraCd;
+}
+
+function _renderHCGrid(sellers){
+  const grid = document.getElementById('psv-hc-grid'); if(!grid) return;
+  const times = (DB.times||[]).filter(t=>sellers.some(s=>s.timeId===t.id));
+  if(!times.length){ grid.innerHTML='<div style="color:var(--tl);font-size:13px;padding:12px">Nenhum HUB.</div>'; return; }
+  const matColors={m0:'#2563eb',m1:'#7c3aed',m2:'#d97706',full:'#059669'};
+  const matLabels={m0:'M0',m1:'M1',m2:'M2',full:'Full'};
+  grid.innerHTML = times.map(t=>{
+    const ts = sellers.filter(s=>s.timeId===t.id);
+    const counts={m0:0,m1:0,m2:0,full:0};
+    ts.forEach(s=>{ counts[sellerMaturity(s)]++; });
+    const rg=(DB.regionais||[]).find(r=>r.id===t.regionalId);
+    const accent=rg?.color||t.color||'#2563eb';
+    return `<div class="hc-card" style="--hc-accent:${accent};flex:0 0 auto;min-width:200px">
+      <div class="hc-title"><div style="width:8px;height:8px;border-radius:50%;background:${accent};flex-shrink:0"></div>${t.nome}<span style="font-size:10px;font-weight:400;color:var(--tl)">${rg?'· '+rg.nome:''}</span></div>
+      <div class="hc-total"><div class="hc-total-val" style="color:${accent}">${ts.length}</div><div class="hc-total-lbl">HC total</div></div>
+      <div class="hc-stats">
+        ${['m0','m1','m2','full'].map(k=>`<div class="hc-stat"><div class="hc-stat-val" style="color:${matColors[k]}">${counts[k]}</div><div class="hc-stat-lbl">${matLabels[k]}</div></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _renderPSVCharts(ymKey,y,m,sellers){
+  const t=today(), dias=getDiasCorridos(y,m);
+  const duPass=dias.filter(d=>d<=t).length, duTotal=dias.length;
+  const real=sellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
+  const meta=sellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
+  const pct = meta>0 ? real/meta : 0;
+
+  // Cor da fatia "realizado" com escala vermelho→verde baseada no %
+  const donutColor = linePointColor(pct, 1); // usa a mesma função de interpolação
+
+  // Plugin: exibe % no centro e valores nas fatias
+  const donutNumPlugin = {
+    id:'donutNum',
+    afterDraw(chart){
+      const {ctx,chartArea:{top,bottom,left,right}} = chart;
+      const cx=(left+right)/2, cy=(top+bottom)/2;
+      // % grande no centro
+      const pctTxt = meta>0 ? Math.round(pct*100)+'%' : '—';
+      ctx.save();
+      ctx.font='800 28px "JetBrains Mono",monospace';
+      ctx.fillStyle=donutColor;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(pctTxt, cx, cy-8);
+      // "de meta" menor embaixo
+      ctx.font='500 11px Outfit,sans-serif';
+      ctx.fillStyle='#94a3b8';
+      ctx.fillText('de meta', cx, cy+16);
+      ctx.restore();
+      // Valores nas fatias
+      chart.data.datasets.forEach((_,di)=>{
+        const mta=chart.getDatasetMeta(di);
+        mta.data.forEach((arc,i)=>{
+          const val=chart.data.datasets[di].data[i]; if(!val) return;
+          const angle=(arc.startAngle+arc.endAngle)/2;
+          const r=arc.outerRadius*0.75;
+          const x=cx+Math.cos(angle)*r, y2=cy+Math.sin(angle)*r;
+          ctx.save();
+          ctx.font='700 11px "JetBrains Mono",monospace';
+          ctx.fillStyle='#fff';
+          ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(val, x, y2);
+          ctx.restore();
+        });
+      });
+    }
+  };
+
+  if(_psvCharts.donut) _psvCharts.donut.destroy();
+  const dctx=document.getElementById('psv-ch-donut')?.getContext('2d');
+  if(dctx) _psvCharts.donut=new Chart(dctx,{
+    type:'doughnut',
+    data:{datasets:[{data:[real,Math.max(0,meta-real)],backgroundColor:['#059669','#e2e8f0'],borderWidth:0,hoverOffset:4}]},
+    options:{
+      cutout:'70%',
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>{const l=['Realizado','Restante'];return ` ${l[c.dataIndex]}: ${c.raw}`;}}}
+      },
+      animation:{animateRotate:true,duration:800}
+    }
+  });
+
+  // Line (vendas por dia)
+  const lb=dias.map(d=>`${d.getDate()}/${m+1}`);
+  const dl=dias.map(d=>d>t?null:getVendas(ymKey).filter(v=>v.date===fmtD(d)&&sellers.some(s=>s.id===v.sellerId)).reduce((a,v)=>a+v.qty,0));
+  const mx=Math.max(0,...dl.filter(v=>v!==null));
+  if(_psvCharts.line) _psvCharts.line.destroy();
+  const lctx=document.getElementById('psv-ch-line')?.getContext('2d');
+  if(lctx) _psvCharts.line=new Chart(lctx,makeLineConfig(lb,dl,dl.map(v=>linePointColor(v,mx))));
+}
+
+function _renderPhotosRow(sellers){
+  const row=document.getElementById('psv-photos-row'); if(!row) return;
+  // Cada slot ocupa espaço proporcional igual — alinha com as colunas do gráfico
+  const w = sellers.length > 0 ? `calc(${100/sellers.length}% - 4px)` : 'auto';
+  row.innerHTML=sellers.map(s=>{
+    const ph=_psvPhotos[s.id];
+    const img=ph
+      ? `<img src="${ph}" class="photo-avatar" style="width:44px;height:44px;border-color:${s.color||'#2563eb'}">`
+      : `<div class="photo-badge" style="width:44px;height:44px;font-size:14px;background:${s.color||'#2563eb'}">${s.name[0]}</div>`;
+    return `<div class="photo-slot" style="flex:1;min-width:0;align-items:center;padding-bottom:8px" onclick="document.getElementById('psv-photo-${s.id}').click()" title="Clique para adicionar foto">
+      <input type="file" id="psv-photo-${s.id}" accept="image/*" onchange="psvUploadPhoto(event,${s.id})">
+      <div class="photo-name" style="font-size:10px;font-weight:700;color:var(--tl);text-align:center;margin-bottom:5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</div>
+      ${img}
+    </div>`;
+  }).join('');
+}
+function psvUploadPhoto(e,sid){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=ev=>{_psvPhotos[sid]=ev.target.result;_renderPhotosRow(getScopedSellers());}; r.readAsDataURL(f);
+}
+
+function _renderPSVSellerChart(ymKey,sellers){
+  const t=today(), {y,m}=ymToYM(ymKey);
+  const dias=getDiasCorridos(y,m);
+  const duPass=dias.filter(d=>d<=t).length, duTotal=dias.length;
+  const vendas = sellers.map(s=>sellerTotal(ymKey,s.id));
+  const compr  = sellers.map(s=>duTotal>0 ? +(getSellerMeta(ymKey,s.id)*duPass/duTotal).toFixed(0) : getSellerMeta(ymKey,s.id));
+  const proj   = sellers.map(s=>duPass>0 ? Math.round(sellerTotal(ymKey,s.id)/duPass*duTotal) : 0);
+
+  if(_psvCharts.sellers) _psvCharts.sellers.destroy();
+  const ctx=document.getElementById('psv-ch-sellers')?.getContext('2d'); if(!ctx) return;
+
+  // Plugin: números em cima das barras e nos pontos das linhas
+  const numPlugin={
+    id:'sellersNum',
+    afterDatasetsDraw(chart){
+      const{ctx}=chart;
+      // Barras (dataset 0) — número em cima
+      const barMeta=chart.getDatasetMeta(0);
+      barMeta.data.forEach((b,i)=>{
+        const v=vendas[i]; if(!v) return;
+        ctx.save(); ctx.fillStyle='#334155'; ctx.font='700 10px "JetBrains Mono",monospace';
+        ctx.textAlign='center'; ctx.textBaseline='bottom';
+        ctx.fillText(v, b.x, b.y-4); ctx.restore();
+      });
+      // Linha compromisso (dataset 1) — número ao lado do ponto
+      const comprMeta=chart.getDatasetMeta(1);
+      comprMeta.data.forEach((pt,i)=>{
+        const v=compr[i]; if(v==null) return;
+        ctx.save(); ctx.fillStyle='#f97316'; ctx.font='700 10px "JetBrains Mono",monospace';
+        ctx.textAlign='center'; ctx.textBaseline='bottom';
+        ctx.fillText(v, pt.x, pt.y-7); ctx.restore();
+      });
+      // Linha projeção (dataset 2) — número ao lado do ponto
+      const projMeta=chart.getDatasetMeta(2);
+      projMeta.data.forEach((pt,i)=>{
+        const v=proj[i]; if(!v) return;
+        ctx.save(); ctx.fillStyle='#7c3aed'; ctx.font='700 10px "JetBrains Mono",monospace';
+        ctx.textAlign='center'; ctx.textBaseline='bottom';
+        ctx.fillText(v, pt.x, pt.y-7); ctx.restore();
+      });
+    }
+  };
+
+  _psvCharts.sellers=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:sellers.map(s=>s.name),
+      datasets:[
+        {type:'bar',  label:'Vendas',      data:vendas, backgroundColor:sellers.map(s=>(s.color||'#2563eb')+'cc'), borderRadius:6, barPercentage:.55, yAxisID:'y'},
+        {type:'line', label:'Compromisso', data:compr,  borderColor:'#f97316', backgroundColor:'rgba(249,115,22,.08)', borderWidth:2.5, pointRadius:6, pointBackgroundColor:'#f97316', pointBorderColor:'#fff', pointBorderWidth:2, tension:0.3, fill:false, yAxisID:'y'},
+        {type:'line', label:'Projeção',    data:proj,   borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,.06)', borderWidth:2, borderDash:[5,4], pointRadius:6, pointBackgroundColor:'#7c3aed', pointBorderColor:'#fff', pointBorderWidth:2, tension:0.3, fill:false, yAxisID:'y'}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      layout:{padding:{top:24}},
+      plugins:{
+        legend:{labels:{font:{family:'Outfit',size:11},color:'#475569'},position:'top'},
+        tooltip:{mode:'index',intersect:false},
+        sellersNum:{}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{font:{family:'Outfit',size:10},color:'#94a3b8'}}  ,
+        y:{grid:{color:'#f1f5f9'},ticks:{font:{family:'JetBrains Mono',size:10},color:'#94a3b8'},beginAtZero:true}
+      }
+    },
+    plugins:[numPlugin]
+  });
+}
+
+let _psvPlan=[];
+function _renderPlanTable(){
+  const tbody=document.getElementById('psv-plan-body'); if(!tbody) return;
+  if(!_psvPlan.length) _psvPlan=[{indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}];
+  const cols=['indicador','problema','causa','acoes','periodo','resultado'];
+  tbody.innerHTML=_psvPlan.map((row,i)=>`<tr>${cols.map(c=>`<td class="ptd"><textarea class="ptd-input" rows="2" oninput="psvPlanUpdate(${i},'${c}',this.value)">${row[c]||''}</textarea></td>`).join('')}<td class="ptd" style="vertical-align:middle;text-align:center"><button onclick="psvDelRow(${i})" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px">✕</button></td></tr>`).join('');
+}
+function psvPlanUpdate(i,col,val){ if(_psvPlan[i]) _psvPlan[i][col]=val; }
+function psvAddRow(){ _psvPlan.push({indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}); _renderPlanTable(); }
+function psvDelRow(i){ _psvPlan.splice(i,1); if(!_psvPlan.length) _psvPlan=[{indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}]; _renderPlanTable(); }
 </script>
 </body>
 </html>
