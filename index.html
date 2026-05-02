@@ -1146,6 +1146,22 @@ select.sel:focus{border-color:var(--blue);}
         <div style="font-size:12px;color:var(--tl);margin-top:2px">Resultado consolidado por times e regionais</div>
       </div>
     </div>
+
+    <!-- FILTRO DE REGIONAL (gerente/aldenir) -->
+    <div id="ov-filter-bar" class="dash-filter" style="display:none;margin-bottom:16px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--tl)" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <span class="dash-filter-label">Filtrar por Regional:</span>
+      <select id="ov-regional-sel" class="sel" onchange="onOvRegionalChange()" style="min-width:160px">
+        <option value="">🏠 Todas as Regionais</option>
+      </select>
+      <button class="btn-sm btn-sm-g" onclick="clearOvFilter()">✕ Ver todas</button>
+      <span class="dash-filter-info" id="ov-filter-info"></span>
+    </div>
+
+    <!-- BADGE DE ESCOPO (regional/supervisor) -->
+    <div id="ov-scope-badge" style="display:none;margin-bottom:14px">
+      <span id="ov-scope-tag" class="dash-filter-tag" style="font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;display:inline-flex;align-items:center;gap:6px"></span>
+    </div>
     <!-- KPIs resumo -->
     <div class="ov-kpi-row" id="ov-kpi-row">
       <div class="kc kc-g"><div class="kc-bar"></div>
@@ -1403,6 +1419,7 @@ let currentYM = nowYM();
 let selectedSeller = null;
 let currentUser  = null;
 let scopeFilter  = {regionalId:null, timeId:null}; // filtro manual do gerente no dash
+let ovRegionalFilter = null; // filtro da página visão geral (gerente)
 let chartBar=null, chartDonut=null, chartLine=null;
 
 function loadDB() {
@@ -1760,6 +1777,7 @@ function populateMes(){
 function onMesChange(){
   currentYM=document.getElementById('mes-sel').value;
   selectedSeller=null;
+  ovRegionalFilter=null;
   syncCalToBI();
   renderAll();
 }
@@ -3044,6 +3062,17 @@ function applySession(){
 // ══════════════════════════════════════════════════════════
 //  OVERVIEW — Visão Geral por Regional
 // ══════════════════════════════════════════════════════════
+function onOvRegionalChange(){
+  ovRegionalFilter = parseInt(document.getElementById('ov-regional-sel')?.value)||null;
+  renderOverview();
+}
+function clearOvFilter(){
+  ovRegionalFilter = null;
+  const sel = document.getElementById('ov-regional-sel');
+  if(sel) sel.value='';
+  renderOverview();
+}
+
 function renderOverview(){
   const ymKey=currentYM, {y,m}=ymToYM(ymKey), t=today();
   const duAll   = getDiasUteis(y,m);
@@ -3054,19 +3083,73 @@ function renderOverview(){
 
   document.getElementById('ov-period').textContent=`${MESES[m]} ${y}`;
 
-  // Determina quais regionais e times exibir baseado no escopo
+  // ── Barra de filtro: só gerente/aldenir vê o select ──
+  const filterBar   = document.getElementById('ov-filter-bar');
+  const scopeBadge  = document.getElementById('ov-scope-badge');
+  const scopeTag    = document.getElementById('ov-scope-tag');
+
+  if(isGerente(u)){
+    // Popula select de regionais
+    const sel = document.getElementById('ov-regional-sel');
+    if(sel){
+      const prev = ovRegionalFilter;
+      sel.innerHTML=`<option value="">🏠 Todas as Regionais (${(DB.regionais||[]).length})</option>`
+        +(DB.regionais||[]).map(r=>`<option value="${r.id}"${r.id===prev?' selected':''}>${r.nome}</option>`).join('');
+      if(prev) sel.value=prev;
+    }
+    if(filterBar) filterBar.style.display='flex';
+    if(scopeBadge) scopeBadge.style.display='none';
+
+    // Info do filtro ativo
+    const infoEl = document.getElementById('ov-filter-info');
+    if(infoEl){
+      if(ovRegionalFilter){
+        const rg=(DB.regionais||[]).find(r=>r.id===ovRegionalFilter);
+        const c=rg?.color||'var(--blue)';
+        infoEl.innerHTML=`<span class="dash-filter-tag" style="background:${c}18;color:${c};border-color:${c}44">🏠 ${rg?.nome||'Regional'}</span>`;
+      } else {
+        infoEl.innerHTML='';
+      }
+    }
+  } else {
+    if(filterBar) filterBar.style.display='none';
+    // Badge mostrando a regional/hub do usuário
+    if(scopeBadge && scopeTag){
+      let label='', color='var(--blue)';
+      if(u?.role==='regional'){
+        const rg=(DB.regionais||[]).find(r=>r.id===u.regionalId);
+        label=`🏠 ${rg?.nome||'Minha Regional'}`;
+        color=rg?.color||'var(--blue)';
+      } else if(u?.role==='supervisor'){
+        const tm=(DB.times||[]).find(t=>t.id===u.timeId);
+        const rg=(DB.regionais||[]).find(r=>r.id===tm?.regionalId);
+        label=`🏢 ${tm?.nome||'Meu HUB'}${rg?' — '+rg.nome:''}`;
+        color=rg?.color||'var(--blue)';
+      }
+      scopeTag.textContent=label;
+      scopeTag.style.cssText=`font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;background:${color}18;color:${color};border:1px solid ${color}44`;
+      scopeBadge.style.display=label?'':'none';
+    }
+  }
+
+  // ── Determina quais regionais e times exibir ──
   let regionaisVisiveis, timesVisiveis;
   if(isGerente(u)){
-    regionaisVisiveis = DB.regionais||[];
-    timesVisiveis     = DB.times||[];
+    if(ovRegionalFilter){
+      regionaisVisiveis = (DB.regionais||[]).filter(r=>r.id===ovRegionalFilter);
+      timesVisiveis     = (DB.times||[]).filter(t=>t.regionalId===ovRegionalFilter);
+    } else {
+      regionaisVisiveis = DB.regionais||[];
+      timesVisiveis     = DB.times||[];
+    }
   } else if(u?.role==='regional'){
     regionaisVisiveis = (DB.regionais||[]).filter(r=>r.id===u.regionalId);
     timesVisiveis     = (DB.times||[]).filter(t=>t.regionalId===u.regionalId);
   } else {
     // Supervisor: só vê o próprio time
     regionaisVisiveis = (DB.regionais||[]).filter(r=>{
-      const t=(DB.times||[]).find(t=>t.id===u.timeId);
-      return t&&r.id===t.regionalId;
+      const tm=(DB.times||[]).find(t=>t.id===u.timeId);
+      return tm&&r.id===tm.regionalId;
     });
     timesVisiveis = (DB.times||[]).filter(t=>t.id===u.timeId);
   }
@@ -3085,10 +3168,12 @@ function renderOverview(){
     return {sellers:sellers.length,real,meta,pct,gap,proj,atv,atvP};
   }
 
-  // KPIs totais (de toda a visão scoped)
-  const allScopedSellers = getScopedSellers();
+  // KPIs totais — baseados nos times VISÍVEIS (respeitam ovRegionalFilter)
+  const visibleTids = new Set(timesVisiveis.map(t=>t.id));
+  const allScopedSellers = DB.sellers.filter(s=>visibleTids.has(s.timeId)&&!s.inativo);
   const tReal = allScopedSellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
-  const tMeta = getScopedMeta(ymKey);
+  const tMeta = timesVisiveis.reduce((a,t)=>a+getHubMeta(ymKey,t.id),0)||
+                allScopedSellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
   const tAtvM = (DB.ativacaoManual||{})[ymKey];
   const tAtv  = tAtvM!=null ? tAtvM : allScopedSellers.reduce((a,s)=>a+totalAtivacao(ymKey,s.id),0);
   const tGap  = Math.max(0,tMeta-tReal);
