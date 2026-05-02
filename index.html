@@ -3877,7 +3877,10 @@ function savePsvTpv(input, mk, ymKey){
 }
 
 // Detrator / Promotor
-const _dpPhotos = {}; // {prom_M0: dataURL, det_M0: dataURL, ...}
+const _dpPhotos = (() => {
+  try { return JSON.parse(localStorage.getItem('psv_dp_photos')||'{}'); } catch(e){ return {}; }
+})();
+function _saveDpPhotos(){ try{ localStorage.setItem('psv_dp_photos', JSON.stringify(_dpPhotos)); }catch(e){} }
 const _dpData   = {}; // {prom_M0: {name, val}, ...}
 
 function dpUploadPhoto(type, mk){
@@ -3888,6 +3891,7 @@ function dpSetPhoto(e, type, mk){
   const r=new FileReader();
   r.onload=ev=>{
     _dpPhotos[`${type}_${mk}`]=ev.target.result;
+    _saveDpPhotos();
     const slot=document.getElementById(`dp-photo-${type}-${mk}`);
     if(slot){
       slot.innerHTML=`<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
@@ -4367,7 +4371,11 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
 //  PSV — Apresentação de Resultados
 // ══════════════════════════════════════════════════════════
 let _psvCharts = {};
-const _psvPhotos = {};
+// Fotos dos vendedores — persistidas em localStorage (separado do banco JSON)
+const _psvPhotos = (() => {
+  try { return JSON.parse(localStorage.getItem('psv_photos')||'{}'); } catch(e){ return {}; }
+})();
+function _savePhotos(){ try{ localStorage.setItem('psv_photos', JSON.stringify(_psvPhotos)); }catch(e){} }
 
 function sellerMaturity(s){
   if(!s.admDate) return 'full';
@@ -4433,7 +4441,29 @@ function _renderPSVKpis(ymKey, y, m, sellers){
   const t = today(), dias = getDiasCorridos(y,m);
   const duPass = dias.filter(d=>d<=t).length, duTotal=dias.length;
   const real  = sellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
-  const meta  = sellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
+
+  // Meta total — igual ao dashboard: soma das metas dos HUBs filtrados
+  const psvRgId  = parseInt(document.getElementById('psv-df-regional')?.value)||null;
+  const psvTmId  = parseInt(document.getElementById('psv-df-time')?.value)||null;
+  const u = currentUser;
+  let meta;
+  if(psvTmId){
+    meta = getHubMeta(ymKey, psvTmId);
+  } else if(psvRgId){
+    const tids=(DB.times||[]).filter(t=>t.regionalId===psvRgId).map(t=>t.id);
+    meta = tids.reduce((a,id)=>a+getHubMeta(ymKey,id),0);
+  } else if(u?.role==='supervisor'){
+    meta = getHubMeta(ymKey, u.timeId);
+  } else if(u?.role==='regional' && !isGerente(u)){
+    const tids=(DB.times||[]).filter(t=>t.regionalId===u.regionalId).map(t=>t.id);
+    meta = tids.reduce((a,id)=>a+getHubMeta(ymKey,id),0);
+  } else {
+    // Gerente sem filtro → soma todos os HUBs do escopo
+    const scopeTids = [...new Set(sellers.map(s=>s.timeId).filter(Boolean))];
+    meta = scopeTids.reduce((a,id)=>a+getHubMeta(ymKey,id),0);
+    // Fallback: se nenhum HUB tem meta definida, usa soma individual
+    if(!meta) meta = sellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
+  }
   const gap   = Math.max(0, meta-real);
   const proj  = duPass>0 ? Math.round(real/duPass*duTotal) : 0;
   const atv   = (DB.ativacaoManual||{})[ymKey] != null
@@ -4533,18 +4563,18 @@ function _renderHCGrid(sellers){
       ts.forEach(s=>cnt[sellerMaturity(s)]++);
       const rg=(DB.regionais||[]).find(r=>r.id===t.regionalId);
       const ac=rg?.color||'#2563eb';
-      hcBody+=`<div style="margin-bottom:8px">
-        <div style="font-size:11px;font-weight:800;color:${ac};display:flex;align-items:center;gap:4px;margin-bottom:4px">
+      hcBody+=`<div style="margin-bottom:9px">
+        <div style="font-size:11px;font-weight:800;color:${ac};display:flex;align-items:center;gap:4px;margin-bottom:6px">
           <div style="width:6px;height:6px;border-radius:50%;background:${ac};flex-shrink:0"></div>
           ${t.nome}
-          <span style="font-size:16px;font-weight:900;font-family:var(--mono);color:${ac};margin-left:3px">${ts.length}</span>
+          <span style="font-size:17px;font-weight:900;font-family:var(--mono);color:${ac};margin-left:2px">${ts.length}</span>
           <span style="font-size:9px;color:var(--tl)">HC</span>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
           ${['m0','m1','m2','full'].map(k=>`
-            <div style="text-align:center;background:${mC[k]}14;border-radius:5px;padding:2px 6px;border:1px solid ${mC[k]}33">
-              <div style="font-size:15px;font-weight:900;font-family:var(--mono);color:${mC[k]};line-height:1.1">${cnt[k]}</div>
-              <div style="font-size:8px;font-weight:700;text-transform:uppercase;color:${mC[k]};opacity:.8">${k}</div>
+            <div style="display:flex;align-items:center;gap:5px;background:${mC[k]}12;border-radius:5px;padding:4px 7px;border:1px solid ${mC[k]}30">
+              <span style="font-size:17px;font-weight:900;font-family:var(--mono);color:${mC[k]};line-height:1">${cnt[k]}</span>
+              <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:${mC[k]};opacity:.85">${k}</span>
             </div>`).join('')}
         </div>
       </div>`;
@@ -4559,48 +4589,48 @@ function _renderHCGrid(sellers){
 
 function _renderPSVCharts(ymKey,y,m,sellers){
   const t=today(), dias=getDiasCorridos(y,m);
-  const duPass=dias.filter(d=>d<=t).length, duTotal=dias.length;
   const real=sellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
-  const meta=sellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
-  const pct = meta>0 ? real/meta : 0;
 
-  // Cor da fatia "realizado" com escala vermelho→verde baseada no %
-  const donutColor = linePointColor(pct, 1); // usa a mesma função de interpolação
+  // Meta — mesma lógica do dashboard: metas dos HUBs filtrados
+  const psvRgId = parseInt(document.getElementById('psv-df-regional')?.value)||null;
+  const psvTmId = parseInt(document.getElementById('psv-df-time')?.value)||null;
+  const u = currentUser;
+  let meta;
+  if(psvTmId){
+    meta = getHubMeta(ymKey, psvTmId);
+  } else if(psvRgId){
+    const tids=(DB.times||[]).filter(t=>t.regionalId===psvRgId).map(t=>t.id);
+    meta = tids.reduce((a,id)=>a+getHubMeta(ymKey,id),0);
+  } else if(u?.role==='supervisor'){
+    meta = getHubMeta(ymKey, u.timeId);
+  } else if(u?.role==='regional' && !isGerente(u)){
+    const tids=(DB.times||[]).filter(t=>t.regionalId===u.regionalId).map(t=>t.id);
+    meta = tids.reduce((a,id)=>a+getHubMeta(ymKey,id),0);
+  } else {
+    const scopeTids=[...new Set(sellers.map(s=>s.timeId).filter(Boolean))];
+    meta = scopeTids.reduce((a,id)=>a+getHubMeta(ymKey,id),0);
+    if(!meta) meta = sellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
+  }
 
-  // Plugin: exibe % no centro e valores nas fatias
-  const donutNumPlugin = {
-    id:'donutNum',
+  // Donut — espelho exato do dashboard: usa real e gap (max(0, meta-real))
+  const gap   = Math.max(0, meta - real);
+  const pct   = meta > 0 ? real / meta : 0;
+  const donutFillColor = linePointColor(pct, 1);
+
+  const psvDonutPlugin = {
+    id:'psvDonutCenter',
     afterDraw(chart){
-      const {ctx,chartArea:{top,bottom,left,right}} = chart;
+      const {ctx, chartArea:{top,bottom,left,right}} = chart;
       const cx=(left+right)/2, cy=(top+bottom)/2;
-      // % grande no centro
-      const pctTxt = meta>0 ? Math.round(pct*100)+'%' : '—';
       ctx.save();
-      ctx.font='800 28px "JetBrains Mono",monospace';
-      ctx.fillStyle=donutColor;
+      ctx.font='800 26px "JetBrains Mono",monospace';
+      ctx.fillStyle=donutFillColor;
       ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(pctTxt, cx, cy-8);
-      // "de meta" menor embaixo
-      ctx.font='500 11px Outfit,sans-serif';
+      ctx.fillText(meta>0 ? Math.round(pct*100)+'%' : '—', cx, cy-6);
+      ctx.font='500 10px Outfit,sans-serif';
       ctx.fillStyle='#94a3b8';
-      ctx.fillText('de meta', cx, cy+16);
+      ctx.fillText('de meta', cx, cy+14);
       ctx.restore();
-      // Valores nas fatias
-      chart.data.datasets.forEach((_,di)=>{
-        const mta=chart.getDatasetMeta(di);
-        mta.data.forEach((arc,i)=>{
-          const val=chart.data.datasets[di].data[i]; if(!val) return;
-          const angle=(arc.startAngle+arc.endAngle)/2;
-          const r=arc.outerRadius*0.75;
-          const x=cx+Math.cos(angle)*r, y2=cy+Math.sin(angle)*r;
-          ctx.save();
-          ctx.font='700 11px "JetBrains Mono",monospace';
-          ctx.fillStyle='#fff';
-          ctx.textAlign='center'; ctx.textBaseline='middle';
-          ctx.fillText(val, x, y2);
-          ctx.restore();
-        });
-      });
     }
   };
 
@@ -4608,16 +4638,16 @@ function _renderPSVCharts(ymKey,y,m,sellers){
   const dctx=document.getElementById('psv-ch-donut')?.getContext('2d');
   if(dctx) _psvCharts.donut=new Chart(dctx,{
     type:'doughnut',
-    data:{datasets:[{data:[real,Math.max(0,meta-real)],backgroundColor:['#059669','#e2e8f0'],borderWidth:0,hoverOffset:4}]},
-    options:{
-      cutout:'70%',
-      responsive:true, maintainAspectRatio:false,
+    data:{datasets:[{data:[real, gap], backgroundColor:[donutFillColor,'#e2e8f0'], borderWidth:0, hoverOffset:4}]},
+    options:{cutout:'70%', responsive:true, maintainAspectRatio:false,
       plugins:{
         legend:{display:false},
-        tooltip:{callbacks:{label:c=>{const l=['Realizado','Restante'];return ` ${l[c.dataIndex]}: ${c.raw}`;}}}
+        tooltip:{callbacks:{label:c=>{const l=['Realizado','Restante']; return ` ${l[c.dataIndex]}: ${c.raw}`;}}},
+        psvDonutCenter:{}
       },
-      animation:{animateRotate:true,duration:800}
-    }
+      animation:{animateRotate:true, duration:800}
+    },
+    plugins:[psvDonutPlugin]
   });
 
   // Line (vendas por dia)
@@ -4647,7 +4677,13 @@ function _renderPhotosRow(sellers){
 }
 function psvUploadPhoto(e,sid){
   const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader(); r.onload=ev=>{_psvPhotos[sid]=ev.target.result;_renderPhotosRow(getScopedSellers());}; r.readAsDataURL(f);
+  const r=new FileReader();
+  r.onload=ev=>{
+    _psvPhotos[sid]=ev.target.result;
+    _savePhotos();
+    _renderPhotosRow(getScopedSellers());
+  };
+  r.readAsDataURL(f);
 }
 
 function _renderPSVSellerChart(ymKey,sellers){
@@ -4661,34 +4697,41 @@ function _renderPSVSellerChart(ymKey,sellers){
   if(_psvCharts.sellers) _psvCharts.sellers.destroy();
   const ctx=document.getElementById('psv-ch-sellers')?.getContext('2d'); if(!ctx) return;
 
-  // Plugin: números em cima das barras e nos pontos das linhas
+  // Plugin: números sem sobreposição quando valores iguais
   const numPlugin={
     id:'sellersNum',
     afterDatasetsDraw(chart){
       const{ctx}=chart;
-      // Barras (dataset 0) — número em cima
-      const barMeta=chart.getDatasetMeta(0);
-      barMeta.data.forEach((b,i)=>{
-        const v=vendas[i]; if(!v) return;
-        ctx.save(); ctx.fillStyle='#334155'; ctx.font='700 10px "JetBrains Mono",monospace';
+      // Para cada posição X, rastreia os Y usados para detectar colisão
+      const usedY = {};
+
+      function drawLabel(x, y, val, color){
+        if(val==null||val===0) return;
+        const key = Math.round(x);
+        if(!usedY[key]) usedY[key]=[];
+        // Se y já está ocupado (±14px), empurra para cima
+        let finalY = y;
+        usedY[key].forEach(uy=>{ if(Math.abs(finalY-uy)<14) finalY=Math.min(finalY,uy)-14; });
+        usedY[key].push(finalY);
+        ctx.save();
+        ctx.fillStyle=color;
+        ctx.font='700 10px "JetBrains Mono",monospace';
         ctx.textAlign='center'; ctx.textBaseline='bottom';
-        ctx.fillText(v, b.x, b.y-4); ctx.restore();
+        ctx.fillText(val, x, finalY);
+        ctx.restore();
+      }
+
+      // Barras (dataset 0)
+      chart.getDatasetMeta(0).data.forEach((b,i)=>{
+        drawLabel(b.x, b.y-4, vendas[i], '#334155');
       });
-      // Linha compromisso (dataset 1) — número ao lado do ponto
-      const comprMeta=chart.getDatasetMeta(1);
-      comprMeta.data.forEach((pt,i)=>{
-        const v=compr[i]; if(v==null) return;
-        ctx.save(); ctx.fillStyle='#f97316'; ctx.font='700 10px "JetBrains Mono",monospace';
-        ctx.textAlign='center'; ctx.textBaseline='bottom';
-        ctx.fillText(v, pt.x, pt.y-7); ctx.restore();
+      // Compromisso (dataset 1)
+      chart.getDatasetMeta(1).data.forEach((pt,i)=>{
+        drawLabel(pt.x, pt.y-7, compr[i], '#f97316');
       });
-      // Linha projeção (dataset 2) — número ao lado do ponto
-      const projMeta=chart.getDatasetMeta(2);
-      projMeta.data.forEach((pt,i)=>{
-        const v=proj[i]; if(!v) return;
-        ctx.save(); ctx.fillStyle='#7c3aed'; ctx.font='700 10px "JetBrains Mono",monospace';
-        ctx.textAlign='center'; ctx.textBaseline='bottom';
-        ctx.fillText(v, pt.x, pt.y-7); ctx.restore();
+      // Projeção (dataset 2)
+      chart.getDatasetMeta(2).data.forEach((pt,i)=>{
+        drawLabel(pt.x, pt.y-7, proj[i]||null, '#7c3aed');
       });
     }
   };
