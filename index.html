@@ -136,6 +136,88 @@ select.sel:focus{border-color:var(--blue);}
 @media(max-width:1200px){.kpi-row{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:700px){.kpi-row{grid-template-columns:repeat(2,1fr);}}
 
+/* ── CHART MAXIMIZE ── */
+.chart-maximize-btn{background:transparent;border:none;cursor:pointer;color:var(--tl);padding:3px;border-radius:5px;display:flex;align-items:center;transition:all .12s;flex-shrink:0;}
+.chart-maximize-btn:hover{background:var(--bg);color:var(--blue);}
+.chart-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:700;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+.chart-modal.show{display:flex;}
+.chart-modal-box{background:#fff;border-radius:18px;padding:20px;width:92vw;max-width:1100px;height:80vh;max-height:700px;box-shadow:0 24px 80px rgba(0,0,0,.3);position:relative;display:flex;flex-direction:column;}
+.chart-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0;}
+.chart-modal-title{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;}
+.chart-modal-close{background:var(--bg);border:1px solid var(--border);border-radius:7px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--tl);}
+.chart-modal-close:hover{background:var(--red);color:#fff;border-color:var(--red);}
+.chart-modal-canvas{flex:1;min-height:0;position:relative;}
+.chart-modal-canvas canvas{width:100%!important;height:100%!important;}
+
+/* ──────────────────────────────────────────
+   RESPONSIVO COMPLETO
+   ────────────────────────────────────────── */
+/* Sidebar mobile: barra inferior */
+@media(max-width:768px){
+  body{padding-left:0;padding-bottom:60px;}
+  .sb{width:100%;height:56px;top:auto;bottom:0;left:0;flex-direction:row;justify-content:space-around;align-items:center;padding:0 8px;border-top:1px solid var(--border);border-right:none;box-shadow:0 -2px 12px rgba(0,0,0,.08);}
+  .sb-logo{display:none;}
+  .ni{width:44px;height:44px;border-radius:10px;}
+  .ni svg{width:20px;height:20px;}
+  .tip{display:none!important;}
+  .main{margin-left:0;}
+  .topbar{padding:10px 14px;flex-wrap:wrap;gap:8px;}
+  .topbar-brand h1{font-size:14px;}
+  .topbar-brand p{font-size:10px;}
+  .dot,.live-t{display:none;}
+  #saved-badge{font-size:10px;}
+  .cloud-pill span{display:none;}
+  .user-badge{gap:7px;}
+  .user-badge-name{font-size:12px;}
+  .user-badge-role{font-size:10px;}
+  .logout-btn{padding:4px 7px;font-size:10px;}
+  .chpw-btn{padding:4px 7px;font-size:10px;}
+  .page{padding:12px 10px 80px;}
+  /* KPIs: 2 col no mobile */
+  .kpi-row{grid-template-columns:repeat(2,1fr);gap:10px;}
+  .kc{padding:13px;}
+  .kc-val{font-size:21px;}
+  /* Dias: 1 col */
+  .dias-row{grid-template-columns:1fr;gap:8px;}
+  /* Gráficos: 1 col */
+  .charts-row{grid-template-columns:1fr!important;gap:12px;}
+  /* Dash layout: 1 col */
+  .dash-layout{grid-template-columns:1fr;}
+  /* Sellers grid */
+  .sellers-grid{grid-template-columns:1fr;}
+  /* Overview table: scroll */
+  .ov-table-wrap{overflow-x:auto;}
+  .dt{min-width:520px;}
+  .ov-kpi-row{grid-template-columns:repeat(2,1fr);}
+  /* dias config */
+  .dias-config{flex-direction:column;align-items:flex-start;gap:10px;}
+  /* topbar buttons */
+  .topbar .btn{font-size:11px;padding:6px 10px;}
+  /* filter */
+  .dash-filter{flex-wrap:wrap;gap:8px;}
+  .dash-filter select{min-width:120px;font-size:11px;}
+  /* QE grid */
+  .qe-grid{grid-template-columns:1fr;}
+  /* rg-grid */
+  .rg-grid{grid-template-columns:1fr;}
+  /* modal */
+  .modal-box{padding:20px 16px;}
+  .chart-modal-box{width:98vw;height:85vh;padding:14px;}
+  /* seller meta edit */
+  .seller-meta-edit{flex-wrap:wrap;}
+}
+
+@media(max-width:480px){
+  .kpi-row{grid-template-columns:1fr 1fr;}
+  .kc-val{font-size:18px;}
+  .topbar-brand{flex:1;min-width:0;}
+  .topbar-brand h1{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .user-badge-name,.user-badge-role{display:none;}
+  #cloud-txt{display:none;}
+  .tabs{flex-wrap:wrap;}
+  .tab-btn{padding:6px 11px;font-size:11px;}
+}
+
 /* ── DIAS CARDS ── */
 .dias-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
 .dc{background:var(--white);border-radius:var(--r);padding:14px 18px;border:1px solid var(--border);box-shadow:var(--sh);display:flex;align-items:center;gap:14px;}
@@ -423,7 +505,7 @@ select.sel:focus{border-color:var(--blue);}
 .chpw-btn{background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:10.5px;font-weight:600;color:var(--tl);cursor:pointer;font-family:var(--font);transition:all .12s;white-space:nowrap;}
 .chpw-btn:hover{border-color:var(--blue);color:var(--blue);}
 
-@media(max-width:1000px){.kpi-row,.dias-row,.charts-row,.ov-kpi-row{grid-template-columns:1fr 1fr;}.dash-layout,.sellers-grid,.um-grid{grid-template-columns:1fr;}.qe-grid{grid-template-columns:1fr 1fr;}}
+/* responsive covered above */
 </style>
 </head>
 <body>
@@ -663,7 +745,10 @@ select.sel:focus{border-color:var(--blue);}
     <!-- 3 CHARTS: Realizado vs Meta | Vendas por Dia | Realizado vs Projeção -->
     <div class="charts-row">
       <div class="card">
-        <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--green)"></div>Realizado vs Meta</div></div>
+        <div class="card-head">
+          <div class="card-title"><div class="ctd" style="background:var(--green)"></div>Realizado vs Meta</div>
+          <button class="chart-maximize-btn" onclick="maximizeChart('donut')" title="Maximizar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+        </div>
         <div class="dw" style="height:180px">
           <canvas id="ch-donut" style="max-height:165px"></canvas>
           <div class="dc2"><div class="dpct" id="donut-p">0%</div><div class="dlbl">da meta</div></div>
@@ -676,12 +761,18 @@ select.sel:focus{border-color:var(--blue);}
       <div class="card">
         <div class="card-head">
           <div class="card-title"><div class="ctd" style="background:var(--cyan)"></div>Vendas por Dia</div>
-          <span style="font-size:10.5px;color:var(--tl)" id="line-lbl"></span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:10.5px;color:var(--tl)" id="line-lbl"></span>
+            <button class="chart-maximize-btn" onclick="maximizeChart('line')" title="Maximizar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+          </div>
         </div>
         <div style="padding:14px;height:250px"><canvas id="ch-line"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--purple)"></div>Realizado vs Projeção</div></div>
+        <div class="card-head">
+          <div class="card-title"><div class="ctd" style="background:var(--purple)"></div>Realizado vs Projeção</div>
+          <button class="chart-maximize-btn" onclick="maximizeChart('bar')" title="Maximizar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
+        </div>
         <div style="padding:14px;height:250px"><canvas id="ch-bar"></canvas></div>
       </div>
     </div>
@@ -802,9 +893,13 @@ select.sel:focus{border-color:var(--blue);}
               </select>
               <button class="btn" style="width:100%;justify-content:center;margin-top:4px" onclick="addSeller()">+ Adicionar Vendedor</button>
               <div class="sep"></div>
-              <label class="form-lbl">Meta Geral do Mês</label>
+              <label class="form-lbl">Meta Total do Mês <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--tl)">(definida manualmente)</span></label>
+              <div style="background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.2);border-radius:6px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:#1e3a8a;line-height:1.5">
+                📌 <strong>Meta Total</strong> = número global de vendas esperado para o mês.<br>
+                Diferente do <strong>Compromisso</strong>, que é a meta individual de cada vendedor.
+              </div>
               <div style="display:flex;gap:8px">
-                <input type="number" class="form-inp" id="meta-g" placeholder="58" min="1" style="margin:0;flex:1">
+                <input type="number" class="form-inp" id="meta-g" placeholder="Ex: 84" min="1" style="margin:0;flex:1">
                 <button class="btn btn-green" onclick="saveMeta()">Definir</button>
               </div>
             </div>
@@ -1023,6 +1118,22 @@ select.sel:focus{border-color:var(--blue);}
   </div><!-- /overview -->
 
 </div><!-- /main -->
+
+<!-- ══ MODAL GRÁFICO MAXIMIZADO ══ -->
+<div class="chart-modal" id="chart-modal" onclick="if(event.target===this)closeChartModal()">
+  <div class="chart-modal-box">
+    <div class="chart-modal-head">
+      <div class="chart-modal-title">
+        <div class="ctd" id="chart-modal-dot" style="background:var(--blue)"></div>
+        <span id="chart-modal-title">Gráfico</span>
+      </div>
+      <div class="chart-modal-close" onclick="closeChartModal()">✕</div>
+    </div>
+    <div class="chart-modal-canvas">
+      <canvas id="ch-modal"></canvas>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"><span id="t-ico">✅</span><span id="t-msg">OK</span></div>
 
@@ -1820,7 +1931,7 @@ function renderSellers(){
         <div class="seller-nm">${s.name}${inativo?'<span class="inativo-badge">INATIVO</span>':''}</div>
         <div class="seller-meta-txt">${t?`HUB: ${t.nome} · `:''}${s.cpf||'—'} · Realizado: ${tot}</div>
         ${!inativo?`<div class="seller-meta-edit">
-          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl)">Compromisso ${MESES[m]}:</span>
+          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl)">Compromisso individual ${MESES[m]}:</span>
           <input type="number" id="smeta-${s.id}" value="${metaMes}" min="1">
           <button class="save-meta-btn" onclick="saveSellerMeta(${s.id})">Salvar</button>
         </div>`:''}
@@ -2163,8 +2274,61 @@ function saveSellerMeta(sid){
 // ══════════════════════════════════════════════════════════
 //  EXCEL IMPORT
 // ══════════════════════════════════════════════════════════
-// ── Ativação manual ──
-function saveAtivacao(){
+// ══════════════════════════════════════════════════════════
+//  CHART MAXIMIZE
+// ══════════════════════════════════════════════════════════
+let _modalChart = null;
+const CHART_META = {
+  donut: { title:'Realizado vs Meta',    color:'var(--green)',  dot:'#059669' },
+  line:  { title:'Vendas por Dia',       color:'var(--cyan)',   dot:'#0891b2' },
+  bar:   { title:'Realizado vs Projeção',color:'var(--purple)', dot:'#7c3aed' }
+};
+
+function maximizeChart(type){
+  const srcMap = { donut: chartDonut, line: chartLine, bar: chartBar };
+  const src = srcMap[type];
+  if(!src) return;
+
+  const meta = CHART_META[type];
+  document.getElementById('chart-modal-title').textContent = meta.title;
+  document.getElementById('chart-modal-dot').style.background = meta.dot;
+  document.getElementById('chart-modal').classList.add('show');
+
+  if(_modalChart){ _modalChart.destroy(); _modalChart=null; }
+
+  // Copia config do gráfico original
+  const canvas = document.getElementById('ch-modal');
+  const origCfg = src.config;
+
+  // Deep clone via JSON (remove funções, reapplica depois)
+  const newCfg = {
+    type: origCfg.type,
+    data: JSON.parse(JSON.stringify(origCfg.data)),
+    options: JSON.parse(JSON.stringify(origCfg.options||{}))
+  };
+  newCfg.options.maintainAspectRatio = false;
+  newCfg.options.responsive = true;
+  // Restaura callbacks de tooltip que se perdem no JSON
+  if(type==='donut'){
+    newCfg.options.plugins = newCfg.options.plugins||{};
+    newCfg.options.plugins.legend = {display:true, position:'right', labels:{font:{size:13},color:'#475569'}};
+    newCfg.options.plugins.tooltip = {callbacks:{label:c=>{const l=['Realizado','Restante'];return ` ${l[c.dataIndex]}: ${c.raw}`;}}};
+  }
+  if(type==='line'){
+    newCfg.options.plugins = newCfg.options.plugins||{};
+    newCfg.options.plugins.legend = {display:true};
+    newCfg.options.plugins.tooltip = {callbacks:{label:c=>`Vendas: ${c.raw??'—'}`}};
+  }
+  _modalChart = new Chart(canvas, newCfg);
+}
+
+function closeChartModal(){
+  document.getElementById('chart-modal').classList.remove('show');
+  if(_modalChart){ _modalChart.destroy(); _modalChart=null; }
+}
+
+// Fecha modal com ESC
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeChartModal(); });
   const el  = document.getElementById('k-atv-input');
   const val = el.value.trim();
   if(!DB.ativacaoManual) DB.ativacaoManual = {};
