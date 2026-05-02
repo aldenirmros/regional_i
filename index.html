@@ -839,7 +839,7 @@ select.sel:focus{border-color:var(--blue);}
             <button class="chart-maximize-btn" onclick="maximizeChart('line')" title="Maximizar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
           </div>
         </div>
-        <div style="padding:14px;height:250px"><canvas id="ch-line"></canvas></div>
+        <div style="padding:14px;height:280px"><canvas id="ch-line"></canvas></div>
       </div>
       <div class="card">
         <div class="card-head">
@@ -2021,24 +2021,92 @@ function buildLine(ymKey,y,m,sid){
   const dias=getDiasCorridos(y,m), t=today();
   const labels=dias.map(d=>`${d.getDate()}/${m+1}`);
   const dataReal=dias.map(d=>{
-    if(d>t) return null; // dias futuros ficam vazios
+    if(d>t) return null;
     return totalByDay(ymKey,fmtD(d),sid);
   });
-  // cor da linha: vendedor selecionado usa cor dele, senão azul
-  const cor = sid ? (DB.sellers.find(s=>s.id===sid)?.color||'#2563eb') : '#2563eb';
-  chartLine=new Chart(ctx,{type:'line',data:{
-    labels,
-    datasets:[{
-      label:'Vendas',data:dataReal,
-      borderColor:cor,backgroundColor:cor+'18',
-      borderWidth:2.5,pointRadius:4,pointHoverRadius:6,
-      pointBackgroundColor:cor,tension:0.3,fill:true,spanGaps:false
-    }]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Vendas: ${c.raw??'—'}`}}},
-      scales:{x:{grid:{display:false},ticks:{maxTicksLimit:14,font:{family:'Outfit',size:10},color:'#94a3b8'}},
-              y:{grid:{color:'#f1f5f9'},ticks:{font:{family:'JetBrains Mono',size:10},color:'#94a3b8'},beginAtZero:true}},
-      animation:{duration:800}}});
+
+  // Escala de cor: vermelho (0) → laranja → dourado (máx)
+  const validVals = dataReal.filter(v=>v!==null);
+  const maxVal    = validVals.length ? Math.max(...validVals) : 1;
+  function lerpColor(t){
+    // t: 0=vermelho #dc2626, 0.5=laranja #f97316, 1=dourado #d97706→#eab308
+    const r0=[220,38,38], r1=[251,146,60], r2=[234,179,8];
+    let r,g,b;
+    if(t<=0.5){ const s=t*2; r=r0[0]+(r1[0]-r0[0])*s; g=r0[1]+(r1[1]-r0[1])*s; b=r0[2]+(r1[2]-r0[2])*s; }
+    else       { const s=(t-0.5)*2; r=r1[0]+(r2[0]-r1[0])*s; g=r1[1]+(r2[1]-r1[1])*s; b=r1[2]+(r2[2]-r1[2])*s; }
+    return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+  }
+  const pointColors = dataReal.map(v=>{
+    if(v===null) return 'transparent';
+    return lerpColor(maxVal>0 ? v/maxVal : 0);
+  });
+
+  // Plugin customizado: desenha número dentro de cada bolinha
+  const numberLabelPlugin = {
+    id:'numberLabel',
+    afterDatasetsDraw(chart){
+      const {ctx,data} = chart;
+      const ds = chart.getDatasetMeta(0);
+      data.datasets[0].data.forEach((val,i)=>{
+        if(val===null||val===undefined) return;
+        const pt = ds.data[i];
+        if(!pt) return;
+        const c = pointColors[i];
+        ctx.save();
+        // Sombra suave
+        ctx.shadowColor='rgba(0,0,0,.18)';
+        ctx.shadowBlur=4;
+        // Círculo preenchido
+        ctx.beginPath();
+        ctx.arc(pt.x,pt.y,12,0,Math.PI*2);
+        ctx.fillStyle=c;
+        ctx.fill();
+        ctx.shadowBlur=0;
+        // Borda branca
+        ctx.lineWidth=2;
+        ctx.strokeStyle='#fff';
+        ctx.stroke();
+        // Número
+        ctx.fillStyle='#fff';
+        ctx.font=`700 ${val>=10?9:10.5}px "JetBrains Mono",monospace`;
+        ctx.textAlign='center';
+        ctx.textBaseline='middle';
+        ctx.fillText(val, pt.x, pt.y);
+        ctx.restore();
+      });
+    }
+  };
+
+  const lineCor = '#94a3b8'; // linha neutra — a cor fica nos pontos
+  chartLine=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'Vendas',data:dataReal,
+        borderColor:lineCor+'88',backgroundColor:'rgba(148,163,184,.06)',
+        borderWidth:1.5,
+        pointRadius:12,pointHoverRadius:14,
+        pointBackgroundColor:pointColors,
+        pointBorderColor:'#fff',pointBorderWidth:2,
+        tension:0.3,fill:true,spanGaps:false
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>`Vendas: ${c.raw??'—'}`}},
+        numberLabel:{}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{maxTicksLimit:14,font:{family:'Outfit',size:10},color:'#94a3b8'}},
+        y:{grid:{color:'#f1f5f9'},ticks:{font:{family:'JetBrains Mono',size:10},color:'#94a3b8'},beginAtZero:true}
+      },
+      animation:{duration:800}
+    },
+    plugins:[numberLabelPlugin]
+  });
 }
 
 // ══════════════════════════════════════════════════════════
