@@ -1172,12 +1172,15 @@ function migrateToDefaultRegional(d){
     d.times.push(tm);
   }
   // Cria Aldenir se não existir
-  if(!d.users.find(u=>u.username==='aldenir')){
+  const aldenirExistente = d.users.find(u=>u.username==='aldenir');
+  if(!aldenirExistente){
     d.users.push({id:1002,username:'aldenir',password:'@RThur20',role:'regional',superAdmin:true,nome:'Aldenir',regionalId:rg.id,timeId:null,color:'#2563eb'});
   } else {
-    // Garante superAdmin no usuário existente
-    const a=d.users.find(u=>u.username==='aldenir');
-    if(a) a.superAdmin=true;
+    // Sempre força a senha correta e superAdmin, independente do que veio da nuvem
+    aldenirExistente.password   = '@RThur20';
+    aldenirExistente.superAdmin = true;
+    aldenirExistente.role       = 'regional';
+    if(!aldenirExistente.regionalId) aldenirExistente.regionalId = rg.id;
   }
   // Atribui todos os sellers sem timeId ao CE 06
   d.sellers.forEach(s=>{ if(!s.timeId) s.timeId = tm.id; });
