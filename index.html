@@ -193,8 +193,12 @@ select.sel:focus{border-color:var(--blue);}
 .chart-modal-canvas{flex:1;min-height:0;position:relative;}
 .chart-modal-canvas canvas{width:100%!important;height:100%!important;}
 
-/* ── TOPBAR ACTIONS ROW (wrapper mobile-only) ── */
-.topbar-actions-row{display:contents;} /* no desktop é transparente */
+/* ── TOPBAR ACTIONS ROW ── */
+/* Desktop: itens em linha junto com os demais elementos da topbar */
+.topbar-actions-row{display:contents;}
+@supports not (display:contents){
+  .topbar-actions-row{display:flex;align-items:center;gap:12px;flex:1;}
+}
 
 /* ══════════════════════════════════════════════════════════
    RESPONSIVO COMPLETO — mobile-first
@@ -1510,12 +1514,23 @@ select.sel:focus{border-color:var(--blue);}
   <div class="modal-box">
     <div class="modal-x" onclick="closeCloudModal()">✕</div>
     <div class="modal-h">☁️ Sincronização na Nuvem</div>
-    <div class="modal-s">Dados salvos remotamente — persistem em qualquer dispositivo e navegador.</div>
+    <div class="modal-s">Dados salvos remotamente — o mesmo banco em qualquer dispositivo.</div>
+
+    <!-- Painel de status e bin ID atual -->
+    <div id="cloud-bin-panel" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#166534;margin-bottom:6px;">✅ Banco ativo</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <code id="cloud-bin-display" style="flex:1;font-family:var(--mono);font-size:11px;color:#166534;background:#dcfce7;padding:6px 10px;border-radius:6px;word-break:break-all;border:1px solid #86efac"></code>
+        <button onclick="copyBinId()" style="background:#16a34a;color:#fff;border:none;border-radius:7px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap">📋 Copiar</button>
+      </div>
+      <div style="font-size:10.5px;color:#166534;margin-top:6px;">Cole este código no campo <b>Bin ID</b> de outro dispositivo para sincronizar.</div>
+    </div>
+
     <div class="modal-hint">
-      <strong>Como obter sua Master Key:</strong><br>
-      1. Acesse <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> → faça login → <b>API Keys</b><br>
-      2. Copie a <b>Master Key</b> e cole no campo abaixo<br>
-      3. Na primeira conexão o sistema cria o bin automaticamente
+      <strong>🔄 Para sincronizar no celular:</strong><br>
+      1. No computador, copie o <b>Bin ID</b> acima<br>
+      2. No celular, abra este modal e cole no campo <b>Bin ID</b><br>
+      3. Clique em <b>Conectar</b> — pronto, mesmo banco!
     </div>
     <div class="modal-warn" id="cloud-warn"></div>
     <div class="mf">
@@ -1523,14 +1538,14 @@ select.sel:focus{border-color:var(--blue);}
       <input type="password" id="m-key" placeholder="$2a$10$..." autocomplete="off">
     </div>
     <div class="mf">
-      <label>Bin ID <span style="font-weight:400;color:var(--tl)">(preenchido automaticamente)</span></label>
-      <input type="text" id="m-bin" placeholder="Deixe vazio para criar novo bin">
+      <label>Bin ID</label>
+      <input type="text" id="m-bin" placeholder="Cole aqui o Bin ID do outro dispositivo">
     </div>
     <div class="modal-acts">
       <button class="btn btn-g" onclick="disconnectCloud()">Desconectar</button>
       <button class="btn btn-green" onclick="connectCloud()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-        Conectar &amp; Salvar
+        Conectar &amp; Sincronizar
       </button>
     </div>
     <div class="sync-log" id="sync-log">—</div>
@@ -3002,9 +3017,16 @@ function downloadModeloExcel(){
 // ══════════════════════════════════════════════════════════
 const CLOUD_LS = 'bi_cloud_v1';
 const MASTER_KEY = '$2a$10$Keiq/OdX8iGlz92x/Xc3VOp/ieE26yTS91vElxKkiWAIn64JGdpRq';
+// ── Após primeira execução no desktop, cole o Bin ID aqui para sincronizar todos os dispositivos:
+const HARDCODED_BIN_ID = ''; // ex: '64abc1234e3a79451e4ee123'
 
 function getCfg(){
-  try{ return JSON.parse(localStorage.getItem(CLOUD_LS)||'{}'); } catch(e){ return {}; }
+  try{
+    const c = JSON.parse(localStorage.getItem(CLOUD_LS)||'{}');
+    // HARDCODED_BIN_ID tem prioridade absoluta — garante o mesmo banco em todos os dispositivos
+    if(HARDCODED_BIN_ID && !c.binId){ c.binId = HARDCODED_BIN_ID; c.key = MASTER_KEY; localStorage.setItem(CLOUD_LS,JSON.stringify(c)); }
+    return c;
+  } catch(e){ return {}; }
 }
 function setCfg(c){ localStorage.setItem(CLOUD_LS, JSON.stringify(c)); }
 
@@ -3135,9 +3157,25 @@ function openCloudModal(){
   document.getElementById('m-key').value = cfg.key  || MASTER_KEY;
   document.getElementById('m-bin').value = cfg.binId || '';
   document.getElementById('cloud-warn').style.display='none';
+  const panel = document.getElementById('cloud-bin-panel');
+  const disp  = document.getElementById('cloud-bin-display');
+  if(cfg.binId){ panel.style.display=''; disp.textContent=cfg.binId; }
+  else { panel.style.display='none'; }
   document.getElementById('cloud-modal').classList.add('show');
 }
 function closeCloudModal(){ document.getElementById('cloud-modal').classList.remove('show'); }
+function copyBinId(){
+  const id = getCfg().binId||document.getElementById('m-bin')?.value||'';
+  if(!id){ toast('Nenhum Bin ID disponível','⚠️'); return; }
+  if(navigator.clipboard?.writeText){
+    navigator.clipboard.writeText(id).then(()=>toast('📋 Bin ID copiado!'));
+  } else {
+    const ta=document.createElement('textarea');ta.value=id;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    try{document.execCommand('copy');toast('📋 Bin ID copiado!');}catch(e){toast('Copie manualmente: '+id);}
+    document.body.removeChild(ta);
+  }
+}
 
 // ══════════════════════════════════════════════════════════
 //  BACKUP
@@ -3916,25 +3954,43 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
       });
       if(res.ok){
         const data = await res.json();
-        // Procura o bin chamado 'BI_Vendas'
-        const found = (data||[]).find(b => b?.snippetMeta?.name === 'BI_Vendas' || b?.record?.sellers);
-        if(found?.snippetMeta?.id || found?.id){
-          const id = found?.snippetMeta?.id || found?.id;
+        // JSONbin v3 retorna { result: [...] } OU array direto
+        const items = Array.isArray(data) ? data : (data?.result || []);
+        const found = items.find(b =>
+          b?.snippetMeta?.name === 'BI_Vendas' ||
+          b?.record?.sellers ||
+          b?.snippetMeta?.id
+        );
+        const id = found?.snippetMeta?.id || found?.id;
+        if(id){
           const c2 = getCfg(); c2.binId = id; c2.key = MASTER_KEY; setCfg(c2);
-          syncLog(`Bin encontrado: ${id}`);
+          syncLog(`Banco encontrado: ${id}`);
+          // Mostra o Bin ID no painel de sync para o usuário copiar
+          const el = document.getElementById('m-bin');
+          if(el) el.value = id;
         }
       }
-    } catch(e){ syncLog('Busca de bin falhou: '+e.message); }
+    } catch(e){ syncLog('Discovery falhou: '+e.message); }
   }
 
   if(getCfg().binId){
     setCloudUI('sync','Carregando…');
     const ok = await cloudPull();
-    if(ok){ populateMes(); populateQESellers(); }
+    if(ok){
+      populateMes();
+      populateQESellers();
+      // Mostra o Bin ID sempre para facilitar cópia em outros dispositivos
+      const el = document.getElementById('m-bin');
+      if(el && !el.value) el.value = getCfg().binId||'';
+    }
   } else {
-    // Só cria bin novo se realmente não existir nenhum
     setCloudUI('sync','Configurando…');
     await cloudPush();
+    // Após criar, exibe o Bin ID gerado
+    const newCfg = getCfg();
+    const el = document.getElementById('m-bin');
+    if(el && newCfg.binId) el.value = newCfg.binId;
+    syncLog('Novo banco criado. Copie o Bin ID acima e cole no campo HARDCODED_BIN_ID do arquivo HTML para sincronizar outros dispositivos.');
   }
 
   // Verifica sessão salva
@@ -3945,7 +4001,6 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
     applySession();
     renderDash();
   } else {
-    // Mostra tela de login
     document.getElementById('login-ov').classList.remove('hidden');
   }
 })();
