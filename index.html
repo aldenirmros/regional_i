@@ -664,6 +664,11 @@ select.sel:focus{border-color:var(--blue);}
         </div>
       </div>
     </div>
+    <!-- Botão exclusivo do Aldenir -->
+    <button class="btn btn-aldenir" id="btn-criar-usuario" onclick="openAldenirUserModal()" style="display:none;background:linear-gradient(135deg,#7c3aed,#2563eb)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+      Criar Usuário
+    </button>
     <button class="btn btn-g" onclick="goPage('sellers',document.querySelectorAll('.ni')[2])">👤 Vendedor</button>
     <button class="btn" onclick="goPage('lancar',document.querySelectorAll('.ni')[1])">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1198,6 +1203,54 @@ select.sel:focus{border-color:var(--blue);}
   </div>
 </div>
 
+<!-- ══ MODAL CRIAR USUÁRIO (ALDENIR) ══ -->
+<div class="modal-ov" id="aldenir-user-modal" onclick="if(event.target===this)closeAldenirUserModal()">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-x" onclick="closeAldenirUserModal()">✕</div>
+    <div class="modal-h">👤 Criar Novo Usuário</div>
+    <div class="modal-s">Crie um acesso com perfil de Gerente ou Supervisor</div>
+    <div class="mf">
+      <label>Usuário *</label>
+      <input type="text" id="au-username" placeholder="ex: joao.silva" autocomplete="off">
+    </div>
+    <div class="mf">
+      <label>Senha *</label>
+      <input type="password" id="au-password" placeholder="mínimo 4 caracteres">
+    </div>
+    <div class="mf">
+      <label>Nome Completo</label>
+      <input type="text" id="au-nome" placeholder="ex: João Silva">
+    </div>
+    <div class="mf">
+      <label>Função / Perfil *</label>
+      <select id="au-role" onchange="onAuRoleChange()" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;transition:border-color .14s;cursor:pointer;">
+        <option value="gerente">🎯 Gerente — acesso total ao sistema</option>
+        <option value="supervisor">👥 Supervisor — acesso ao seu HUB</option>
+      </select>
+    </div>
+    <div id="au-hub-wrap" class="mf" style="display:none">
+      <label>Vincular ao HUB *</label>
+      <select id="au-time" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;transition:border-color .14s;cursor:pointer;">
+        <option value="">— Selecione o HUB —</option>
+      </select>
+    </div>
+    <div id="au-regional-wrap" class="mf" style="display:none">
+      <label>Vincular à Regional</label>
+      <select id="au-regional-au" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;transition:border-color .14s;cursor:pointer;">
+        <option value="">— Selecione a Regional —</option>
+      </select>
+    </div>
+    <div class="modal-warn" id="au-warn"></div>
+    <div class="modal-acts">
+      <button class="btn btn-g" onclick="closeAldenirUserModal()">Cancelar</button>
+      <button class="btn" style="background:linear-gradient(135deg,#7c3aed,#2563eb)" onclick="saveAldenirUser()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Criar Usuário
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ M-VALUES POPUP ══ -->
 <div class="m-popup" id="m-popup" onmouseleave="closeMPopup()">
   <label id="m-popup-lbl">M0 — HUB</label>
@@ -1463,11 +1516,15 @@ function populateDashFilter(){
 
   const rgSel=document.getElementById('df-regional');
   if(rgSel){
-    const prev=rgSel.value;
+    const prev = scopeFilter.regionalId || rgSel.value;
     rgSel.innerHTML=`<option value="">🏠 Todas as Regionais (${(DB.regionais||[]).length})</option>`
       +(DB.regionais||[]).map(r=>`<option value="${r.id}"${r.id==prev?' selected':''}>${r.nome}</option>`).join('');
+    if(scopeFilter.regionalId) rgSel.value = scopeFilter.regionalId;
   }
   populateDashFilterTimes();
+  // Reflete o timeId do scopeFilter no select
+  const tmSel=document.getElementById('df-time');
+  if(tmSel && scopeFilter.timeId) tmSel.value = scopeFilter.timeId;
   updateDashFilterInfo();
 }
 
@@ -1478,7 +1535,7 @@ function populateDashFilterTimes(){
   const times= rgId
     ? (DB.times||[]).filter(t=>t.regionalId===rgId)
     : (DB.times||[]);
-  const prev = parseInt(tmSel.value)||null;
+  const prev = scopeFilter.timeId || parseInt(tmSel.value)||null;
   const label= rgId ? `🏢 Todos os HUBs (${times.length})` : `🏢 Todos os HUBs`;
   tmSel.innerHTML=`<option value="">${label}</option>`
     +times.map(t=>{
@@ -1486,6 +1543,7 @@ function populateDashFilterTimes(){
       const lbl=rg?`${t.nome} — ${rg.nome}`:t.nome;
       return `<option value="${t.id}"${t.id==prev?' selected':''}>${lbl}</option>`;
     }).join('');
+  if(scopeFilter.timeId) tmSel.value = scopeFilter.timeId;
 }
 
 function onDashFilterRegional(){
@@ -2817,6 +2875,8 @@ function doLogout(){
   document.getElementById('li-user').value='';
   document.getElementById('li-pass').value='';
   document.getElementById('user-badge').style.display='none';
+  const btnAldenir = document.getElementById('btn-criar-usuario');
+  if(btnAldenir) btnAldenir.style.display='none';
 }
 
 function applySession(){
@@ -2835,6 +2895,10 @@ function applySession(){
   document.getElementById('user-badge').style.display='flex';
   const navRegionais=document.getElementById('nav-regionais');
   if(navRegionais) navRegionais.style.display=isGerente(u)?'':'none';
+
+  // Botão "Criar Usuário" exclusivo para Aldenir
+  const btnAldenir = document.getElementById('btn-criar-usuario');
+  if(btnAldenir) btnAldenir.style.display = u.username==='aldenir' ? 'inline-flex' : 'none';
 
   // Aldenir sempre abre filtrado no HUB CE 06
   if(u.username==='aldenir'){
@@ -3208,6 +3272,64 @@ function syncCalToBI(){
   const dd = document.getElementById('cal-dropdown');
   if(dd?.classList.contains('open')) renderCalendar();
 }
+
+// ══════════════════════════════════════════════════════════
+//  MODAL CRIAR USUÁRIO (ALDENIR)
+// ══════════════════════════════════════════════════════════
+function openAldenirUserModal(){
+  const tmSel = document.getElementById('au-time');
+  tmSel.innerHTML='<option value="">— Selecione o HUB —</option>'
+    +(DB.times||[]).map(t=>{
+      const rg=(DB.regionais||[]).find(r=>r.id===t.regionalId);
+      return `<option value="${t.id}">${t.nome}${rg?' — '+rg.nome:''}</option>`;
+    }).join('');
+  const rgSel = document.getElementById('au-regional-au');
+  rgSel.innerHTML='<option value="">— Selecione a Regional —</option>'
+    +(DB.regionais||[]).map(r=>`<option value="${r.id}">${r.nome}</option>`).join('');
+  document.getElementById('au-username').value='';
+  document.getElementById('au-password').value='';
+  document.getElementById('au-nome').value='';
+  document.getElementById('au-role').value='gerente';
+  document.getElementById('au-warn').style.display='none';
+  onAuRoleChange();
+  document.getElementById('aldenir-user-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('au-username').focus(),80);
+}
+function closeAldenirUserModal(){
+  document.getElementById('aldenir-user-modal').classList.remove('show');
+}
+function onAuRoleChange(){
+  const role = document.getElementById('au-role').value;
+  document.getElementById('au-hub-wrap').style.display      = role==='supervisor'?'':'none';
+  document.getElementById('au-regional-wrap').style.display = role==='supervisor'?'':'none';
+}
+function saveAldenirUser(){
+  const username   = document.getElementById('au-username').value.trim().toLowerCase();
+  const password   = document.getElementById('au-password').value;
+  const nome       = document.getElementById('au-nome').value.trim();
+  const role       = document.getElementById('au-role').value;
+  const timeId     = parseInt(document.getElementById('au-time').value)||null;
+  const regionalId = parseInt(document.getElementById('au-regional-au').value)||null;
+  const warn       = document.getElementById('au-warn');
+  const showWarn   = msg=>{ warn.style.display='block'; warn.textContent=msg; };
+  if(!username){ showWarn('⚠️ Informe o nome de usuário.'); return; }
+  if(!password||password.length<4){ showWarn('⚠️ A senha precisa ter no mínimo 4 caracteres.'); return; }
+  if(role==='supervisor'&&!timeId){ showWarn('⚠️ Selecione o HUB para o Supervisor.'); return; }
+  if(!DB.users) DB.users=[];
+  if(DB.users.find(u=>u.username.toLowerCase()===username)){ showWarn('⚠️ Já existe um usuário com este nome.'); return; }
+  const colorMap={gerente:'#7c3aed',supervisor:'#059669'};
+  DB.users.push({
+    id:Date.now(), username, password, role,
+    nome:nome||username,
+    regionalId: role==='supervisor'?regionalId:null,
+    timeId:     role==='supervisor'?timeId:null,
+    color: colorMap[role]||'#2563eb'
+  });
+  saveDB();
+  closeAldenirUserModal();
+  toast(`✅ Usuário @${username} criado como ${role==='gerente'?'Gerente':'Supervisor'}!`);
+}
+
 populateMes();
 populateQESellers();
 setDefaultDate();
