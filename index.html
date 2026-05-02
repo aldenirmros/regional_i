@@ -1544,31 +1544,6 @@ function goPage(name, el){
   if(name==='overview')  renderOverview();
 }
 
-function applySession(){
-  if(!currentUser) return;
-  const u=currentUser;
-  const colorMap={gerente:'#7c3aed',regional:'#2563eb',supervisor:'#059669'};
-  const color  = u.color || colorMap[u.role] || '#2563eb';
-  const label  = u.nome  || u.username;
-  const roleLabel={gerente:'Gerente',regional:'Admin Regional',supervisor:'Supervisor'}[u.role]||u.role;
-  document.getElementById('ub-avatar').style.background = color;
-  document.getElementById('ub-avatar').textContent      = label[0].toUpperCase();
-  document.getElementById('ub-name').textContent        = label;
-  document.getElementById('ub-role').textContent        = roleLabel;
-  document.getElementById('user-badge').style.display   = 'flex';
-
-  // Nav visibility
-  const navSellers   = document.getElementById('nav-sellers');
-  const navRegionais = document.getElementById('nav-regionais');
-  const navOverview  = document.getElementById('nav-overview');
-  if(navSellers)   navSellers.style.display   = (u.role!=='supervisor') ? '' : '';
-  if(navRegionais) navRegionais.style.display = u.role==='gerente' ? '' : 'none';
-  if(navOverview)  navOverview.style.display  = '';
-
-  // Login screen role badge color
-  document.getElementById('login-ov')?.classList.add('hidden');
-}
-
 // ══════════════════════════════════════════════════════════
 //  SELLER FILTER (click no dash)
 // ══════════════════════════════════════════════════════════
@@ -2329,11 +2304,14 @@ function closeChartModal(){
 
 // Fecha modal com ESC
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeChartModal(); });
+
+// ── Ativação manual ──
+function saveAtivacao(){
   const el  = document.getElementById('k-atv-input');
   const val = el.value.trim();
   if(!DB.ativacaoManual) DB.ativacaoManual = {};
   if(val === '' || val === null){
-    delete DB.ativacaoManual[currentYM]; // volta ao automático
+    delete DB.ativacaoManual[currentYM];
   } else {
     const n = parseInt(val);
     if(isNaN(n) || n < 0){ toast('Valor inválido','⚠️'); return; }
