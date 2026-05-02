@@ -693,7 +693,25 @@ select.sel:focus{border-color:var(--blue);}
 <body>
 
 <!-- ══ LOGIN ══ -->
-<div class="login-ov" id="login-ov">
+<!-- ══ TELA DE CARREGAMENTO ══ -->
+<div id="loading-ov" style="position:fixed;inset:0;background:linear-gradient(135deg,#0b0d17,#0f172a,#1e1b4b);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px">
+  <div style="width:52px;height:52px;background:linear-gradient(135deg,#2563eb,#06b6d4);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px rgba(37,99,235,.5)">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+  </div>
+  <div style="text-align:center">
+    <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:6px">BI Vendas</div>
+    <div id="loading-msg" style="color:rgba(255,255,255,.5);font-size:13px">Conectando ao banco de dados…</div>
+  </div>
+  <!-- Spinner -->
+  <div style="width:36px;height:36px;border:3px solid rgba(255,255,255,.1);border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite"></div>
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  <!-- Botão de retry (aparece se demorar) -->
+  <button id="loading-retry" onclick="location.reload()" style="display:none;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 20px;font-family:var(--font);font-size:13px;cursor:pointer;margin-top:4px">
+    🔄 Tentar novamente
+  </button>
+</div>
+
+<div class="login-ov hidden" id="login-ov">
   <div class="login-box">
     <div class="login-logo"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></div>
     <div class="login-title">BI Vendas</div>
@@ -1608,56 +1626,20 @@ let ovRegionalFilter = null; // filtro da página visão geral (gerente)
 let chartBar=null, chartDonut=null, chartLine=null;
 
 function loadDB() {
-  try {
-    const s = localStorage.getItem('bi_v5');
-    if(s){
-      const d = JSON.parse(s);
-      if(!d.diasConfig)     d.diasConfig={};
-      if(!d.sellerMetas)    d.sellerMetas={};
-      if(!d.ativacaoManual) d.ativacaoManual={};
-      if(!d.regionais)      d.regionais=[];
-      if(!d.times)          d.times=[];
-      if(!d.hubMetas)       d.hubMetas={};
-      if(!d.mValues)        d.mValues={}; // {ymKey: {timeId: {M0,M1,M2}}}
-      if(!d.users)          d.users=[];
-      // Migra usuários antigos
-      d.users = d.users.map(u=>({
-        ...u,
-        role: u.role==='admin'?'gerente': u.role==='user'?'supervisor': u.role||'supervisor',
-        nome: u.nome||u.displayName||u.username,
-        regionalId: u.regionalId??null,
-        timeId: u.timeId??null,
-        color: u.color||(u.role==='gerente'?'#7c3aed':'#2563eb')
-      }));
-      if(!d.users.find(u=>u.role==='gerente'))
-        d.users.unshift({id:1,username:'gerente',password:'gerente123',role:'gerente',nome:'Gerente Geral',regionalId:null,timeId:null,color:'#7c3aed'});
-
-      // ── MIGRAÇÃO: atribui dados existentes à Regional I / CE 06 / Aldenir ──
-      migrateToDefaultRegional(d);
-      return d;
-    }
-  } catch(e){}
-
-  // ── DB padrão com estrutura completa ──
-  const rgId  = 1001;
-  const tmId  = 2001;
+  // Retorna apenas esqueleto mínimo — dados reais sempre vêm da nuvem
+  const cached = (() => {
+    try { const s=localStorage.getItem('bi_v5'); return s?JSON.parse(s):null; } catch(e){ return null; }
+  })();
+  if(cached?.sellers && cached?.vendas) {
+    // Garante campos obrigatórios
+    ['diasConfig','sellerMetas','ativacaoManual','hubMetas','mValues'].forEach(k=>{ if(!cached[k]) cached[k]={}; });
+    ['regionais','times','users'].forEach(k=>{ if(!cached[k]) cached[k]=[]; });
+    return cached;
+  }
+  // DB vazio — será substituído pelo cloudPull
   return {
-    sellers: [
-      {id:1,name:'ANTONIO',  cpf:'3040155284',meta:14,color:'#2563eb',timeId:tmId},
-      {id:2,name:'FRANCISCO',cpf:'1756570805',meta:14,color:'#059669',timeId:tmId},
-      {id:3,name:'NEILMA',   cpf:'2593589718',meta:14,color:'#7c3aed',timeId:tmId},
-      {id:4,name:'RAUL',     cpf:'',          meta:14,color:'#d97706',timeId:tmId},
-      {id:5,name:'SILVIA',   cpf:'',          meta:14,color:'#dc2626',timeId:tmId},
-      {id:6,name:'THEO',     cpf:'',          meta:14,color:'#0891b2',timeId:tmId},
-    ],
-    nextId:7,
-    vendas:{}, metas:{}, diasConfig:{}, sellerMetas:{}, ativacaoManual:{}, hubMetas:{}, mValues:{},
-    regionais:[{id:rgId, nome:'Regional I', color:'#2563eb'}],
-    times:[{id:tmId, nome:'CE 06', regionalId:rgId, color:'#2563eb'}],
-    users:[
-      {id:1,   username:'gerente', password:'gerente123', role:'gerente',  nome:'Gerente Geral', regionalId:null, timeId:null, color:'#7c3aed'},
-      {id:1002,username:'aldenir', password:'@RThur20', role:'regional', superAdmin:true, nome:'Aldenir', regionalId:rgId, timeId:null, color:'#2563eb'},
-    ]
+    sellers:[], nextId:1, vendas:{}, metas:{}, diasConfig:{}, sellerMetas:{},
+    ativacaoManual:{}, hubMetas:{}, mValues:{}, regionais:[], times:[], users:[]
   };
 }
 
@@ -3087,7 +3069,7 @@ function downloadModeloExcel(){
 const CLOUD_LS   = 'bi_cloud_v1';
 const MASTER_KEY = '$2a$10$Keiq/OdX8iGlz92x/Xc3VOp/ieE26yTS91vElxKkiWAIn64JGdpRq';
 // BIN ID gravado diretamente no HTML — mesmo banco em TODOS os dispositivos
-const HARDCODED_BIN_ID = '%%BIN_ID%%';
+const HARDCODED_BIN_ID = '69f5155f856a68218996bf2a';
 
 function getCfg(){
   try{
@@ -4051,82 +4033,70 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
 }); // preenche login se "lembrar" estava ativo
 
 (async () => {
+  const setMsg = t => { const el=document.getElementById('loading-msg'); if(el) el.textContent=t; };
+  const hideLoading = () => { const el=document.getElementById('loading-ov'); if(el) el.style.display='none'; };
+
+  // Mostra botão de retry após 12s sem resposta
+  const retryTimer = setTimeout(()=>{
+    const btn=document.getElementById('loading-retry');
+    if(btn){ btn.style.display=''; setMsg('Demorando mais que o esperado…'); }
+  }, 12000);
+
+  // Garante master key
   const cfg = getCfg();
-  if(!cfg.key){ cfg.key = MASTER_KEY; setCfg(cfg); }
+  if(!cfg.key){ cfg.key=MASTER_KEY; setCfg(cfg); }
 
-  // ── Tenta descobrir o binId se não estiver salvo localmente ──
-  if(!getCfg().binId){
-    setCloudUI('sync','Buscando banco…');
-    try {
-      // Estratégia 1: listar todos os bins com a master key
-      const res = await fetch('https://api.jsonbin.io/v3/b', {
-        headers:{ 'X-Master-Key': MASTER_KEY, 'X-Sort-Order':'desc' }
-      });
-      if(res.ok){
-        const data = await res.json();
-        // JSONbin pode retornar array direto ou { result: [...] }
-        const items = Array.isArray(data) ? data
-                    : Array.isArray(data?.result) ? data.result
-                    : Array.isArray(data?.data) ? data.data : [];
-        // Pega o bin mais recente que tenha o nome certo OU qualquer bin
-        const found = items.find(b=>b?.snippetMeta?.name==='BI_Vendas')
-                   || items.find(b=>b?.snippetMeta?.id)
-                   || items[0];
-        const id = found?.snippetMeta?.id || found?.id;
-        if(id){
-          const c2=getCfg(); c2.binId=id; c2.key=MASTER_KEY; setCfg(c2);
-          syncLog('Banco encontrado: '+id);
-        }
-      }
-    } catch(e){ syncLog('Discovery: '+e.message); }
+  setMsg('Buscando banco de dados…');
+
+  // ── Puxa SEMPRE da nuvem — localStorage é apenas fallback ──
+  let ok = false;
+  for(let tentativa=1; tentativa<=3; tentativa++){
+    setMsg(`Carregando dados… (tentativa ${tentativa}/3)`);
+    ok = await cloudPull();
+    if(ok) break;
+    if(tentativa < 3) await new Promise(r=>setTimeout(r, 2000));
   }
 
-  // ── Pull inicial ──
-  if(getCfg().binId){
-    setCloudUI('sync','Carregando…');
-    const ok = await cloudPull();
-    if(ok){
-      populateMes(); populateQESellers();
-      const c=getCfg(); localStorage.setItem(CLOUD_LS,JSON.stringify(c));
-      const el=document.getElementById('m-bin'); if(el) el.value=c.binId||'';
-    }
-  } else {
-    setCloudUI('sync','Configurando…');
-    await cloudPush();
-    const nc=getCfg(); localStorage.setItem(CLOUD_LS,JSON.stringify(nc));
-    const el=document.getElementById('m-bin'); if(el&&nc.binId) el.value=nc.binId;
-    syncLog('Banco criado. Abra ☁️ → "Baixar HTML Atualizado" para fixar o ID no arquivo.');
+  clearTimeout(retryTimer);
+
+  if(!ok){
+    // Fallback: usa localStorage se nuvem falhou
+    setMsg('⚠️ Usando dados locais (sem conexão com nuvem)');
+    const local = (()=>{ try{ const s=localStorage.getItem('bi_v5'); return s?JSON.parse(s):null; }catch(e){return null;} })();
+    if(local?.sellers){ DB=local; migrateToDefaultRegional(DB); }
+    await new Promise(r=>setTimeout(r,1500)); // mostra aviso por 1.5s
   }
 
-  // ── Verifica sessão salva ──
+  populateMes();
+  populateQESellers();
+
+  // ── Verifica sessão ──
   const sess = getSession();
+  hideLoading();
+
   if(sess && DB.users?.find(u=>u.id===sess.id)){
     currentUser = sess;
     document.getElementById('login-ov').classList.add('hidden');
     applySession(); renderDash();
   } else {
     document.getElementById('login-ov').classList.remove('hidden');
-    // Mostra aviso de bin não encontrado se ainda sem binId
     if(!getCfg().binId){
       document.getElementById('login-sync-warn').style.display='block';
     }
   }
 
-  // ── Auto-refresh: mantém todos os dispositivos sincronizados ──
-  // Puxa dados novos a cada 60s se a aba estiver visível
+  // ── Auto-refresh a cada 60s ──
   setInterval(async ()=>{
-    if(document.hidden) return;           // não atualiza se aba em background
-    if(!getCfg().binId) return;
-    if(!currentUser) return;              // não atualiza se ninguém logado
-    const ok = await cloudPull();
-    if(ok){ populateMes(); populateQESellers(); renderDash(); }
+    if(document.hidden || !currentUser) return;
+    const refreshed = await cloudPull();
+    if(refreshed){ populateMes(); populateQESellers(); renderDash(); }
   }, 60_000);
 
-  // Também atualiza ao voltar para a aba (ex: celular que ficou em background)
+  // ── Atualiza ao voltar do background ──
   document.addEventListener('visibilitychange', async ()=>{
-    if(!document.hidden && getCfg().binId && currentUser){
-      const ok = await cloudPull();
-      if(ok){ populateMes(); populateQESellers(); renderDash(); }
+    if(!document.hidden && currentUser){
+      const refreshed = await cloudPull();
+      if(refreshed){ populateMes(); populateQESellers(); renderDash(); }
     }
   });
 })();
