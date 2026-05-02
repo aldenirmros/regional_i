@@ -193,78 +193,208 @@ select.sel:focus{border-color:var(--blue);}
 .chart-modal-canvas{flex:1;min-height:0;position:relative;}
 .chart-modal-canvas canvas{width:100%!important;height:100%!important;}
 
-/* ──────────────────────────────────────────
-   RESPONSIVO COMPLETO
-   ────────────────────────────────────────── */
-/* Sidebar mobile: barra inferior */
+/* ── TOPBAR ACTIONS ROW (wrapper mobile-only) ── */
+.topbar-actions-row{display:contents;} /* no desktop é transparente */
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVO COMPLETO — mobile-first
+   ══════════════════════════════════════════════════════════ */
+
+/* ── 768 px: tablet / celular médio ── */
 @media(max-width:768px){
-  body{padding-left:0;padding-bottom:60px;}
-  .sb{width:100%;height:56px;top:auto;bottom:0;left:0;flex-direction:row;justify-content:space-around;align-items:center;padding:0 8px;border-top:1px solid var(--border);border-right:none;box-shadow:0 -2px 12px rgba(0,0,0,.08);}
+
+  /* ── SIDEBAR → barra inferior ── */
+  body{padding-left:0;padding-bottom:64px;}
+  .sb{
+    width:100%;height:60px;
+    top:auto;bottom:0;left:0;
+    flex-direction:row;justify-content:space-around;align-items:center;
+    padding:0 6px;
+    border-top:1px solid rgba(255,255,255,.08);
+    border-right:none;
+    box-shadow:0 -4px 20px rgba(0,0,0,.25);
+  }
   .sb-logo{display:none;}
-  .ni{width:44px;height:44px;border-radius:10px;}
+  .sb-spacer{display:none;}
+  .ni{width:48px;height:48px;border-radius:12px;flex-direction:column;gap:2px;font-size:9px;}
   .ni svg{width:20px;height:20px;}
+  .ni.on::before{display:none;}
+  .ni.on{background:rgba(255,255,255,.12);}
   .tip{display:none!important;}
-  .main{margin-left:0;}
-  /* Topbar: scroll horizontal em vez de wrapping */
-  .topbar{padding:0 10px;height:52px;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;gap:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
-  .topbar::-webkit-scrollbar{display:none;}
-  .topbar-brand h1{font-size:13px;white-space:nowrap;}
+
+  /* ── MAIN ── */
+  .main{margin-left:0;min-width:0;}
+
+  /* ── TOPBAR: duas linhas ── */
+  .topbar{
+    padding:8px 12px;
+    height:auto;
+    min-height:52px;
+    flex-wrap:wrap;
+    gap:6px;
+    position:sticky;top:0;z-index:90;
+  }
+  .topbar-brand{order:0;flex:1;min-width:0;}
+  .topbar-brand h1{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .topbar-brand p{display:none;}
   .dot,.live-t{display:none;}
-  #saved-badge{font-size:10px;}
-  .cloud-pill span{display:none;}
-  .user-badge{gap:7px;flex-shrink:0;}
-  .user-badge-name{font-size:12px;}
-  .user-badge-role{font-size:10px;}
-  .logout-btn{padding:4px 7px;font-size:10px;white-space:nowrap;}
-  .chpw-btn{padding:4px 7px;font-size:10px;white-space:nowrap;}
-  .topbar .btn{font-size:11px;padding:5px 9px;white-space:nowrap;flex-shrink:0;}
-  /* Page */
-  .page{padding:12px 10px 80px;}
-  /* KPIs: 2 col no mobile */
-  .kpi-row{grid-template-columns:repeat(2,1fr);gap:10px;}
-  .kc{padding:13px;}
-  .kc-val{font-size:21px;}
-  /* Dias: 1 col */
-  .dias-row{grid-template-columns:1fr;gap:8px;}
-  /* Gráficos: 1 col */
+  /* Agrupa cloud + badge na mesma linha do título */
+  .cloud-pill{order:1;padding:4px 8px;font-size:10px;}
+  #cloud-txt{display:none;}
+  #saved-badge{order:2;font-size:10px;}
+  .user-badge{order:3;width:100%;justify-content:flex-end;padding:2px 0;}
+  .user-avatar{width:26px;height:26px;font-size:10px;}
+  .user-badge-name{font-size:11px;}
+  .user-badge-role{display:none;}
+  .logout-btn,.chpw-btn{padding:4px 8px;font-size:10px;}
+  /* Linha de ações: mês + botões — scroll horizontal */
+  .topbar > select.sel,
+  .topbar > .cal-wrap,
+  .topbar > .btn{order:4;flex-shrink:0;}
+  .topbar > select.sel{font-size:11px;padding:5px 8px;}
+  /* Todos os btns da topbar numa faixa rolável */
+  .topbar-actions-row{
+    order:4;width:100%;
+    display:flex;gap:6px;
+    overflow-x:auto;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:2px;
+  }
+  .topbar-actions-row::-webkit-scrollbar{display:none;}
+  .topbar .btn{font-size:11px;padding:5px 10px;white-space:nowrap;flex-shrink:0;}
+  .cal-btn{font-size:11px;padding:5px 9px;}
+  #cal-btn-label{display:none;}
+  /* Calendário dropdown: fica abaixo do topbar */
+  .cal-dropdown{width:calc(100vw - 24px);right:auto;left:0;}
+
+  /* ── PAGE ── */
+  .page{padding:12px 10px 72px;}
+
+  /* ── KPI GRID: 2 colunas ── */
+  .kpi-row{grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:14px;}
+  .kc{padding:12px 14px;}
+  .kc-lbl{font-size:9.5px;}
+  .kc-val{font-size:20px;}
+  .kc-sub{font-size:10px;}
+
+  /* ── DIAS: 1 coluna ── */
+  .dias-row{grid-template-columns:1fr;gap:8px;margin-bottom:14px;}
+
+  /* ── DASH LAYOUT: 1 coluna ── */
+  .dash-layout{grid-template-columns:1fr;gap:12px;margin-bottom:14px;}
+
+  /* ── GRÁFICOS: 1 coluna ── */
   .charts-row{grid-template-columns:1fr!important;gap:12px;}
-  /* Dash layout: 1 col */
-  .dash-layout{grid-template-columns:1fr;}
-  /* Sellers grid */
-  .sellers-grid{grid-template-columns:1fr;}
-  /* Overview table: scroll */
-  .ov-table-wrap{overflow-x:auto;}
-  .dt{min-width:520px;}
-  .ov-kpi-row{grid-template-columns:repeat(2,1fr);}
-  /* dias config */
-  .dias-config{flex-direction:column;align-items:flex-start;gap:10px;}
-  /* filter */
-  .dash-filter{flex-wrap:wrap;gap:8px;}
-  .dash-filter select{min-width:120px;font-size:11px;}
-  /* QE grid */
-  .qe-grid{grid-template-columns:1fr;}
-  /* rg-grid: 1 col, cards completos visíveis */
+  /* Reduz altura dos gráficos no mobile */
+  #ch-line,#ch-donut,#ch-bar{max-height:220px;}
+
+  /* ── FILTRO DASH: vertical ── */
+  .dash-filter{
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+    padding:10px 12px;
+    margin-bottom:12px;
+  }
+  .dash-filter select{width:100%;font-size:12px;padding:8px 10px;}
+  .dash-filter-label{font-size:11px;}
+  .dash-filter-sep{display:none;}
+  #df-info{font-size:11px;}
+
+  /* ── SELLER BANNER ── */
+  .sel-banner{font-size:11px;padding:8px 12px;gap:8px;}
+
+  /* ── DIAS CONFIG ── */
+  .dias-config{flex-direction:column;align-items:flex-start;gap:10px;padding:12px;}
+
+  /* ── QUICK ENTRY ── */
+  .qe-grid{grid-template-columns:1fr 1fr;gap:9px;}
+  .qe-grid > *:last-child{grid-column:1/-1;}
+
+  /* ── HISTÓRIO TABLE ── */
+  .hist-scroll{max-height:260px;}
+  .hist-wrap table{min-width:480px;}
+  .hist-wrap{overflow-x:auto;}
+
+  /* ── SELLERS GRID: 1 coluna ── */
+  .sellers-grid{grid-template-columns:1fr;gap:12px;}
+
+  /* ── TABS ── */
+  .tabs{width:100%;overflow-x:auto;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab-btn{font-size:11px;padding:6px 13px;white-space:nowrap;flex-shrink:0;}
+
+  /* ── REGIONAL GRID: 1 coluna ── */
   .rg-grid{grid-template-columns:1fr!important;}
-  /* modal */
-  .modal-box{padding:20px 16px;max-height:92vh;overflow-y:auto;}
-  .chart-modal-box{width:98vw;height:85vh;padding:14px;}
-  /* seller meta edit */
+
+  /* ── OVERVIEW TABLE ── */
+  .ov-table-wrap{overflow-x:auto;}
+  .ov-table-wrap .dt{min-width:500px;}
+  .ov-kpi-row{grid-template-columns:repeat(2,1fr);}
+  .ov-filter{flex-direction:column;gap:8px;align-items:stretch;}
+  .ov-filter select{width:100%;}
+
+  /* ── MODAIS: ocupa quase a tela toda ── */
+  .modal-ov{align-items:flex-end;}
+  .modal-box{
+    width:100%;max-width:100%;
+    border-radius:20px 20px 0 0;
+    padding:24px 16px 32px;
+    max-height:92vh;
+    overflow-y:auto;
+    animation:slideUp .22s var(--ease);
+  }
+  @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+  .modal-acts{flex-direction:column-reverse;gap:8px;}
+  .modal-acts .btn{width:100%;justify-content:center;}
+  .chart-modal-box{width:100%;border-radius:18px 18px 0 0;height:90vh;padding:14px;}
+
+  /* ── USER ITEMS ── */
+  .um-user-item{flex-wrap:wrap;gap:8px;padding:10px 12px;}
+  .um-user-info{flex:1;min-width:0;}
+  .um-user-name{font-size:12.5px;flex-wrap:wrap;}
+  .um-user-item > div:last-child{width:100%;display:flex;gap:6px;justify-content:flex-end;}
+
+  /* ── SELLER ITEMS ── */
+  .seller-item{flex-wrap:wrap;gap:6px;}
   .seller-meta-edit{flex-wrap:wrap;}
-  /* user items: stack em mobile */
-  .um-user-item{flex-wrap:wrap;gap:8px;}
+
+  /* ── OVERVIEW HUB ROWS ── */
+  .ov-hub-row{flex-direction:column;gap:4px;}
+
+  /* ── EXCEL UPLOAD ── */
+  .excel-upload{flex-direction:column;align-items:flex-start;}
 }
 
+/* ── 480 px: celular pequeno ── */
 @media(max-width:480px){
-  .kpi-row{grid-template-columns:1fr 1fr;}
-  .kc-val{font-size:18px;}
-  .topbar-brand{flex:1;min-width:0;}
-  .topbar-brand h1{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .user-badge-name,.user-badge-role{display:none;}
-  #cloud-txt{display:none;}
-  .tabs{flex-wrap:wrap;}
-  .tab-btn{padding:6px 11px;font-size:11px;}
+  .kpi-row{grid-template-columns:1fr 1fr;gap:8px;}
+  .kc-val{font-size:17px;}
+  .kc{padding:10px 11px;}
+
+  /* Topbar ainda mais compacto */
+  .user-badge-name{display:none;}
+  .topbar-brand h1{font-size:12px;}
+
+  /* QE: empilha tudo */
+  .qe-grid{grid-template-columns:1fr;}
+
+  /* Cards regionais menores */
+  .rg-stat-val{font-size:15px;}
+  .rg-card-nm{font-size:13px;}
+
+  /* Filtro do dash: selects full width já garantidos acima */
+  .dash-filter select{font-size:11.5px;}
+
+  /* Modais: padding ainda menor */
+  .modal-box{padding:20px 13px 28px;}
+
+  /* Tabelas: scroll mais fácil */
+  .dt th{font-size:9px;padding:7px 10px;}
+  .dt td{font-size:11.5px;padding:9px 10px;}
 }
+
 
 /* ── DIAS CARDS ── */
 .dias-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
@@ -647,41 +777,44 @@ select.sel:focus{border-color:var(--blue);}
       <button class="chpw-btn" onclick="openChangePwModal()" title="Trocar senha">🔑</button>
       <button class="logout-btn" onclick="doLogout()" title="Sair">⏏ Sair</button>
     </div>
-    <select class="sel" id="mes-sel" onchange="onMesChange()"></select>
-    <!-- Calendário -->
-    <div class="cal-wrap" id="cal-wrap">
-      <button class="cal-btn" onclick="toggleCalendar()" id="cal-btn">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span id="cal-btn-label">Calendário</span>
-      </button>
-      <div class="cal-dropdown" id="cal-dropdown">
-        <div class="cal-header">
-          <button class="cal-nav" onclick="calNav(-1)">‹</button>
-          <span class="cal-month-label" id="cal-month-lbl">—</span>
-          <button class="cal-nav" onclick="calNav(+1)">›</button>
-        </div>
-        <div class="cal-grid" id="cal-grid"></div>
-        <div class="cal-footer">
-          <div class="cal-legend"><div class="cal-legend-dot" style="background:var(--green)"></div> Com vendas</div>
-          <div class="cal-legend"><div class="cal-legend-dot" style="background:var(--blue)"></div> Hoje</div>
-          <div class="cal-total" id="cal-total-label">—</div>
+    <!-- Linha de ações (rola horizontalmente no mobile) -->
+    <div class="topbar-actions-row">
+      <select class="sel" id="mes-sel" onchange="onMesChange()" style="flex-shrink:0"></select>
+      <!-- Calendário -->
+      <div class="cal-wrap" id="cal-wrap" style="flex-shrink:0">
+        <button class="cal-btn" onclick="toggleCalendar()" id="cal-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span id="cal-btn-label">Calendário</span>
+        </button>
+        <div class="cal-dropdown" id="cal-dropdown">
+          <div class="cal-header">
+            <button class="cal-nav" onclick="calNav(-1)">‹</button>
+            <span class="cal-month-label" id="cal-month-lbl">—</span>
+            <button class="cal-nav" onclick="calNav(+1)">›</button>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+          <div class="cal-footer">
+            <div class="cal-legend"><div class="cal-legend-dot" style="background:var(--green)"></div> Com vendas</div>
+            <div class="cal-legend"><div class="cal-legend-dot" style="background:var(--blue)"></div> Hoje</div>
+            <div class="cal-total" id="cal-total-label">—</div>
+          </div>
         </div>
       </div>
+      <!-- Botão exclusivo do Aldenir -->
+      <button class="btn btn-aldenir" id="btn-criar-usuario" onclick="openAldenirUserModal()" style="display:none;background:linear-gradient(135deg,#7c3aed,#2563eb);flex-shrink:0">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Criar Usuário
+      </button>
+      <button class="btn btn-g" id="btn-ver-usuarios" onclick="openVerUsuariosModal()" style="display:none;flex-shrink:0">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>
+        Usuários
+      </button>
+      <button class="btn btn-g" style="flex-shrink:0" onclick="goPage('sellers',document.querySelectorAll('.ni')[2])">👤 Vendedor</button>
+      <button class="btn" style="flex-shrink:0" onclick="goPage('lancar',document.querySelectorAll('.ni')[1])">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Lançar Venda
+      </button>
     </div>
-    <!-- Botão exclusivo do Aldenir -->
-    <button class="btn btn-aldenir" id="btn-criar-usuario" onclick="openAldenirUserModal()" style="display:none;background:linear-gradient(135deg,#7c3aed,#2563eb)">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-      Criar Usuário
-    </button>
-    <button class="btn btn-g" id="btn-ver-usuarios" onclick="openVerUsuariosModal()" style="display:none">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>
-      Usuários
-    </button>
-    <button class="btn btn-g" onclick="goPage('sellers',document.querySelectorAll('.ni')[2])">👤 Vendedor</button>
-    <button class="btn" onclick="goPage('lancar',document.querySelectorAll('.ni')[1])">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Lançar Venda
-    </button>
   </div>
 
   <!-- ══ PAGE: DASHBOARD ══ -->
@@ -2953,6 +3086,9 @@ async function cloudPull(){
     migrateToDefaultRegional(rec);
     DB = rec;
     localStorage.setItem('bi_v5', JSON.stringify(DB));
+    // Garante que o binId fica salvo localmente neste dispositivo
+    const cfgNow = getCfg();
+    if(!cfgNow.binId && cfg.binId){ cfgNow.binId = cfg.binId; cfgNow.key = key; setCfg(cfgNow); }
     setCloudUI('ok','Nuvem ✓');
     syncLog('Dados carregados da nuvem.');
     return true;
@@ -3771,11 +3907,32 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
   const cfg = getCfg();
   if(!cfg.key){ cfg.key = MASTER_KEY; setCfg(cfg); }
 
-  if(cfg.binId){
+  // Se não tem binId salvo, tenta descobrir o bin existente no JSONbin
+  if(!getCfg().binId){
+    setCloudUI('sync','Buscando banco…');
+    try {
+      const res = await fetch('https://api.jsonbin.io/v3/b?sortBy=createdAt&order=desc', {
+        headers:{ 'X-Master-Key': MASTER_KEY }
+      });
+      if(res.ok){
+        const data = await res.json();
+        // Procura o bin chamado 'BI_Vendas'
+        const found = (data||[]).find(b => b?.snippetMeta?.name === 'BI_Vendas' || b?.record?.sellers);
+        if(found?.snippetMeta?.id || found?.id){
+          const id = found?.snippetMeta?.id || found?.id;
+          const c2 = getCfg(); c2.binId = id; c2.key = MASTER_KEY; setCfg(c2);
+          syncLog(`Bin encontrado: ${id}`);
+        }
+      }
+    } catch(e){ syncLog('Busca de bin falhou: '+e.message); }
+  }
+
+  if(getCfg().binId){
     setCloudUI('sync','Carregando…');
     const ok = await cloudPull();
     if(ok){ populateMes(); populateQESellers(); }
   } else {
+    // Só cria bin novo se realmente não existir nenhum
     setCloudUI('sync','Configurando…');
     await cloudPush();
   }
