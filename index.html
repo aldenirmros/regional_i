@@ -1143,6 +1143,19 @@ select.sel:focus{border-color:var(--blue);}
       🔒 Exibindo dados de: <span id="scope-label">—</span>
     </div>
 
+    <!-- Filtro Regional/HUB (gerente/regional/supervisor) -->
+    <div id="sellers-filter-bar" class="dash-filter" style="display:none;margin-bottom:14px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--tl)" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <span class="dash-filter-label">Filtrar:</span>
+      <select id="sf-regional" onchange="onSellersFilterChange()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12.5px;color:var(--td);outline:none;cursor:pointer">
+        <option value="">🏠 Todas as Regionais</option>
+      </select>
+      <select id="sf-time" onchange="onSellersFilterChange()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12.5px;color:var(--td);outline:none;cursor:pointer">
+        <option value="">🏢 Todos os HUBs</option>
+      </select>
+      <button class="btn-sm btn-sm-g" onclick="document.getElementById('sf-regional').value='';document.getElementById('sf-time').value='';onSellersFilterChange()">✕ Limpar</button>
+    </div>
+
     <!-- Tabs: Vendedores | Times | Usuários (visibilidade por role) -->
     <div class="tabs" id="sellers-tabs">
       <button class="tab-btn on" onclick="switchTab('tab-vendedores',this)">👤 Vendedores</button>
@@ -1426,6 +1439,15 @@ select.sel:focus{border-color:var(--blue);}
     </div>
   </div><!-- /overview -->
 
+<!-- ══ MAXIMIZE OVERLAY (PSV) ══ -->
+<div id="psv-maximize-ov" style="display:none;position:fixed;inset:0;background:var(--white);z-index:400;flex-direction:column;padding:20px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div id="psv-max-title" style="font-size:16px;font-weight:800;color:var(--td)"></div>
+    <button onclick="closePsvMaximize()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;color:var(--td)">✕ Fechar</button>
+  </div>
+  <div id="psv-max-content" style="flex:1;overflow:auto"></div>
+</div>
+
   <!-- ══ PAGE: PSV ══ -->
   <div id="page-psv" class="page">
 
@@ -1460,18 +1482,27 @@ select.sel:focus{border-color:var(--blue);}
     <!-- 2. Donut + Vendas por Dia lado a lado, ponta a ponta -->
     <div style="display:grid;grid-template-columns:240px 1fr;gap:16px;margin-bottom:16px">
       <div class="card">
-        <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--green)"></div>Realizado vs Meta</div></div>
+        <div class="card-head" style="justify-content:space-between">
+          <div class="card-title"><div class="ctd" style="background:var(--green)"></div>Realizado vs Meta</div>
+          <button onclick="psvMaximize('donut','Realizado vs Meta')" title="Maximizar" style="background:none;border:none;cursor:pointer;color:var(--tl);font-size:14px;padding:2px 6px">⛶</button>
+        </div>
         <div style="padding:14px;height:220px"><canvas id="psv-ch-donut"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--blue)"></div>Vendas por Dia</div></div>
+        <div class="card-head" style="justify-content:space-between">
+          <div class="card-title"><div class="ctd" style="background:var(--blue)"></div>Vendas por Dia</div>
+          <button onclick="psvMaximize('line','Vendas por Dia')" title="Maximizar" style="background:none;border:none;cursor:pointer;color:var(--tl);font-size:14px;padding:2px 6px">⛶</button>
+        </div>
         <div style="padding:14px;height:220px"><canvas id="psv-ch-line"></canvas></div>
       </div>
     </div>
 
     <!-- 3. Vendas & Compromisso — ponta a ponta, fotos abaixo do nome alinhadas com colunas -->
     <div class="card" style="margin-bottom:24px">
-      <div class="card-head"><div class="card-title"><div class="ctd" style="background:#d97706"></div>Vendas &amp; Compromisso por Vendedor</div></div>
+      <div class="card-head" style="justify-content:space-between">
+        <div class="card-title"><div class="ctd" style="background:#d97706"></div>Vendas &amp; Compromisso por Vendedor</div>
+        <button onclick="psvMaximize('sellers','Vendas &amp; Compromisso por Vendedor')" title="Maximizar" style="background:none;border:none;cursor:pointer;color:var(--tl);font-size:14px;padding:2px 6px">⛶</button>
+      </div>
       <!-- Faixa de fotos: alinhada com as colunas do gráfico via JS -->
       <div id="psv-photos-row" style="display:flex;padding:10px 20px 0;gap:0;border-bottom:1px solid var(--border)"></div>
       <div style="padding:14px 20px;height:320px"><canvas id="psv-ch-sellers"></canvas></div>
@@ -1540,6 +1571,88 @@ select.sel:focus{border-color:var(--blue);}
     </div>
     <!-- Lista -->
     <div id="vu-list" style="overflow-y:auto;flex:1;padding-right:4px"></div>
+  </div>
+</div>
+
+<!-- ══ MODAL TRANSFERIR VENDEDOR ══ -->
+<div class="modal-ov" id="transfer-modal" onclick="if(event.target===this)closeTransferModal()">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-x" onclick="closeTransferModal()">✕</div>
+    <div class="modal-h">🔄 Transferir Vendedor</div>
+    <div class="modal-s" id="tr-subtitle">—</div>
+    <div style="background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.2);border-radius:8px;padding:12px 14px;font-size:12px;color:#7c3aed;margin-bottom:16px;line-height:1.6">
+      <strong>ℹ️ Como funciona a transferência:</strong><br>
+      O histórico de vendas anterior à data de transferência <strong>permanece vinculado ao HUB atual</strong>.<br>
+      A partir da data informada, o vendedor terá um novo histórico no HUB destino.
+    </div>
+    <div class="mf">
+      <label>Data da Transferência *</label>
+      <input type="date" id="tr-date" style="width:100%;border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);background:var(--bg);outline:none;box-sizing:border-box">
+    </div>
+    <div class="mf">
+      <label>HUB Destino *</label>
+      <select id="tr-hub" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;cursor:pointer">
+        <option value="">— Selecione o HUB destino —</option>
+      </select>
+    </div>
+    <div class="modal-warn" id="tr-warn"></div>
+    <div class="modal-acts">
+      <button class="btn btn-g" onclick="closeTransferModal()">Cancelar</button>
+      <button class="btn" style="background:linear-gradient(135deg,#7c3aed,#2563eb)" onclick="confirmTransfer()">
+        🔄 Confirmar Transferência
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL EDITAR VENDEDOR ══ -->
+<div class="modal-ov" id="edit-seller-modal" onclick="if(event.target===this)closeEditSellerModal()">
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-x" onclick="closeEditSellerModal()">✕</div>
+    <div class="modal-h">✏️ Editar Vendedor</div>
+    <div class="mf">
+      <label>Nome *</label>
+      <input type="text" id="es-nome" placeholder="NOME DO VENDEDOR" style="text-transform:uppercase">
+    </div>
+    <div class="mf">
+      <label>CPF / Matrícula</label>
+      <input type="text" id="es-cpf" placeholder="Opcional">
+    </div>
+    <div class="mf">
+      <label>Data de Admissão</label>
+      <input type="date" id="es-adm">
+    </div>
+    <div class="mf" id="es-hub-wrap">
+      <label>HUB</label>
+      <select id="es-time" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;cursor:pointer"></select>
+    </div>
+    <div class="mf">
+      <label>Foto do Vendedor</label>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="es-photo-preview" onclick="document.getElementById('es-photo-file').click()" style="width:52px;height:52px;border-radius:50%;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:var(--bg);flex-shrink:0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tl)" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </div>
+        <input type="file" id="es-photo-file" accept="image/*" style="display:none" onchange="previewEditSellerPhoto(event)">
+        <div style="font-size:11px;color:var(--tl)">Clique para alterar a foto</div>
+      </div>
+    </div>
+    <div class="mf">
+      <label>Cor</label>
+      <select id="es-cor" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;cursor:pointer">
+        <option value="#2563eb">🔵 Azul</option>
+        <option value="#059669">🟢 Verde</option>
+        <option value="#7c3aed">🟣 Roxo</option>
+        <option value="#d97706">🟠 Laranja</option>
+        <option value="#dc2626">🔴 Vermelho</option>
+        <option value="#0891b2">🩵 Ciano</option>
+        <option value="#db2777">🩷 Rosa</option>
+      </select>
+    </div>
+    <div class="modal-warn" id="es-warn"></div>
+    <div class="modal-acts">
+      <button class="btn btn-g" onclick="closeEditSellerModal()">Cancelar</button>
+      <button class="btn btn-green" onclick="saveEditSeller()">💾 Salvar</button>
+    </div>
   </div>
 </div>
 
@@ -1862,7 +1975,18 @@ function getVendas(ymKey){ return DB.vendas[ymKey] || []; }
 function getScopedSellers(includeInativo=false){
   const u = currentUser;
   if(!u) return [];
-  let sellers = DB.sellers.filter(s=>includeInativo||!s.inativo);
+  const {y,m}=ymToYM(currentYM);
+  // Vendedor inativo só some a partir do mês SEGUINTE à data de desligamento
+  let sellers = DB.sellers.filter(s=>{
+    if(includeInativo) return true;
+    if(!s.inativo) return true;
+    if(s.desligamento){
+      const [dy,dm]=s.desligamento.split('-').map(Number);
+      // Se o mês/ano atual é <= mês de desligamento, ainda aparece
+      if(y < dy || (y===dy && m <= dm-1)) return true;
+    }
+    return false;
+  });
 
   // Gerente com filtro manual ativo
   if(isGerente(u)){
@@ -2022,7 +2146,22 @@ function updateDashFilterInfo(){
 
 // total realizado por vendedor no mês
 function sellerTotal(ymKey, sid){
-  return getVendas(ymKey).filter(v=>v.sellerId===sid).reduce((a,v)=>a+v.qty,0);
+  const vs = getVendas(ymKey).filter(v=>v.sellerId===sid);
+  const s  = DB.sellers.find(x=>x.id===sid);
+  // Se o vendedor foi transferido, conta só vendas a partir da data de início no hub atual
+  if(s?.activeFrom){
+    const {y,m}=ymToYM(ymKey);
+    const af=new Date(s.activeFrom+'T00:00:00');
+    // Mesmo mês da transferência: filtra pela data de início
+    if(af.getFullYear()===y && af.getMonth()===m) return vs.filter(v=>v.date>=s.activeFrom).reduce((a,v)=>a+v.qty,0);
+    // Mês anterior à transferência: 0 (vendedor não estava neste hub)
+    if(af > new Date(y,m+1,1)) return 0;
+  }
+  return vs.reduce((a,v)=>a+v.qty,0);
+}
+// Vendas antes de uma data (para histórico de hub antigo)
+function sellerTotalBefore(ymKey, sid, beforeDate){
+  return getVendas(ymKey).filter(v=>v.sellerId===sid && v.date<beforeDate).reduce((a,v)=>a+v.qty,0);
 }
 // total por todos
 function totalRealizado(ymKey, sid=null){
@@ -2407,6 +2546,30 @@ function linePointColor(val, maxVal){
 
 const numberLabelPlugin = {
   id:'numberLabel',
+  beforeDraw(chart){
+    // Sábados com fundo amarelo suave
+    const{ctx,chartArea,scales}=chart;
+    if(!chartArea) return;
+    const labels=chart.data.labels||[];
+    labels.forEach((lbl,i)=>{
+      if(!lbl) return;
+      const parts=lbl.split('/');
+      if(parts.length<2) return;
+      const d=parseInt(parts[0]),m=parseInt(parts[1]);
+      const {y}=ymToYM(currentYM);
+      const dt=new Date(y,m-1,d);
+      if(dt.getDay()!==6) return;
+      const meta0=chart.getDatasetMeta(0);
+      if(!meta0?.data?.[i]) return;
+      const x=meta0.data[i].x;
+      const count=labels.length||1;
+      const w=(scales?.x?.width||chartArea.width)/count;
+      ctx.save();
+      ctx.fillStyle='rgba(234,179,8,.13)';
+      ctx.fillRect(x-w/2,chartArea.top,w,chartArea.height);
+      ctx.restore();
+    });
+  },
   afterDatasetsDraw(chart){
     const {ctx} = chart;
     const meta  = chart.getDatasetMeta(0);
@@ -2572,7 +2735,38 @@ function renderSellers(){
   const u = currentUser;
   const scopedSel = getScopedSellers();
 
-  // Scope banner
+  // Barra de filtro Regional/HUB
+  const sfBar=document.getElementById('sellers-filter-bar');
+  const sfRg=document.getElementById('sf-regional');
+  const sfTm=document.getElementById('sf-time');
+  if(sfBar){
+    if(u?.role==='supervisor'){ sfBar.style.display='none'; }
+    else {
+      sfBar.style.display='flex';
+      // Regional
+      if(sfRg){
+        if(u?.role==='regional'&&!isGerente(u)){
+          const myRg=(DB.regionais||[]).find(r=>r.id===u.regionalId);
+          sfRg.innerHTML=myRg?`<option value="${myRg.id}">${myRg.nome}`:''; sfRg.value=u.regionalId||''; sfRg.style.display='none';
+        } else {
+          sfRg.style.display='';
+          const prev=sfRg.value;
+          sfRg.innerHTML='<option value="">🏠 Todas as Regionais</option>'+(DB.regionais||[]).map(r=>`<option value="${r.id}"${r.id==prev?' selected':''}>${r.nome}</option>`).join('');
+        }
+      }
+      // HUB
+      if(sfTm){
+        const rgId=u?.role==='regional'&&!isGerente(u)?u.regionalId:(parseInt(sfRg?.value)||null);
+        const times=rgId?(DB.times||[]).filter(t=>t.regionalId===rgId):(DB.times||[]);
+        const prevT=sfTm.value;
+        sfTm.innerHTML='<option value="">🏢 Todos os HUBs</option>'+times.map(t=>`<option value="${t.id}"${t.id==prevT?' selected':''}>${t.nome}</option>`).join('');
+      }
+    }
+  }
+
+  // Scope filtrado
+  const sfRgId=parseInt(sfRg?.value)||null;
+  const sfTmId=parseInt(sfTm?.value)||null;
   const banner = document.getElementById('scope-banner-sellers');
   const lbl    = document.getElementById('scope-label');
   if(u?.role==='supervisor'){
@@ -2585,12 +2779,14 @@ function renderSellers(){
     const tbu=document.getElementById('tab-btn-users');
     if(tbt) tbt.style.display='none';
     if(tbu) tbu.style.display='none';
-    // Pré-seleciona o HUB do supervisor no form
+    // Pré-seleciona o HUB do supervisor mas permite trocar
     const vtEl2=document.getElementById('v-time');
     if(vtEl2 && u.timeId){
-      vtEl2.innerHTML=`<option value="${u.timeId}">${t?.nome||'Meu HUB'}</option>`;
+      const ts2=(DB.times||[]).filter(t=>t.id===u.timeId||(t.id&&true)); // mostra todos
+      const myScopeTs=isGerente(u)?(DB.times||[]):(DB.times||[]).filter(t=>t.id===u.timeId);
+      vtEl2.innerHTML=myScopeTs.map(t=>`<option value="${t.id}"${t.id===u.timeId?' selected':''}>${t.nome}</option>`).join('');
       vtEl2.value=u.timeId;
-      vtEl2.disabled=true;
+      vtEl2.disabled=false; // permite escolher
     }
   } else if(u?.role==='regional'){
     const rg=(DB.regionais||[]).find(x=>x.id===u.regionalId);
@@ -2618,7 +2814,10 @@ function renderSellers(){
   const metaTotalEl=document.getElementById('meta-total-display');
   if(metaTotalEl) metaTotalEl.textContent=getScopedMeta(ymKey);
 
-  const scopedAll = getScopedSellers(true); // inclui inativos
+  let scopedAll = getScopedSellers(true); // inclui inativos
+  // Aplica filtro da barra de sellers
+  if(sfTmId) scopedAll=scopedAll.filter(s=>s.timeId===sfTmId);
+  else if(sfRgId){ const tids=(DB.times||[]).filter(t=>t.regionalId===sfRgId).map(t=>t.id); scopedAll=scopedAll.filter(s=>tids.includes(s.timeId)); }
   let lh='', lhInativo='';
   [...scopedAll].sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{
     const tot=sellerTotal(ymKey,s.id);
@@ -2640,6 +2839,8 @@ function renderSellers(){
         </div>`:''}
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+        <button class="btn-sm" onclick="openEditSellerModal(${s.id})" style="background:var(--blue-g);color:var(--blue);border:1px solid rgba(37,99,235,.2);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">✏️ Editar</button>
+        <button class="btn-sm" onclick="openTransferModal(${s.id})" style="background:rgba(124,58,237,.08);color:#7c3aed;border:1px solid rgba(124,58,237,.2);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)">🔄 Transferir</button>
         ${inativo
           ? `<button class="btn-ativar" onclick="toggleSellerInativo(${s.id},false)">↩ Reativar</button>
              <button class="del-seller" onclick="delSellerPermanent(${s.id})">Excluir</button>`
@@ -2652,6 +2853,29 @@ function renderSellers(){
   });
   const allHtml=(lh||'')+(lhInativo?`<div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tl);margin-bottom:8px">Inativos</div>${lhInativo}</div>`:'');
   document.getElementById('v-list').innerHTML=allHtml||'<div style="color:var(--tl);text-align:center;padding:20px">Nenhum vendedor</div>';
+
+  // Seção: Histórico de Transferidos (vendedores que saíram deste hub)
+  const viewTid = sfTmId || (u?.role==='supervisor'?u.timeId:null);
+  let lhTrans='';
+  if(viewTid){
+    DB.sellers.forEach(s=>{
+      if(s.timeId===viewTid) return; // ainda está aqui
+      const lastTransferOut = [...(s.transfers||[])].reverse().find(tr=>tr.fromTimeId===viewTid);
+      if(!lastTransferOut) return;
+      const tot=sellerTotalBefore(ymKey, s.id, lastTransferOut.date);
+      const toTm=(DB.times||[]).find(t=>t.id===lastTransferOut.toTimeId);
+      lhTrans+=`<div class="seller-item" style="opacity:.75">
+        ${s.photo?`<div class="seller-ic" style="background:${s.color};overflow:hidden;padding:0"><img src="${s.photo}" style="width:100%;height:100%;object-fit:cover"></div>`:`<div class="seller-ic" style="background:${s.color}">${s.name[0]}</div>`}
+        <div style="flex:1">
+          <div class="seller-nm">${s.name}<span class="inativo-badge" style="background:rgba(124,58,237,.1);color:#7c3aed;border-color:rgba(124,58,237,.2)">TRANSFERIDO</span></div>
+          <div class="seller-meta-txt">Saiu em ${lastTransferOut.date.split('-').reverse().join('/')} → ${toTm?.nome||'outro HUB'} · Vendas antes da transferência: <strong>${tot}</strong></div>
+        </div>
+      </div>`;
+    });
+  }
+  if(lhTrans){
+    document.getElementById('v-list').innerHTML+=(allHtml?'':'')+'<div style="margin-top:14px;padding-top:12px;border-top:1px dashed rgba(124,58,237,.3)"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#7c3aed;margin-bottom:8px">📦 Histórico — Transferidos</div>'+lhTrans+'</div>';
+  }
 
   renderTimesList();
   renderUserList();
@@ -2775,12 +2999,55 @@ function delSellerPermanent(id){
   saveDB(); renderSellers(); renderDash(); populateQESellers();
   toast(`${s.name} excluído permanentemente`,'🗑️');
 }
+function onSellersFilterChange(){
+  // Atualiza HUBs quando regional muda
+  const u=currentUser;
+  const sfRg=document.getElementById('sf-regional');
+  const sfTm=document.getElementById('sf-time');
+  if(sfRg&&sfTm){
+    const rgId=u?.role==='regional'&&!isGerente(u)?u.regionalId:(parseInt(sfRg.value)||null);
+    const times=rgId?(DB.times||[]).filter(t=>t.regionalId===rgId):(DB.times||[]);
+    const prevT=sfTm.value;
+    sfTm.innerHTML='<option value="">🏢 Todos os HUBs</option>'+times.map(t=>`<option value="${t.id}"${t.id==prevT?' selected':''}>${t.nome}</option>`).join('');
+  }
+  renderSellers();
+}
 function toggleSellerInativo(id, inativo){
   const s=DB.sellers.find(x=>x.id===id);
   if(!s) return;
-  s.inativo=inativo;
+  if(inativo){
+    openInativarModal(id);
+  } else {
+    s.inativo=false; delete s.desligamento;
+    saveDB(); renderSellers(); renderDash(); populateQESellers();
+    toast(`${s.name} reativado ✓`);
+  }
+}
+function openInativarModal(id){
+  const s=DB.sellers.find(x=>x.id===id); if(!s) return;
+  const modal=document.createElement('div');
+  modal.id='inativar-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML=`<div style="background:var(--white);border-radius:var(--r);padding:24px 24px 20px;max-width:380px;width:90%;box-shadow:var(--sh2)">
+    <div style="font-size:16px;font-weight:800;color:var(--td);margin-bottom:6px">Inativar ${s.name}</div>
+    <div style="font-size:12px;color:var(--tl);margin-bottom:16px">Informe a data de desligamento. O vendedor só desaparecerá a partir do mês seguinte.</div>
+    <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);display:block;margin-bottom:5px">Data de Desligamento *</label>
+    <input type="date" id="inativar-date" value="${fmtD(today())}" style="width:100%;border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 12px;font-family:var(--font);font-size:13px;color:var(--td);background:var(--bg);outline:none;margin-bottom:16px;box-sizing:border-box">
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="document.getElementById('inativar-modal').remove()" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:7px 16px;font-family:var(--font);font-size:12px;cursor:pointer">Cancelar</button>
+      <button onclick="confirmInativar(${id})" style="background:#dc2626;color:#fff;border:none;border-radius:var(--rs);padding:7px 16px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer">Confirmar Inativação</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+function confirmInativar(id){
+  const s=DB.sellers.find(x=>x.id===id); if(!s) return;
+  const dt=document.getElementById('inativar-date')?.value;
+  if(!dt){ toast('Informe a data','⚠️'); return; }
+  s.inativo=true; s.desligamento=dt;
   saveDB(); renderSellers(); renderDash(); populateQESellers();
-  toast(inativo?`${s.name} marcado como inativo`:`${s.name} reativado ✓`);
+  document.getElementById('inativar-modal')?.remove();
+  toast(`${s.name} inativado a partir de ${dt.split('-').reverse().join('/')}`);
 }
 
 // saveMeta removida — meta total agora é sempre a soma dos HUBs
@@ -3916,7 +4183,7 @@ function _renderDPGrid(){
             <input type="text" id="dp-name-prom-${c.mk}" placeholder="Nome do promotor"
               style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--font);font-size:12px;color:var(--td);background:var(--bg);outline:none;margin-bottom:5px;box-sizing:border-box"
               oninput="saveDpData('prom','${c.mk}','name',this.value)">
-            <input type="number" id="dp-val-prom-${c.mk}" placeholder="R$ TPV"
+            <input type="text" inputmode="numeric" id="dp-val-prom-${c.mk}" placeholder="R$ 0,00"
               style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;font-weight:700;color:#059669;background:var(--bg);outline:none;box-sizing:border-box"
               oninput="saveDpData('prom','${c.mk}','val',this.value)">
           </div>
@@ -3930,7 +4197,7 @@ function _renderDPGrid(){
             <input type="text" id="dp-name-det-${c.mk}" placeholder="Nome do detrator"
               style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--font);font-size:12px;color:var(--td);background:var(--bg);outline:none;margin-bottom:5px;box-sizing:border-box"
               oninput="saveDpData('det','${c.mk}','name',this.value)">
-            <input type="number" id="dp-val-det-${c.mk}" placeholder="R$ TPV"
+            <input type="text" inputmode="numeric" id="dp-val-det-${c.mk}" placeholder="R$ 0,00"
               style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626;background:var(--bg);outline:none;box-sizing:border-box"
               oninput="saveDpData('det','${c.mk}','val',this.value)">
           </div>
@@ -3939,16 +4206,18 @@ function _renderDPGrid(){
     </div>`).join('');
 }
 
+function fmtBRL(v){ if(!v) return ''; return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
 function savePsvTpv(input, mk, ymKey){
-  const v = parseInt(input.value)||0;
+  // Remove formatting to get raw number
+  const raw = input.value.replace(/\./g,'').replace(',','.');
+  const v = parseFloat(raw)||0;
   if(!DB.psvData) DB.psvData={};
   if(!DB.psvData.tpv) DB.psvData.tpv={};
   if(!DB.psvData.tpv[ymKey]) DB.psvData.tpv[ymKey]={};
   DB.psvData.tpv[ymKey][mk] = v||null;
-  // Atualiza cor do input
   const c = v<15000?'#dc2626':v<20000?'#d97706':'#059669';
   input.style.color = c;
-  input.style.fontWeight = v<15000?'700':'900';
   saveDB();
 }
 
@@ -4230,6 +4499,129 @@ function deleteUserFromModal(id){
 }
 
 // ══════════════════════════════════════════════════════════
+//  TRANSFERÊNCIA DE VENDEDOR ENTRE HUBS
+// ══════════════════════════════════════════════════════════
+let _transferSellerId = null;
+
+function openTransferModal(id){
+  const s = DB.sellers.find(x=>x.id===id); if(!s) return;
+  _transferSellerId = id;
+  document.getElementById('tr-subtitle').textContent = `${s.name} · HUB atual: ${(DB.times||[]).find(t=>t.id===s.timeId)?.nome||'—'}`;
+  document.getElementById('tr-date').value = fmtD(today());
+  document.getElementById('tr-warn').style.display='none';
+
+  // HUBs disponíveis (todos menos o atual)
+  const u = currentUser;
+  const allTimes = isGerente(u) ? (DB.times||[]) : u?.role==='regional' ? (DB.times||[]).filter(t=>t.regionalId===u.regionalId) : (DB.times||[]);
+  const trHub = document.getElementById('tr-hub');
+  trHub.innerHTML = '<option value="">— Selecione o HUB destino —</option>'
+    + allTimes.filter(t=>t.id!==s.timeId).map(t=>{
+        const rg=(DB.regionais||[]).find(r=>r.id===t.regionalId);
+        return `<option value="${t.id}">${t.nome}${rg?' — '+rg.nome:''}`;
+      }).join('');
+
+  document.getElementById('transfer-modal').classList.add('show');
+}
+function closeTransferModal(){
+  document.getElementById('transfer-modal').classList.remove('show');
+  _transferSellerId = null;
+}
+function confirmTransfer(){
+  const s = DB.sellers.find(x=>x.id===_transferSellerId); if(!s) return;
+  const date   = document.getElementById('tr-date').value;
+  const toTimeId = parseInt(document.getElementById('tr-hub').value)||null;
+  const warn   = document.getElementById('tr-warn');
+  const show   = msg=>{ warn.style.display='block'; warn.textContent=msg; };
+
+  if(!date){ show('⚠️ Informe a data da transferência.'); return; }
+  if(!toTimeId){ show('⚠️ Selecione o HUB destino.'); return; }
+
+  const fromTimeId = s.timeId;
+  if(!s.transfers) s.transfers=[];
+  s.transfers.push({fromTimeId, toTimeId, date});
+  s.timeId    = toTimeId;
+  s.activeFrom = date; // nova data de início no hub destino
+
+  saveDB();
+  closeTransferModal();
+  renderSellers(); renderDash(); populateQESellers();
+
+  const toTm = (DB.times||[]).find(t=>t.id===toTimeId);
+  const frTm = (DB.times||[]).find(t=>t.id===fromTimeId);
+  toast(`✅ ${s.name} transferido de ${frTm?.nome||'?'} → ${toTm?.nome||'?'} a partir de ${date.split('-').reverse().join('/')}`);
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODAL EDITAR VENDEDOR
+// ══════════════════════════════════════════════════════════
+let _editSellerId=null;
+let _editSellerPhoto=null;
+
+function openEditSellerModal(id){
+  const s=DB.sellers.find(x=>x.id===id); if(!s) return;
+  _editSellerId=id; _editSellerPhoto=null;
+  document.getElementById('es-nome').value=s.name||'';
+  document.getElementById('es-cpf').value=s.cpf||'';
+  document.getElementById('es-adm').value=s.admDate||'';
+  document.getElementById('es-cor').value=s.color||'#2563eb';
+  document.getElementById('es-warn').style.display='none';
+
+  // HUB select — supervisor vê só o seu
+  const u=currentUser;
+  const esTm=document.getElementById('es-time');
+  const esHubWrap=document.getElementById('es-hub-wrap');
+  if(u?.role==='supervisor'){
+    const tm=(DB.times||[]).find(t=>t.id===u.timeId);
+    esTm.innerHTML=`<option value="${u.timeId}">${tm?.nome||'Meu HUB'}</option>`;
+    esTm.value=u.timeId; esHubWrap.style.display='none';
+  } else {
+    esHubWrap.style.display='';
+    const ts=u?.role==='regional'?(DB.times||[]).filter(t=>t.regionalId===u.regionalId):(DB.times||[]);
+    esTm.innerHTML='<option value="">— Sem HUB —</option>'+ts.map(t=>`<option value="${t.id}"${t.id===s.timeId?' selected':''}>${t.nome}</option>`).join('');
+  }
+
+  // Foto
+  const prev=document.getElementById('es-photo-preview');
+  if(prev) prev.innerHTML=s.photo
+    ?`<img src="${s.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    :`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tl)" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+
+  document.getElementById('edit-seller-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('es-nome').focus(),80);
+}
+function closeEditSellerModal(){
+  document.getElementById('edit-seller-modal').classList.remove('show');
+  _editSellerId=null; _editSellerPhoto=null;
+}
+async function previewEditSellerPhoto(e){
+  const f=e.target.files[0]; if(!f) return;
+  const data=await compressPhoto(f);
+  _editSellerPhoto=data;
+  const prev=document.getElementById('es-photo-preview');
+  if(prev) prev.innerHTML=`<img src="${data}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+}
+function saveEditSeller(){
+  const s=DB.sellers.find(x=>x.id===_editSellerId); if(!s) return;
+  const nome=document.getElementById('es-nome').value.trim().toUpperCase();
+  const warn=document.getElementById('es-warn');
+  if(!nome){ warn.style.display='block'; warn.textContent='⚠️ Informe o nome.'; return; }
+  s.name=nome;
+  s.cpf=document.getElementById('es-cpf').value.trim();
+  const adm=document.getElementById('es-adm').value;
+  if(adm) s.admDate=adm;
+  const u=currentUser;
+  if(u?.role!=='supervisor'){
+    const tmId=parseInt(document.getElementById('es-time').value)||null;
+    s.timeId=tmId;
+  }
+  s.color=document.getElementById('es-cor').value||s.color;
+  if(_editSellerPhoto) s.photo=_editSellerPhoto;
+  saveDB(); renderSellers(); renderDash(); populateQESellers();
+  closeEditSellerModal();
+  toast(`✅ ${nome} atualizado!`);
+}
+
+// ══════════════════════════════════════════════════════════
 //  MODAL EDITAR USUÁRIO (GERENTE / ALDENIR)
 // ══════════════════════════════════════════════════════════
 let _editUserId = null;
@@ -4461,6 +4853,53 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
 //  PSV — Apresentação de Resultados
 // ══════════════════════════════════════════════════════════
 let _psvCharts = {};
+
+// Raw params stored for PSV maximize
+let _psvLineParams = null;
+let _psvSellersParams = null;
+
+function psvMaximize(type, title){
+  const ov=document.getElementById('psv-maximize-ov');
+  const content=document.getElementById('psv-max-content');
+  const titleEl=document.getElementById('psv-max-title');
+  if(!ov||!content) return;
+  titleEl.innerHTML=title;
+  ov.style.display='flex';
+
+  content.innerHTML=`<div style="width:100%;height:calc(100vh - 110px)"><canvas id="psv-max-canvas"></canvas></div>`;
+  setTimeout(()=>{
+    const ctx=document.getElementById('psv-max-canvas')?.getContext('2d');
+    if(!ctx) return;
+
+    if(type==='donut'){
+      const real=_psvCharts.donut?.data?.datasets?.[0]?.data?.[0]??0;
+      const gap =_psvCharts.donut?.data?.datasets?.[0]?.data?.[1]??0;
+      const fill=_psvCharts.donut?.data?.datasets?.[0]?.backgroundColor?.[0]??'#059669';
+      const pct = (real+gap)>0 ? Math.round(real/(real+gap)*100) : 0;
+      const plug={id:'maxDonutCenter',afterDraw(chart){
+        const{ctx,chartArea:{top,bottom,left,right}}=chart;
+        const cx=(left+right)/2,cy=(top+bottom)/2;
+        ctx.save();ctx.font='800 40px "JetBrains Mono",monospace';ctx.fillStyle=fill;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(pct+'%',cx,cy-12);ctx.font='500 16px Outfit,sans-serif';ctx.fillStyle='#94a3b8';ctx.fillText('de meta',cx,cy+22);ctx.restore();
+      }};
+      new Chart(ctx,{type:'doughnut',data:{datasets:[{data:[real,gap],backgroundColor:[fill,'#e2e8f0'],borderWidth:0}]},options:{cutout:'70%',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const l=['Realizado','Restante'];return ` ${l[c.dataIndex]}: ${c.raw}`;}}}},animation:{animateRotate:true}},plugins:[plug]});
+    }
+    else if(type==='line' && _psvLineParams){
+      const {labels,data,colors}=_psvLineParams;
+      new Chart(ctx, makeLineConfig(labels, data, colors));
+    }
+    else if(type==='sellers' && _psvSellersParams){
+      const{labels,vendas,compr,proj,colors}=_psvSellersParams;
+      const bp={id:'bp_max',afterDatasetsDraw(chart){const{ctx}=chart;const usedY={};function dl(x,y,v,c){if(!v)return;const k=Math.round(x);if(!usedY[k])usedY[k]=[];let fy=y;usedY[k].forEach(uy=>{if(Math.abs(fy-uy)<14)fy=Math.min(fy,uy)-14;});usedY[k].push(fy);ctx.save();ctx.fillStyle=c;ctx.font='700 11px "JetBrains Mono",monospace';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(v,x,fy);ctx.restore();}chart.getDatasetMeta(0).data.forEach((b,i)=>dl(b.x,b.y-4,vendas[i],'#334155'));chart.getDatasetMeta(1).data.forEach((pt,i)=>dl(pt.x,pt.y-7,compr[i],'#f97316'));chart.getDatasetMeta(2).data.forEach((pt,i)=>dl(pt.x,pt.y-7,proj[i],'#7c3aed'));}};
+      new Chart(ctx,{type:'bar',data:{labels,datasets:[{type:'bar',label:'Vendas',data:vendas,backgroundColor:colors.map(c=>c+'cc'),borderRadius:6,barPercentage:.55,yAxisID:'y'},{type:'line',label:'Compromisso',data:compr,borderColor:'#f97316',backgroundColor:'rgba(249,115,22,.08)',borderWidth:2.5,pointRadius:6,pointBackgroundColor:'#f97316',pointBorderColor:'#fff',pointBorderWidth:2,tension:0.3,fill:false,yAxisID:'y'},{type:'line',label:'Projeção',data:proj,borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.06)',borderWidth:2,borderDash:[5,4],pointRadius:6,pointBackgroundColor:'#7c3aed',pointBorderColor:'#fff',pointBorderWidth:2,tension:0.3,fill:false,yAxisID:'y'}]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28}},plugins:{legend:{labels:{font:{family:'Outfit',size:12},color:'#475569'},position:'bottom'},tooltip:{mode:'index',intersect:false},bp_max:{}},scales:{x:{grid:{display:false},ticks:{font:{family:'Outfit',size:11},color:'#94a3b8'}},y:{grid:{color:'#f1f5f9'},ticks:{font:{family:'JetBrains Mono',size:11},color:'#94a3b8'},beginAtZero:true}}},plugins:[bp]});
+    }
+  },50);
+}
+function closePsvMaximize(){
+  const ov=document.getElementById('psv-maximize-ov');
+  if(ov) ov.style.display='none';
+  const c=document.getElementById('psv-max-canvas');
+  if(c) Chart.getChart(c)?.destroy();
+}
 // Fotos dos vendedores — persistidas em localStorage (separado do banco JSON)
 const _psvPhotos = (() => {
   try { return JSON.parse(localStorage.getItem('psv_photos')||'{}'); } catch(e){ return {}; }
@@ -4625,7 +5064,7 @@ function _renderPSVKpis(ymKey, y, m, sellers){
           const cur=tpvD[s.k]||''; const c=tpvColor(cur);
           return `<div style="padding:3px 4px 6px;border-right:1px solid ${s.border};text-align:center">
             <div style="font-size:9px;color:var(--tl);font-weight:600;margin-bottom:1px">R$</div>
-            <input type="number" min="0" step="100" id="psv-tpv-${s.k}" value="${cur}" placeholder="0"
+            <input type="text" inputmode="numeric" id="psv-tpv-${s.k}" value="${cur?fmtBRL(cur):''}" placeholder="0,00"
               style="width:100%;text-align:center;border:1px solid var(--border);border-radius:4px;padding:3px 1px;font-family:var(--mono);font-size:11px;font-weight:800;color:${c};background:var(--white);outline:none;"
               oninput="savePsvTpv(this,'${s.k}','${ymKey}')" onkeydown="if(event.key==='Enter')this.blur()">
           </div>`;
@@ -4747,7 +5186,10 @@ function _renderPSVCharts(ymKey,y,m,sellers){
   const mx=Math.max(0,...dl.filter(v=>v!==null));
   if(_psvCharts.line) _psvCharts.line.destroy();
   const lctx=document.getElementById('psv-ch-line')?.getContext('2d');
-  if(lctx) _psvCharts.line=new Chart(lctx,makeLineConfig(lb,dl,dl.map(v=>linePointColor(v,mx))));
+  if(lctx){
+    _psvLineParams={labels:lb,data:dl,colors:dl.map(v=>linePointColor(v,mx))};
+    _psvCharts.line=new Chart(lctx,makeLineConfig(lb,dl,_psvLineParams.colors));
+  }
 }
 
 function _renderPhotosRow(sellers){
@@ -4828,6 +5270,7 @@ function _renderPSVSellerChart(ymKey,sellers){
     }
   };
 
+  _psvSellersParams={labels:sellers.map(s=>s.name),vendas,compr,proj,colors:sellers.map(s=>s.color||'#2563eb')};
   _psvCharts.sellers=new Chart(ctx,{
     type:'bar',
     data:{
@@ -4842,7 +5285,7 @@ function _renderPSVSellerChart(ymKey,sellers){
       responsive:true, maintainAspectRatio:false,
       layout:{padding:{top:24}},
       plugins:{
-        legend:{labels:{font:{family:'Outfit',size:11},color:'#475569'},position:'top'},
+        legend:{labels:{font:{family:'Outfit',size:11},color:'#475569'},position:'bottom'},
         tooltip:{mode:'index',intersect:false},
         sellersNum:{}
       },
