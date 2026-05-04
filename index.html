@@ -209,7 +209,7 @@ select.sel:focus{border-color:var(--blue);}
 /* ══ PSV ══ */
 .pth{padding:10px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);border-bottom:2px solid var(--border);text-align:left;white-space:nowrap;}
 .ptd{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
-.ptd-input{width:100%;min-width:100px;background:transparent;border:none;outline:none;font-family:var(--font);font-size:12.5px;color:var(--td);resize:none;min-height:34px;}
+.ptd-input{width:100%;min-width:100px;background:transparent;border:none;outline:none;font-family:var(--font);font-size:12.5px;color:var(--td);resize:none;height:auto;min-height:34px;overflow:hidden;box-sizing:border-box;line-height:1.5;}
 .ptd-input:focus{background:var(--bg);border-radius:5px;padding:2px 5px;}
 .hc-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);position:relative;overflow:hidden;flex:0 0 auto;min-width:200px;}
 .hc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--hc-accent,var(--blue));}
@@ -424,6 +424,14 @@ select.sel:focus{border-color:var(--blue);}
   .dt td{font-size:11.5px;padding:9px 10px;}
 }
 
+
+/* ── MAPA SEMANAL ── */
+.mapa-cell{text-align:center;padding:9px 10px;font-family:var(--mono);font-size:13px;font-weight:800;transition:background .15s;}
+.mapa-cell-zero{color:var(--tl)!important;background:rgba(148,163,184,.06)!important;}
+.mapa-week-th{text-align:center;white-space:nowrap;}
+.mapa-week-th small{display:block;font-size:9.5px;font-weight:400;color:var(--tl);letter-spacing:.3px;margin-top:2px;}
+.mapa-total-col{background:rgba(37,99,235,.06)!important;color:var(--blue)!important;}
+.mapa-sem-atual{outline:2px solid rgba(37,99,235,.3);outline-offset:-2px;}
 
 /* ── DIAS CARDS ── */
 .dias-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
@@ -700,6 +708,9 @@ select.sel:focus{border-color:var(--blue);}
 /* hub meta inline */
 .hub-meta-row{display:flex;align-items:center;gap:6px;margin-top:4px;}
 .hub-meta-row label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);white-space:nowrap;}
+/* hub edit modal */
+.hub-edit-modal .modal-box{max-width:440px;}
+
 .hub-meta-row input{width:70px;background:var(--bg);border:1.5px solid var(--border);border-radius:5px;padding:3px 7px;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--td);outline:none;transition:border-color .14s;}
 .hub-meta-row input:focus{border-color:var(--blue);}
 .hub-meta-row .save-meta-btn{background:var(--blue);color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .12s;}
@@ -1050,7 +1061,7 @@ select.sel:focus{border-color:var(--blue);}
             <button class="chart-maximize-btn" onclick="maximizeChart('line')" title="Maximizar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
           </div>
         </div>
-        <div style="padding:14px;height:280px"><canvas id="ch-line"></canvas></div>
+        <div style="padding:14px;height:300px"><canvas id="ch-line"></canvas></div>
       </div>
       <div class="card">
         <div class="card-head">
@@ -1060,6 +1071,10 @@ select.sel:focus{border-color:var(--blue);}
         <div style="padding:14px;height:250px"><canvas id="ch-bar"></canvas></div>
       </div>
     </div>
+
+    <!-- MAPA SEMANAL DE VENDAS -->
+    <div class="card" id="dash-mapa-semanal" style="margin-top:4px;overflow:hidden"></div>
+
   </div><!-- /dash -->
 
   <!-- ══ PAGE: LANÇAR ══ -->
@@ -1080,7 +1095,7 @@ select.sel:focus{border-color:var(--blue);}
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Selecionar arquivo .xlsx
         </button>
-        <button class="btn btn-g" onclick="downloadModeloExcel()" style="font-size:11px;padding:5px 10px">⬇ Baixar modelo Excel</button>
+        <button class="btn btn-g" onclick="openModeloExcelModal()" style="font-size:11px;padding:5px 10px">⬇ Baixar modelo Excel</button>
       </div>
       <input type="file" id="xl-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(event)">
     </div>
@@ -1461,6 +1476,10 @@ select.sel:focus{border-color:var(--blue);}
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         Atualizar
       </button>
+      <button class="btn btn-g" onclick="openHubEditModal()" style="font-size:12px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Alterar HUB
+      </button>
     </div>
 
     <!-- Filtro PSV -->
@@ -1493,7 +1512,7 @@ select.sel:focus{border-color:var(--blue);}
           <div class="card-title"><div class="ctd" style="background:var(--blue)"></div>Vendas por Dia</div>
           <button onclick="psvMaximize('line','Vendas por Dia')" title="Maximizar" style="background:none;border:none;cursor:pointer;color:var(--tl);font-size:14px;padding:2px 6px">⛶</button>
         </div>
-        <div style="padding:14px;height:220px"><canvas id="psv-ch-line"></canvas></div>
+        <div style="padding:14px;height:250px"><canvas id="psv-ch-line"></canvas></div>
       </div>
     </div>
 
@@ -1508,6 +1527,9 @@ select.sel:focus{border-color:var(--blue);}
       <div style="padding:14px 20px;height:320px"><canvas id="psv-ch-sellers"></canvas></div>
     </div>
 
+    <!-- MAPA SEMANAL PSV -->
+    <div class="card" id="psv-mapa-semanal" style="margin-bottom:24px;overflow:hidden"></div>
+
     <!-- Detrator / Promotor por Safra -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-head"><div class="card-title"><div class="ctd" style="background:#7c3aed"></div>Detrator &amp; Promotor por Safra</div></div>
@@ -1518,9 +1540,16 @@ select.sel:focus{border-color:var(--blue);}
     <div class="card" style="margin-bottom:24px">
       <div class="card-head" style="justify-content:space-between;align-items:center">
         <div class="card-title"><div class="ctd" style="background:#dc2626"></div>Plano de Ação</div>
-        <button class="btn" onclick="psvAddRow()" style="font-size:11px;padding:5px 11px">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nova Linha
-        </button>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span id="plan-saved-badge" style="font-size:10.5px;color:var(--green);font-weight:700;display:flex;align-items:center;gap:3px;opacity:0;transition:opacity .4s">✅ Salvo</span>
+          <button class="btn" onclick="psvSavePlan()" style="font-size:11px;padding:5px 11px;background:var(--green)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Salvar
+          </button>
+          <button class="btn" onclick="psvAddRow()" style="font-size:11px;padding:5px 11px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nova Linha
+          </button>
+        </div>
       </div>
       <div style="overflow-x:auto;padding:0 0 12px">
         <table id="psv-plan-table" style="width:100%;border-collapse:collapse;min-width:860px">
@@ -1846,6 +1875,36 @@ select.sel:focus{border-color:var(--blue);}
   </div>
 </div>
 
+<!-- ══ MODAL MODELO EXCEL ══ -->
+<div class="modal-ov" id="modelo-excel-modal" onclick="if(event.target===this)closeModeloExcelModal()">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-x" onclick="closeModeloExcelModal()">✕</div>
+    <div class="modal-h">📥 Baixar Modelo Excel</div>
+    <div class="modal-s">O modelo será gerado com os vendedores do seu escopo.</div>
+    <div style="background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.2);border-radius:9px;padding:10px 13px;margin-bottom:16px;font-size:12px;color:#1e3a8a;display:flex;align-items:center;gap:8px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+      <span id="modelo-scope-txt">—</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+      <div class="mf" style="margin-bottom:0">
+        <label>Mês</label>
+        <select id="modelo-mes-sel" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;cursor:pointer"></select>
+      </div>
+      <div class="mf" style="margin-bottom:0">
+        <label>Ano</label>
+        <select id="modelo-ano-sel" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;cursor:pointer"></select>
+      </div>
+    </div>
+    <div class="modal-acts">
+      <button class="btn btn-g" onclick="closeModeloExcelModal()">Cancelar</button>
+      <button class="btn btn-green" onclick="downloadModeloExcel()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Baixar .xlsx
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════════════════════
 //  CONSTANTS
@@ -1948,10 +2007,83 @@ function getDiasCorridos(y,m){
   while(d.getMonth()===m){ const dw=d.getDay(); if(dw>=1&&dw<=5)r.push(new Date(d)); d.setDate(d.getDate()+1); }
   return r;
 }
+// Dias com sábado = Seg–Sáb (para gráfico de linha)
+function getDiasComSabado(y,m){
+  const d=new Date(y,m,1),r=[];
+  while(d.getMonth()===m){ const dw=d.getDay(); if(dw>=1&&dw<=6)r.push(new Date(d)); d.setDate(d.getDate()+1); }
+  return r;
+}
 function getAllDias(y,m){
   const d=new Date(y,m,1),r=[];
   while(d.getMonth()===m){ r.push(new Date(d)); d.setDate(d.getDate()+1); }
   return r;
+}
+
+// Semanas do mês: cada semana = array de dateStrings Seg→Sáb
+function getSemanasDoMes(y,m){
+  const fim=new Date(y,m+1,0);
+  const semanas=[], cur=new Date(y,m,1);
+  let semAtual=[];
+  while(cur<=fim){
+    const dw=cur.getDay();
+    if(dw>=1&&dw<=6){
+      semAtual.push(fmtD(cur));
+      if(dw===6){ semanas.push(semAtual); semAtual=[]; }
+    }
+    cur.setDate(cur.getDate()+1);
+  }
+  if(semAtual.length) semanas.push(semAtual);
+  return semanas;
+}
+
+// Renderiza o mapa semanal em qualquer containerId
+// Funciona para TODOS os papéis: gerente, regional, supervisor
+function renderMapaSemanal(ymKey, sellers, containerId){
+  const el=document.getElementById(containerId);
+  if(!el) return;
+  if(!sellers||!sellers.length){ el.innerHTML=''; return; }
+  const {y,m}=ymToYM(ymKey);
+  const semanas=getSemanasDoMes(y,m);
+  if(!semanas.length){ el.innerHTML=''; return; }
+  const vendas=getVendas(ymKey);
+  const todayStr=fmtD(today());
+  // [vendedor][semana] = total
+  const dados=sellers.map(s=>semanas.map(sem=>vendas.filter(v=>v.sellerId===s.id&&sem.includes(v.date)).reduce((a,v)=>a+v.qty,0)));
+  const maxVal=Math.max(1,...dados.flat());
+  function bgCell(v){ if(!v) return ''; const p=Math.min(1,v/maxVal); return `background:rgba(5,150,105,${(0.07+p*0.28).toFixed(2)})`; }
+  const semAtualIdx=semanas.findIndex(sem=>sem.includes(todayStr));
+  const wLabels=semanas.map((sem,i)=>{
+    const f=ds=>ds.slice(8,10)+'/'+ds.slice(5,7);
+    return `Sem ${i+1}<small>${f(sem[0])}–${f(sem[sem.length-1])}</small>`;
+  });
+  const totSem=semanas.map((_,si)=>dados.reduce((a,d)=>a+d[si],0));
+  const totGeral=totSem.reduce((a,v)=>a+v,0);
+  let html=`
+    <div class="card-head" style="flex-wrap:wrap;gap:8px">
+      <div class="card-title"><div class="ctd" style="background:var(--blue)"></div>📅 Mapa Semanal — ${MESES[m]} ${y}</div>
+      <span style="font-size:10.5px;color:var(--tl)">${sellers.length} vendedor(es) · ${semanas.length} semana(s)</span>
+    </div>
+    <div style="overflow-x:auto;padding-bottom:4px">
+      <table class="dt" style="min-width:${140+semanas.length*100+90}px">
+        <thead><tr>
+          <th style="min-width:140px">Vendedor</th>
+          ${wLabels.map((l,i)=>`<th class="mapa-week-th${i===semAtualIdx?' mapa-sem-atual':''}">${l}</th>`).join('')}
+          <th class="mapa-week-th mapa-total-col">Total</th>
+        </tr></thead>
+        <tbody>`;
+  sellers.forEach((s,si)=>{
+    const tot=dados[si].reduce((a,v)=>a+v,0);
+    html+=`<tr>
+      <td><div class="sc"><div class="sd" style="background:${s.color||'#2563eb'}"></div>${s.name}</div></td>
+      ${dados[si].map((v,wi)=>`<td class="mapa-cell ${v===0?'mapa-cell-zero':''}${wi===semAtualIdx?' mapa-sem-atual':''}" style="${bgCell(v)};${v?'color:var(--green)':''}">${v||'—'}</td>`).join('')}
+      <td class="mapa-cell mapa-total-col">${tot||'—'}</td>
+    </tr>`;
+  });
+  html+=`<tr class="tr-tot"><td>TOTAL EQUIPE</td>
+    ${totSem.map((v,i)=>`<td class="mapa-cell${i===semAtualIdx?' mapa-sem-atual':''}">${v}</td>`).join('')}
+    <td class="mapa-cell">${totGeral}</td>
+  </tr></tbody></table></div>`;
+  el.innerHTML=html;
 }
 function getMeta(ymKey){
   // Meta total = soma das metas definidas manualmente nos HUBs
@@ -2348,10 +2480,9 @@ function renderDash(){
     metaLabel = 'Soma das metas dos HUBs';
   }
 
-  // Realizado: se vendedor selecionado → individual; senão → soma apenas dos vendedores do escopo
   const realFilt = sid
-    ? totalRealizado(ymKey, sid)
-    : scopedSellers.reduce((a,s) => a + sellerTotal(ymKey, s.id), 0);
+    ? sellerTotal(ymKey, sid)
+    : scopedSellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
   const gap = Math.max(0, metaFilt-realFilt);
   const proj = duPass>0 ? realFilt/duPass*duTotal : 0;
   const realPct = metaFilt>0 ? realFilt/metaFilt : 0;
@@ -2382,15 +2513,14 @@ function renderDash(){
   // ── Ativação ──
   if(!DB.ativacaoManual) DB.ativacaoManual = {};
   const atvManual = DB.ativacaoManual[ymKey] ?? null;
-  const atvAuto   = sid
-    ? totalAtivacao(ymKey, sid)
-    : scopedSellers.reduce((a,s) => a + totalAtivacao(ymKey, s.id), 0);
-  const atvFilt   = atvManual !== null ? atvManual : atvAuto;
+  const _atvAuto  = sid ? totalAtivacao(ymKey,sid) : scopedSellers.reduce((a,s)=>a+totalAtivacao(ymKey,s.id),0);
+  const atvFilt   = atvManual !== null ? atvManual : _atvAuto;
   const atvPct    = realFilt > 0 ? atvFilt / realFilt : 0;
+  // Popula o input com o valor salvo (não sobrescreve se usuário está digitando)
   const atvInput = document.getElementById('k-atv-input');
   if(atvInput && document.activeElement !== atvInput){
     atvInput.value = atvManual !== null ? atvManual : '';
-    atvInput.placeholder = atvAuto;
+    atvInput.placeholder = _atvAuto;
   }
   document.getElementById('k-atv-fill').style.width = Math.min(100, atvPct*100).toFixed(1)+'%';
   document.getElementById('k-atv-pct').textContent  = (atvPct*100).toFixed(1)+'%';
@@ -2467,9 +2597,11 @@ function renderDash(){
   });
   document.getElementById('gap-l').innerHTML=gHtml;
 
-  // CHARTS (filtrados pelo vendedor selecionado)
+  // CHARTS
   buildBar(stats, sid, duPass, duTotal);
   buildLine(ymKey, y, m, sid);
+  // MAPA SEMANAL — disponível para todos os usuários
+  renderMapaSemanal(ymKey, scopedSellers, 'dash-mapa-semanal');
 }
 
 function buildDonut(real,gap){
@@ -2617,7 +2749,7 @@ function makeLineConfig(labels, dataReal, pointColors){
         numberLabel:{}
       },
       scales:{
-        x:{grid:{display:false},ticks:{maxTicksLimit:14,font:{family:'Outfit',size:10},color:'#94a3b8'}},
+        x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:45,minRotation:0,font:{family:'Outfit',size:9},color:'#94a3b8'}},
         y:{grid:{color:'#f1f5f9'},ticks:{font:{family:'JetBrains Mono',size:10},color:'#94a3b8'},beginAtZero:true}
       },
       animation:{duration:800}
@@ -2629,13 +2761,21 @@ function makeLineConfig(labels, dataReal, pointColors){
 function buildLine(ymKey,y,m,sid){
   const ctx=document.getElementById('ch-line').getContext('2d');
   if(chartLine) chartLine.destroy();
-  const dias=getDiasCorridos(y,m), t=today();
+  const dias=getDiasComSabado(y,m), t=today();
   const labels=dias.map(d=>`${d.getDate()}/${m+1}`);
-  const dataReal=dias.map(d=>{ if(d>t) return null; return totalByDay(ymKey,fmtD(d),sid); });
-  const maxVal = Math.max(0,...dataReal.filter(v=>v!==null));
-  const pointColors = dataReal.map(v=>linePointColor(v,maxVal));
-  _lineParams = {labels, dataReal, pointColors};
-  chartLine = new Chart(ctx, makeLineConfig(labels, dataReal, pointColors));
+  const scopedIds=getScopedSellers().map(s=>s.id);
+  const vendas=getVendas(ymKey);
+  const dataReal=dias.map(d=>{
+    if(d>t) return null;
+    const ds=fmtD(d);
+    const vs=vendas.filter(v=>v.date===ds);
+    return (sid ? vs.filter(v=>v.sellerId===sid) : vs.filter(v=>scopedIds.includes(v.sellerId)))
+      .reduce((a,v)=>a+v.qty,0);
+  });
+  const maxVal=Math.max(0,...dataReal.filter(v=>v!==null));
+  const pointColors=dias.map((d,i)=>d.getDay()===6?'#94a3b8':linePointColor(dataReal[i],maxVal));
+  _lineParams={labels,dataReal,pointColors};
+  chartLine=new Chart(ctx,makeLineConfig(labels,dataReal,pointColors));
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2914,6 +3054,10 @@ function renderTimesList(){
           <div class="time-nm">${t.nome}</div>
           <div class="time-sub">${rg?`Regional: ${rg.nome} · `:''}${cnt} vendedor(es) · Realizado: ${real}${sup?` · Sup: @${sup.username}`:''}</div>
         </div>
+        <button class="btn btn-g" onclick="openHubEditById(${t.id})" style="font-size:11px;padding:4px 10px;border-color:rgba(37,99,235,.3);color:var(--blue)">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Alterar
+        </button>
         <button class="del-seller" onclick="delTime(${t.id})">Remover</button>
       </div>
       ${canEdit?`<div class="hub-meta-row">
@@ -3489,46 +3633,59 @@ function importExcel(e){
   reader.readAsArrayBuffer(file);
 }
 
-function downloadModeloExcel(){
-  // Gera dias úteis (Seg–Sex) do mês atual
-  const t=today(), y=t.getFullYear(), m=t.getMonth();
-  const dias=getDiasUteis(y,m);
-  const nomes=DB.sellers.map(s=>s.name);
+function openModeloExcelModal(){
+  // Preenche meses
+  const mesSel=document.getElementById('modelo-mes-sel');
+  mesSel.innerHTML=MESES.map((n,i)=>`<option value="${i}">${n}</option>`).join('');
+  mesSel.value=today().getMonth();
+  // Preenche anos
+  const anoSel=document.getElementById('modelo-ano-sel');
+  const anoAtual=today().getFullYear();
+  anoSel.innerHTML='';
+  for(let y=2024;y<=2030;y++) anoSel.innerHTML+=`<option value="${y}"${y===anoAtual?' selected':''}>${y}</option>`;
+  // Info de escopo — funciona para todos os papéis
+  const sellers=getScopedSellers();
+  const u=currentUser;
+  let desc='';
+  if(isGerente(u))             desc=`Todos os vendedores (${sellers.length})`;
+  else if(u?.role==='regional'){ const rg=(DB.regionais||[]).find(r=>r.id===u.regionalId); desc=`Regional: ${rg?.nome||'—'} · ${sellers.length} vendedor(es)`; }
+  else if(u?.role==='supervisor'){ const tm=(DB.times||[]).find(t=>t.id===u.timeId); desc=`HUB: ${tm?.nome||'—'} · ${sellers.length} vendedor(es)`; }
+  else desc=`${sellers.length} vendedor(es)`;
+  document.getElementById('modelo-scope-txt').textContent=desc;
+  document.getElementById('modelo-excel-modal').classList.add('show');
+}
+function closeModeloExcelModal(){ document.getElementById('modelo-excel-modal').classList.remove('show'); }
 
+function downloadModeloExcel(){
+  const mesSel=document.getElementById('modelo-mes-sel');
+  const anoSel=document.getElementById('modelo-ano-sel');
+  // Usa seletores do modal se disponíveis, senão mês/ano atual
+  const m=mesSel ? parseInt(mesSel.value) : today().getMonth();
+  const y=anoSel ? parseInt(anoSel.value)  : today().getFullYear();
+  // getScopedSellers funciona para TODOS os papéis automaticamente
+  const sellers=getScopedSellers();
+  const nomes=sellers.map(s=>s.name);
+  if(!nomes.length){ toast('Nenhum vendedor no seu escopo','⚠️'); return; }
+  const dias=getDiasUteis(y,m);
   function makeSheet(){
-    // Cabeçalho: VENDEDOR | data1 | data2 | ...
-    // Linha de cabeçalho usa objetos Date para que o Excel reconheça como tipo Data
     const header=['VENDEDOR',...dias];
     const wsData=[header];
-    nomes.forEach(nome=>{
-      wsData.push([nome,...dias.map(()=>0)]);
-    });
+    nomes.forEach(nome=>wsData.push([nome,...dias.map(()=>0)]));
     const ws=XLSX.utils.aoa_to_sheet(wsData,{cellDates:true});
-
-    // Formata células de data na linha 1 (colunas B em diante) como dd/mm/yyyy
     dias.forEach((d,i)=>{
       const cellRef=XLSX.utils.encode_cell({r:0,c:i+1});
-      if(ws[cellRef]){
-        ws[cellRef].t='d';         // tipo date
-        ws[cellRef].v=d;           // valor Date nativo
-        ws[cellRef].z='dd/mm/yyyy'; // formato de exibição
-      }
+      if(ws[cellRef]){ ws[cellRef].t='d'; ws[cellRef].v=d; ws[cellRef].z='dd/mm/yyyy'; }
     });
-
-    // Largura das colunas
     ws['!cols']=[{wch:16},...dias.map(()=>({wch:13}))];
-
-    // Congela linha de cabeçalho e primeira coluna
     ws['!freeze']={xSplit:1,ySplit:1};
-
     return ws;
   }
-
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, makeSheet(), 'Conquistas');
-  XLSX.utils.book_append_sheet(wb, makeSheet(), 'Ativações');
+  XLSX.utils.book_append_sheet(wb,makeSheet(),'Conquistas');
+  XLSX.utils.book_append_sheet(wb,makeSheet(),'Ativações');
   XLSX.writeFile(wb,`modelo_vendas_${MESES[m]}_${y}.xlsx`);
-  toast('📥 Modelo Excel baixado!');
+  closeModeloExcelModal();
+  toast(`📥 Modelo ${MESES[m]} ${y} — ${nomes.length} vendedor(es)!`);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -4943,7 +5100,10 @@ function renderPSV(){
   _renderPSVCharts(ymKey,y,m,sellers);
   _renderPhotosRow(sellers);
   _renderPSVSellerChart(ymKey,sellers);
+  // MAPA SEMANAL — disponível para todos os usuários
+  renderMapaSemanal(ymKey, sellers, 'psv-mapa-semanal');
   _renderDPGrid();
+  psvLoadPlan();
   _renderPlanTable();
   setTimeout(_restoreDpFields, 0);
 }
@@ -5185,15 +5345,17 @@ function _renderPSVCharts(ymKey,y,m,sellers){
     plugins:[psvDonutPlugin]
   });
 
-  // Line (vendas por dia)
-  const lb=dias.map(d=>`${d.getDate()}/${m+1}`);
-  const dl=dias.map(d=>d>t?null:getVendas(ymKey).filter(v=>v.date===fmtD(d)&&sellers.some(s=>s.id===v.sellerId)).reduce((a,v)=>a+v.qty,0));
+  // Line (vendas por dia) — Seg–Sáb, sábados cinza
+  const diasLn=getDiasComSabado(y,m);
+  const lb=diasLn.map(d=>`${d.getDate()}/${m+1}`);
+  const dl=diasLn.map(d=>d>t?null:getVendas(ymKey).filter(v=>v.date===fmtD(d)&&sellers.some(s=>s.id===v.sellerId)).reduce((a,v)=>a+v.qty,0));
   const mx=Math.max(0,...dl.filter(v=>v!==null));
+  const lColors=diasLn.map((d,i)=>d.getDay()===6?'#94a3b8':linePointColor(dl[i],mx));
   if(_psvCharts.line) _psvCharts.line.destroy();
   const lctx=document.getElementById('psv-ch-line')?.getContext('2d');
   if(lctx){
-    _psvLineParams={labels:lb,data:dl,colors:dl.map(v=>linePointColor(v,mx))};
-    _psvCharts.line=new Chart(lctx,makeLineConfig(lb,dl,_psvLineParams.colors));
+    _psvLineParams={labels:lb,data:dl,colors:lColors};
+    _psvCharts.line=new Chart(lctx,makeLineConfig(lb,dl,lColors));
   }
 }
 
@@ -5304,15 +5466,194 @@ function _renderPSVSellerChart(ymKey,sellers){
 }
 
 let _psvPlan=[];
+function _autoResizeAll(){
+  document.querySelectorAll('.ptd-input').forEach(ta=>{
+    ta.style.height='auto';
+    ta.style.height=ta.scrollHeight+'px';
+  });
+}
 function _renderPlanTable(){
   const tbody=document.getElementById('psv-plan-body'); if(!tbody) return;
   if(!_psvPlan.length) _psvPlan=[{indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}];
   const cols=['indicador','problema','causa','acoes','periodo','resultado'];
-  tbody.innerHTML=_psvPlan.map((row,i)=>`<tr>${cols.map(c=>`<td class="ptd"><textarea class="ptd-input" rows="2" oninput="psvPlanUpdate(${i},'${c}',this.value)">${row[c]||''}</textarea></td>`).join('')}<td class="ptd" style="vertical-align:middle;text-align:center"><button onclick="psvDelRow(${i})" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px">✕</button></td></tr>`).join('');
+  tbody.innerHTML=_psvPlan.map((row,i)=>`<tr>${cols.map(c=>`<td class="ptd"><textarea class="ptd-input" rows="1" oninput="psvPlanUpdate(${i},'${c}',this.value);this.style.height='auto';this.style.height=this.scrollHeight+'px'">${row[c]||''}</textarea></td>`).join('')}<td class="ptd" style="vertical-align:middle;text-align:center"><button onclick="psvDelRow(${i})" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px">✕</button></td></tr>`).join('');
+  // Auto-resize after render
+  setTimeout(_autoResizeAll, 0);
 }
 function psvPlanUpdate(i,col,val){ if(_psvPlan[i]) _psvPlan[i][col]=val; }
 function psvAddRow(){ _psvPlan.push({indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}); _renderPlanTable(); }
 function psvDelRow(i){ _psvPlan.splice(i,1); if(!_psvPlan.length) _psvPlan=[{indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}]; _renderPlanTable(); }
+</script>
+<!-- ══ MODAL ALTERAR HUB (inline — via lista de HUBs) ══ -->
+<div class="modal-ov" id="hub-inline-edit-modal" onclick="if(event.target===this)closeHubInlineEditModal()">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-x" onclick="closeHubInlineEditModal()">✕</div>
+    <div class="modal-h">🏢 Alterar HUB</div>
+    <div class="modal-s" id="hub-ie-subtitle">—</div>
+    <div class="mf">
+      <label>Nome do HUB *</label>
+      <input type="text" id="hub-ie-nome"
+        style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;transition:border-color .14s"
+        placeholder="Ex: HUB Norte"
+        onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
+    <div class="mf">
+      <label>Nome do Supervisor</label>
+      <input type="text" id="hub-ie-sup-nome"
+        style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;transition:border-color .14s"
+        placeholder="Ex: Carlos Silva"
+        onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'">
+    </div>
+    <div id="hub-ie-warn" class="modal-warn"></div>
+    <div class="modal-acts">
+      <button class="btn btn-g" onclick="closeHubInlineEditModal()">Cancelar</button>
+      <button class="btn btn-green" onclick="saveHubInlineEdit()">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ HUB INLINE EDIT (via lista HUBs Cadastrados) ══
+let _hubIeTargetId = null;
+
+function openHubEditById(timeId){
+  const t = (DB.times||[]).find(x=>x.id===timeId);
+  if(!t) return;
+  _hubIeTargetId = timeId;
+  document.getElementById('hub-ie-subtitle').textContent = `Editando: ${t.nome}`;
+  document.getElementById('hub-ie-nome').value = t.nome || '';
+  const sup = (DB.users||[]).find(u=>u.role==='supervisor'&&u.timeId===timeId);
+  document.getElementById('hub-ie-sup-nome').value = sup?.nome || '';
+  const warn = document.getElementById('hub-ie-warn');
+  warn.style.display='none'; warn.textContent='';
+  document.getElementById('hub-inline-edit-modal').classList.add('show');
+}
+
+function closeHubInlineEditModal(){
+  document.getElementById('hub-inline-edit-modal').classList.remove('show');
+  _hubIeTargetId = null;
+}
+
+function saveHubInlineEdit(){
+  const tid   = _hubIeTargetId;
+  const nome  = document.getElementById('hub-ie-nome').value.trim();
+  const warn  = document.getElementById('hub-ie-warn');
+  if(!tid){ warn.textContent='⚠️ HUB não identificado.'; warn.style.display='block'; return; }
+  if(!nome){ warn.textContent='⚠️ O nome do HUB não pode ser vazio.'; warn.style.display='block'; return; }
+  const t = (DB.times||[]).find(x=>x.id===tid);
+  if(!t) return;
+  t.nome = nome;
+  const supNome = document.getElementById('hub-ie-sup-nome').value.trim();
+  const sup = (DB.users||[]).find(u=>u.role==='supervisor'&&u.timeId===tid);
+  if(sup && supNome) sup.nome = supNome;
+  saveDB();
+  closeHubInlineEditModal();
+  renderTimesList();
+  renderPSV();
+  toast('✅ HUB atualizado com sucesso!');
+}
+</script>
+
+<!-- ══ MODAL ALTERAR HUB ══ -->
+<div class="modal-ov hub-edit-modal" id="hub-edit-modal" onclick="if(event.target===this)closeHubEditModal()">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-x" onclick="closeHubEditModal()">✕</div>
+    <div class="modal-h">🏢 Alterar HUB</div>
+    <div class="modal-s">Edite o nome do HUB e o nome do Supervisor</div>
+    <div class="mf">
+      <label>Selecionar HUB</label>
+      <select id="hub-edit-sel" onchange="onHubEditSelChange()" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;cursor:pointer">
+        <option value="">— Selecione —</option>
+      </select>
+    </div>
+    <div id="hub-edit-fields" style="display:none">
+      <div class="mf">
+        <label>Nome do HUB *</label>
+        <input type="text" id="hub-edit-nome" placeholder="Ex: HUB Norte" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;transition:border-color .14s">
+      </div>
+      <div class="mf">
+        <label>Nome do Supervisor</label>
+        <input type="text" id="hub-edit-sup-nome" placeholder="Ex: Carlos Silva" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;transition:border-color .14s">
+      </div>
+      <div id="hub-edit-warn" class="modal-warn"></div>
+    </div>
+    <div class="modal-acts">
+      <button class="btn btn-g" onclick="closeHubEditModal()">Cancelar</button>
+      <button class="btn btn-green" onclick="saveHubEdit()">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ MODAL ALTERAR HUB ══
+function openHubEditModal(){
+  const modal = document.getElementById('hub-edit-modal');
+  const sel   = document.getElementById('hub-edit-sel');
+  const u     = currentUser;
+  if(!u) return;
+  // Monta lista de HUBs visíveis
+  let times = DB.times || [];
+  if(u.role==='supervisor')      times = times.filter(t=>t.id===u.timeId);
+  else if(u.role==='regional' && !isGerente(u)) times = times.filter(t=>t.regionalId===u.regionalId);
+  sel.innerHTML='<option value="">— Selecione —</option>'+times.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+  // Se supervisor, pré-seleciona automaticamente
+  if(u.role==='supervisor' && u.timeId){
+    sel.value = u.timeId;
+    onHubEditSelChange();
+  } else {
+    document.getElementById('hub-edit-fields').style.display='none';
+  }
+  modal.classList.add('show');
+}
+function closeHubEditModal(){
+  document.getElementById('hub-edit-modal').classList.remove('show');
+}
+function onHubEditSelChange(){
+  const tid = parseInt(document.getElementById('hub-edit-sel').value)||null;
+  const fields = document.getElementById('hub-edit-fields');
+  if(!tid){ fields.style.display='none'; return; }
+  const t = (DB.times||[]).find(x=>x.id===tid);
+  if(!t){ fields.style.display='none'; return; }
+  document.getElementById('hub-edit-nome').value = t.nome || '';
+  // Busca supervisor vinculado ao HUB
+  const sup = (DB.users||[]).find(u=>u.role==='supervisor' && u.timeId===tid);
+  document.getElementById('hub-edit-sup-nome').value = sup?.nome || '';
+  fields.style.display='block';
+  document.getElementById('hub-edit-warn').style.display='none';
+}
+function saveHubEdit(){
+  const tid  = parseInt(document.getElementById('hub-edit-sel').value)||null;
+  const nome = document.getElementById('hub-edit-nome').value.trim();
+  const warn = document.getElementById('hub-edit-warn');
+  if(!tid){ warn.textContent='⚠️ Selecione um HUB.'; warn.style.display='block'; return; }
+  if(!nome){ warn.textContent='⚠️ O nome do HUB não pode ser vazio.'; warn.style.display='block'; return; }
+  const t = (DB.times||[]).find(x=>x.id===tid);
+  if(!t){ return; }
+  t.nome = nome;
+  const supNome = document.getElementById('hub-edit-sup-nome').value.trim();
+  const sup = (DB.users||[]).find(u=>u.role==='supervisor' && u.timeId===tid);
+  if(sup && supNome) sup.nome = supNome;
+  saveDB();
+  closeHubEditModal();
+  renderPSV();
+  toast('✅ HUB atualizado com sucesso!');
+}
+
+// ══ PLANO DE AÇÃO — SAVE / LOAD ══
+function _planKey(){ return 'psv_plan_'+(currentUser?.id||'default'); }
+function psvLoadPlan(){
+  try{
+    const raw=localStorage.getItem(_planKey());
+    if(raw){ const d=JSON.parse(raw); if(Array.isArray(d)&&d.length) _psvPlan=d; }
+  }catch(e){}
+}
+function psvSavePlan(){
+  try{
+    localStorage.setItem(_planKey(), JSON.stringify(_psvPlan));
+    const badge=document.getElementById('plan-saved-badge');
+    if(badge){ badge.style.opacity='1'; clearTimeout(badge._t); badge._t=setTimeout(()=>badge.style.opacity='0',2200); }
+  }catch(e){ toast('⚠️ Erro ao salvar plano.'); }
+}
 </script>
 </body>
 </html>
