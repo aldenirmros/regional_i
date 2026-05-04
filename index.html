@@ -2815,32 +2815,75 @@ function renderLancar(){
   const ymKey=currentYM, {y,m}=ymToYM(ymKey);
   document.getElementById('hist-period').textContent=`${MESES[m]} ${y}`;
 
-  // Supervisor vê só os lançamentos do seu time
   const u = currentUser;
-  let vs=[...getVendas(ymKey)].sort((a,b)=>b.ts.localeCompare(a.ts));
+  const allVs=[...getVendas(ymKey)].sort((a,b)=>b.ts.localeCompare(a.ts));
+  let vs = allVs;
+  // vsHistorico: vendas de vendedores que saíram deste hub (histórico do hub antigo)
+  let vsHistorico = [];
+
   if(u?.role==='supervisor'){
+    const myTid = u.timeId;
     const myIds = new Set(getScopedSellers().map(s=>s.id));
-    vs = vs.filter(v=>myIds.has(v.sellerId));
+
+    // Vendas atuais: somente dos vendedores que estão no hub agora.
+    // Para vendedores transferidos PARA cá no mesmo mês: filtra a partir de activeFrom.
+    // Para vendedores transferidos PARA cá em mês futuro: não aparecem ainda.
+    vs = allVs.filter(v=>{
+      if(!myIds.has(v.sellerId)) return false;
+      const s = DB.sellers.find(x=>x.id===v.sellerId);
+      if(s?.activeFrom && s.timeId===myTid){
+        const af = new Date(s.activeFrom+'T00:00:00');
+        // Mês futuro à transferência: vendedor ainda não estava aqui
+        if(af >= new Date(y,m+1,1)) return false;
+        // Mesmo mês da transferência: filtra a partir da data de início
+        if(af.getFullYear()===y && af.getMonth()===m) return v.date>=s.activeFrom;
+      }
+      return true;
+    });
+
+    // Histórico: vendas de vendedores que JÁ SAÍRAM deste hub (antes da data de transferência)
+    (DB.sellers||[]).forEach(s=>{
+      if(s.timeId===myTid) return; // ainda está aqui
+      const lastOut = [...(s.transfers||[])].reverse().find(tr=>tr.fromTimeId===myTid);
+      if(!lastOut) return;
+      // Só inclui vendas que aconteceram ANTES da saída e dentro deste mês
+      allVs.filter(v=>v.sellerId===s.id && v.date<lastOut.date)
+           .forEach(v=>vsHistorico.push({...v, _transferDate:lastOut.date, _seller:s}));
+    });
+    vsHistorico.sort((a,b)=>b.ts.localeCompare(a.ts));
   }
 
   document.getElementById('hist-count').textContent=`${vs.length} registro${vs.length!==1?'s':''}`;
+
+  function buildRow(v, isHist=false){
+    const s = isHist ? v._seller : DB.sellers.find(x=>x.id===v.sellerId);
+    const d=new Date(v.date+'T12:00:00');
+    const dow=DSEM[d.getDay()];
+    return `<tr style="${isHist?'opacity:.72;background:rgba(124,58,237,.025)':''}">
+      <td class="mono" style="color:var(--tm)">${v.date.split('-').reverse().join('/')}</td>
+      <td style="color:var(--tl);font-size:11px">${dow}</td>
+      <td><div class="sc"><div class="sd" style="background:${s?.color||'#ccc'}"></div>${s?.name||'—'}${isHist?'<span style="font-size:9px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.2);border-radius:4px;padding:1px 5px;margin-left:5px;font-weight:700">HIST</span>':''}</div></td>
+      <td class="mono fw7 fg-g">${v.qty}</td>
+      <td><span style="font-size:11px;background:${v.type==='conquista'?'rgba(5,150,105,.1)':'rgba(37,99,235,.1)'};color:${v.type==='conquista'?'var(--green)':'var(--blue)'};padding:2px 7px;border-radius:4px;font-weight:600">${v.type}</span></td>
+      <td>${!isHist?`<button class="del-btn" onclick="delVenda('${v.id}','${ymKey}')" title="Excluir">✕</button>`:''}</td>
+    </tr>`;
+  }
+
   let html='';
-  if(vs.length===0){
+  if(vs.length===0 && vsHistorico.length===0){
     html=`<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--tl)">Nenhuma venda registrada neste mês</td></tr>`;
   } else {
-    vs.forEach(v=>{
-      const s=DB.sellers.find(x=>x.id===v.sellerId);
-      const d=new Date(v.date+'T12:00:00');
-      const dow=DSEM[d.getDay()];
-      html+=`<tr>
-        <td class="mono" style="color:var(--tm)">${v.date.split('-').reverse().join('/')}</td>
-        <td style="color:var(--tl);font-size:11px">${dow}</td>
-        <td><div class="sc"><div class="sd" style="background:${s?.color||'#ccc'}"></div>${s?.name||'—'}</div></td>
-        <td class="mono fw7 fg-g">${v.qty}</td>
-        <td><span style="font-size:11px;background:${v.type==='conquista'?'rgba(5,150,105,.1)':'rgba(37,99,235,.1)'};color:${v.type==='conquista'?'var(--green)':'var(--blue)'};padding:2px 7px;border-radius:4px;font-weight:600">${v.type}</span></td>
-        <td><button class="del-btn" onclick="delVenda('${v.id}','${ymKey}')" title="Excluir">✕</button></td>
-      </tr>`;
-    });
+    if(vs.length===0){
+      html=`<tr><td colspan="6" style="text-align:center;padding:16px 24px;color:var(--tl)">Nenhuma venda da equipe atual neste mês</td></tr>`;
+    } else {
+      vs.forEach(v=>{ html+=buildRow(v); });
+    }
+    if(vsHistorico.length>0){
+      html+=`<tr><td colspan="6" style="padding:6px 14px 4px;border-top:2px dashed rgba(124,58,237,.25)">
+        <span style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#7c3aed">📦 Histórico — Vendedores Transferidos</span>
+      </td></tr>`;
+      vsHistorico.forEach(v=>{ html+=buildRow(v, true); });
+    }
   }
   document.getElementById('hist-tb').innerHTML=html;
 }
