@@ -209,7 +209,7 @@ select.sel:focus{border-color:var(--blue);}
 /* ══ PSV ══ */
 .pth{padding:10px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);border-bottom:2px solid var(--border);text-align:left;white-space:nowrap;}
 .ptd{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
-.ptd-input{width:100%;min-width:100px;background:transparent;border:none;outline:none;font-family:var(--font);font-size:12.5px;color:var(--td);resize:none;min-height:34px;}
+.ptd-input{width:100%;min-width:100px;background:transparent;border:none;outline:none;font-family:var(--font);font-size:12.5px;font-weight:700;color:var(--td);resize:none;overflow:hidden;min-height:34px;box-sizing:border-box;}
 .ptd-input:focus{background:var(--bg);border-radius:5px;padding:2px 5px;}
 .hc-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);position:relative;overflow:hidden;flex:0 0 auto;min-width:200px;}
 .hc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--hc-accent,var(--blue));}
@@ -1080,7 +1080,7 @@ select.sel:focus{border-color:var(--blue);}
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Selecionar arquivo .xlsx
         </button>
-        <button class="btn btn-g" onclick="downloadModeloExcel()" style="font-size:11px;padding:5px 10px">⬇ Baixar modelo Excel</button>
+        <button class="btn btn-g" onclick="openModeloExcelModal()" style="font-size:11px;padding:5px 10px">⬇ Baixar modelo Excel</button>
       </div>
       <input type="file" id="xl-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(event)">
     </div>
@@ -1846,6 +1846,36 @@ select.sel:focus{border-color:var(--blue);}
   </div>
 </div>
 
+<!-- ══ MODAL MODELO EXCEL ══ -->
+<div class="modal-ov" id="modelo-excel-modal" onclick="if(event.target===this)closeModeloExcelModal()">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-x" onclick="closeModeloExcelModal()">✕</div>
+    <div class="modal-h">📥 Baixar Modelo Excel</div>
+    <div class="modal-s">O modelo será gerado com os vendedores do seu escopo.</div>
+    <div id="modelo-scope-info" style="background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.2);border-radius:9px;padding:10px 13px;margin-bottom:16px;font-size:12px;color:#1e3a8a;display:flex;align-items:center;gap:8px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+      <span id="modelo-scope-txt">—</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+      <div class="mf" style="margin-bottom:0">
+        <label>Mês</label>
+        <select id="modelo-mes-sel" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;cursor:pointer"></select>
+      </div>
+      <div class="mf" style="margin-bottom:0">
+        <label>Ano</label>
+        <select id="modelo-ano-sel" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;cursor:pointer"></select>
+      </div>
+    </div>
+    <div class="modal-acts">
+      <button class="btn btn-g" onclick="closeModeloExcelModal()">Cancelar</button>
+      <button class="btn btn-green" onclick="downloadModeloExcel()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Baixar .xlsx
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════════════════════
 //  CONSTANTS
@@ -2348,7 +2378,9 @@ function renderDash(){
     metaLabel = 'Soma das metas dos HUBs';
   }
 
-  const realFilt = totalRealizado(ymKey, sid);
+  const realFilt = sid
+    ? totalRealizado(ymKey, sid)
+    : scopedSellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
   const gap = Math.max(0, metaFilt-realFilt);
   const proj = duPass>0 ? realFilt/duPass*duTotal : 0;
   const realPct = metaFilt>0 ? realFilt/metaFilt : 0;
@@ -2464,7 +2496,7 @@ function renderDash(){
 
   // CHARTS (filtrados pelo vendedor selecionado)
   buildBar(stats, sid, duPass, duTotal);
-  buildLine(ymKey, y, m, sid);
+  buildLine(ymKey, y, m, sid, scopedSellers);
 }
 
 function buildDonut(real,gap){
@@ -2621,12 +2653,20 @@ function makeLineConfig(labels, dataReal, pointColors){
   };
 }
 
-function buildLine(ymKey,y,m,sid){
+function buildLine(ymKey,y,m,sid,scopeSellers=null){
   const ctx=document.getElementById('ch-line').getContext('2d');
   if(chartLine) chartLine.destroy();
   const dias=getDiasCorridos(y,m), t=today();
   const labels=dias.map(d=>`${d.getDate()}/${m+1}`);
-  const dataReal=dias.map(d=>{ if(d>t) return null; return totalByDay(ymKey,fmtD(d),sid); });
+  const dataReal=dias.map(d=>{
+    if(d>t) return null;
+    const ds=fmtD(d);
+    if(sid) return totalByDay(ymKey,ds,sid);
+    if(scopeSellers){
+      return getVendas(ymKey).filter(v=>v.date===ds&&scopeSellers.some(s=>s.id===v.sellerId)).reduce((a,v)=>a+v.qty,0);
+    }
+    return totalByDay(ymKey,ds);
+  });
   const maxVal = Math.max(0,...dataReal.filter(v=>v!==null));
   const pointColors = dataReal.map(v=>linePointColor(v,maxVal));
   _lineParams = {labels, dataReal, pointColors};
@@ -3484,46 +3524,55 @@ function importExcel(e){
   reader.readAsArrayBuffer(file);
 }
 
+function openModeloExcelModal(){
+  const mesSel = document.getElementById('modelo-mes-sel');
+  const anoSel = document.getElementById('modelo-ano-sel');
+  mesSel.innerHTML = MESES.map((n,i)=>`<option value="${i}">${n}</option>`).join('');
+  anoSel.innerHTML = '';
+  const anoAtual = today().getFullYear();
+  for(let y=2024;y<=2030;y++) anoSel.innerHTML+=`<option value="${y}"${y===anoAtual?' selected':''}>${y}</option>`;
+  mesSel.value = today().getMonth();
+  const sellers = getScopedSellers();
+  const u = currentUser;
+  let desc = '';
+  if(isGerente(u))            desc=`Todos os vendedores (${sellers.length})`;
+  else if(u?.role==='regional'){ const rg=(DB.regionais||[]).find(r=>r.id===u.regionalId); desc=`Regional: ${rg?.nome||'—'} · ${sellers.length} vendedor(es)`; }
+  else if(u?.role==='supervisor'){ const tm=(DB.times||[]).find(t=>t.id===u.timeId); desc=`HUB: ${tm?.nome||'—'} · ${sellers.length} vendedor(es)`; }
+  document.getElementById('modelo-scope-txt').textContent = desc || `${sellers.length} vendedor(es)`;
+  document.getElementById('modelo-excel-modal').classList.add('show');
+}
+function closeModeloExcelModal(){
+  document.getElementById('modelo-excel-modal').classList.remove('show');
+}
+
 function downloadModeloExcel(){
-  // Gera dias úteis (Seg–Sex) do mês atual
-  const t=today(), y=t.getFullYear(), m=t.getMonth();
-  const dias=getDiasUteis(y,m);
-  const nomes=DB.sellers.map(s=>s.name);
-
+  const mesSel = document.getElementById('modelo-mes-sel');
+  const anoSel = document.getElementById('modelo-ano-sel');
+  const m = mesSel ? parseInt(mesSel.value) : today().getMonth();
+  const y = anoSel ? parseInt(anoSel.value)  : today().getFullYear();
+  const sellers = getScopedSellers();
+  const nomes   = sellers.map(s=>s.name);
+  if(!nomes.length){ toast('Nenhum vendedor no seu escopo','⚠️'); return; }
+  const dias = getDiasUteis(y, m);
   function makeSheet(){
-    // Cabeçalho: VENDEDOR | data1 | data2 | ...
-    // Linha de cabeçalho usa objetos Date para que o Excel reconheça como tipo Data
-    const header=['VENDEDOR',...dias];
-    const wsData=[header];
-    nomes.forEach(nome=>{
-      wsData.push([nome,...dias.map(()=>0)]);
-    });
-    const ws=XLSX.utils.aoa_to_sheet(wsData,{cellDates:true});
-
-    // Formata células de data na linha 1 (colunas B em diante) como dd/mm/yyyy
+    const header = ['VENDEDOR',...dias];
+    const wsData = [header];
+    nomes.forEach(nome=>wsData.push([nome,...dias.map(()=>0)]));
+    const ws = XLSX.utils.aoa_to_sheet(wsData,{cellDates:true});
     dias.forEach((d,i)=>{
       const cellRef=XLSX.utils.encode_cell({r:0,c:i+1});
-      if(ws[cellRef]){
-        ws[cellRef].t='d';         // tipo date
-        ws[cellRef].v=d;           // valor Date nativo
-        ws[cellRef].z='dd/mm/yyyy'; // formato de exibição
-      }
+      if(ws[cellRef]){ ws[cellRef].t='d'; ws[cellRef].v=d; ws[cellRef].z='dd/mm/yyyy'; }
     });
-
-    // Largura das colunas
     ws['!cols']=[{wch:16},...dias.map(()=>({wch:13}))];
-
-    // Congela linha de cabeçalho e primeira coluna
     ws['!freeze']={xSplit:1,ySplit:1};
-
     return ws;
   }
-
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, makeSheet(), 'Conquistas');
-  XLSX.utils.book_append_sheet(wb, makeSheet(), 'Ativações');
+  XLSX.utils.book_append_sheet(wb,makeSheet(),'Conquistas');
+  XLSX.utils.book_append_sheet(wb,makeSheet(),'Ativações');
   XLSX.writeFile(wb,`modelo_vendas_${MESES[m]}_${y}.xlsx`);
-  toast('📥 Modelo Excel baixado!');
+  closeModeloExcelModal();
+  toast(`📥 Modelo ${MESES[m]} ${y} baixado — ${nomes.length} vendedor(es)!`);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -5303,7 +5352,8 @@ function _renderPlanTable(){
   const tbody=document.getElementById('psv-plan-body'); if(!tbody) return;
   if(!_psvPlan.length) _psvPlan=[{indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}];
   const cols=['indicador','problema','causa','acoes','periodo','resultado'];
-  tbody.innerHTML=_psvPlan.map((row,i)=>`<tr>${cols.map(c=>`<td class="ptd"><textarea class="ptd-input" rows="2" oninput="psvPlanUpdate(${i},'${c}',this.value)">${row[c]||''}</textarea></td>`).join('')}<td class="ptd" style="vertical-align:middle;text-align:center"><button onclick="psvDelRow(${i})" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px">✕</button></td></tr>`).join('');
+  tbody.innerHTML=_psvPlan.map((row,i)=>`<tr>${cols.map(c=>`<td class="ptd"><textarea class="ptd-input" rows="1" oninput="psvPlanUpdate(${i},'${c}',this.value);this.style.height='auto';this.style.height=this.scrollHeight+'px'">${row[c]||''}</textarea></td>`).join('')}<td class="ptd" style="vertical-align:middle;text-align:center"><button onclick="psvDelRow(${i})" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px">✕</button></td></tr>`).join('');
+  setTimeout(()=>{ tbody.querySelectorAll('.ptd-input').forEach(ta=>{ ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; }); }, 0);
 }
 function psvPlanUpdate(i,col,val){ if(_psvPlan[i]) _psvPlan[i][col]=val; }
 function psvAddRow(){ _psvPlan.push({indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}); _renderPlanTable(); }
