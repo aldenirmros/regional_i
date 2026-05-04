@@ -425,14 +425,6 @@ select.sel:focus{border-color:var(--blue);}
 }
 
 
-/* ── MAPA SEMANAL ── */
-.mapa-cell{text-align:center;padding:9px 10px;font-family:var(--mono);font-size:13px;font-weight:800;transition:background .15s;}
-.mapa-cell-zero{color:var(--tl)!important;background:rgba(148,163,184,.06)!important;}
-.mapa-week-th{text-align:center;white-space:nowrap;}
-.mapa-week-th small{display:block;font-size:9.5px;font-weight:400;color:var(--tl);letter-spacing:.3px;margin-top:2px;}
-.mapa-total-col{background:rgba(37,99,235,.06)!important;color:var(--blue)!important;}
-.mapa-sem-atual{outline:2px solid rgba(37,99,235,.3);outline-offset:-2px;}
-
 /* ── DIAS CARDS ── */
 .dias-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
 .dc{background:var(--white);border-radius:var(--r);padding:14px 18px;border:1px solid var(--border);box-shadow:var(--sh);display:flex;align-items:center;gap:14px;}
@@ -1068,10 +1060,6 @@ select.sel:focus{border-color:var(--blue);}
         <div style="padding:14px;height:250px"><canvas id="ch-bar"></canvas></div>
       </div>
     </div>
-
-    <!-- MAPA SEMANAL DE VENDAS -->
-    <div class="card" id="dash-mapa-semanal" style="margin-top:4px;overflow:hidden"></div>
-
   </div><!-- /dash -->
 
   <!-- ══ PAGE: LANÇAR ══ -->
@@ -1092,7 +1080,7 @@ select.sel:focus{border-color:var(--blue);}
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Selecionar arquivo .xlsx
         </button>
-        <button class="btn btn-g" onclick="openModeloExcelModal()" style="font-size:11px;padding:5px 10px">⬇ Baixar modelo Excel</button>
+        <button class="btn btn-g" onclick="downloadModeloExcel()" style="font-size:11px;padding:5px 10px">⬇ Baixar modelo Excel</button>
       </div>
       <input type="file" id="xl-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(event)">
     </div>
@@ -1520,9 +1508,6 @@ select.sel:focus{border-color:var(--blue);}
       <div style="padding:14px 20px;height:320px"><canvas id="psv-ch-sellers"></canvas></div>
     </div>
 
-    <!-- MAPA SEMANAL PSV -->
-    <div class="card" id="psv-mapa-semanal" style="margin-bottom:24px;overflow:hidden"></div>
-
     <!-- Detrator / Promotor por Safra -->
     <div class="card" style="margin-bottom:16px">
       <div class="card-head"><div class="card-title"><div class="ctd" style="background:#7c3aed"></div>Detrator &amp; Promotor por Safra</div></div>
@@ -1861,36 +1846,6 @@ select.sel:focus{border-color:var(--blue);}
   </div>
 </div>
 
-<!-- ══ MODAL MODELO EXCEL ══ -->
-<div class="modal-ov" id="modelo-excel-modal" onclick="if(event.target===this)closeModeloExcelModal()">
-  <div class="modal-box" style="max-width:400px">
-    <div class="modal-x" onclick="closeModeloExcelModal()">✕</div>
-    <div class="modal-h">📥 Baixar Modelo Excel</div>
-    <div class="modal-s">O modelo será gerado com os vendedores do seu escopo.</div>
-    <div style="background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.2);border-radius:9px;padding:10px 13px;margin-bottom:16px;font-size:12px;color:#1e3a8a;display:flex;align-items:center;gap:8px">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
-      <span id="modelo-scope-txt">—</span>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
-      <div class="mf" style="margin-bottom:0">
-        <label>Mês</label>
-        <select id="modelo-mes-sel" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;cursor:pointer"></select>
-      </div>
-      <div class="mf" style="margin-bottom:0">
-        <label>Ano</label>
-        <select id="modelo-ano-sel" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;cursor:pointer"></select>
-      </div>
-    </div>
-    <div class="modal-acts">
-      <button class="btn btn-g" onclick="closeModeloExcelModal()">Cancelar</button>
-      <button class="btn btn-green" onclick="downloadModeloExcel()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Baixar .xlsx
-      </button>
-    </div>
-  </div>
-</div>
-
 <script>
 // ══════════════════════════════════════════════════════════
 //  CONSTANTS
@@ -1997,73 +1952,6 @@ function getAllDias(y,m){
   const d=new Date(y,m,1),r=[];
   while(d.getMonth()===m){ r.push(new Date(d)); d.setDate(d.getDate()+1); }
   return r;
-}
-
-// Semanas do mês: cada semana = array de dateStrings Seg→Sáb
-function getSemanasDoMes(y,m){
-  const fim=new Date(y,m+1,0);
-  const semanas=[], cur=new Date(y,m,1);
-  let semAtual=[];
-  while(cur<=fim){
-    const dw=cur.getDay();
-    if(dw>=1&&dw<=6){
-      semAtual.push(fmtD(cur));
-      if(dw===6){ semanas.push(semAtual); semAtual=[]; }
-    }
-    cur.setDate(cur.getDate()+1);
-  }
-  if(semAtual.length) semanas.push(semAtual);
-  return semanas;
-}
-
-// Renderiza o mapa semanal em qualquer containerId
-// Funciona para TODOS os papéis: gerente, regional, supervisor
-function renderMapaSemanal(ymKey, sellers, containerId){
-  const el=document.getElementById(containerId);
-  if(!el) return;
-  if(!sellers||!sellers.length){ el.innerHTML=''; return; }
-  const {y,m}=ymToYM(ymKey);
-  const semanas=getSemanasDoMes(y,m);
-  if(!semanas.length){ el.innerHTML=''; return; }
-  const vendas=getVendas(ymKey);
-  const todayStr=fmtD(today());
-  // [vendedor][semana] = total
-  const dados=sellers.map(s=>semanas.map(sem=>vendas.filter(v=>v.sellerId===s.id&&sem.includes(v.date)).reduce((a,v)=>a+v.qty,0)));
-  const maxVal=Math.max(1,...dados.flat());
-  function bgCell(v){ if(!v) return ''; const p=Math.min(1,v/maxVal); return `background:rgba(5,150,105,${(0.07+p*0.28).toFixed(2)})`; }
-  const semAtualIdx=semanas.findIndex(sem=>sem.includes(todayStr));
-  const wLabels=semanas.map((sem,i)=>{
-    const f=ds=>ds.slice(8,10)+'/'+ds.slice(5,7);
-    return `Sem ${i+1}<small>${f(sem[0])}–${f(sem[sem.length-1])}</small>`;
-  });
-  const totSem=semanas.map((_,si)=>dados.reduce((a,d)=>a+d[si],0));
-  const totGeral=totSem.reduce((a,v)=>a+v,0);
-  let html=`
-    <div class="card-head" style="flex-wrap:wrap;gap:8px">
-      <div class="card-title"><div class="ctd" style="background:var(--blue)"></div>📅 Mapa Semanal — ${MESES[m]} ${y}</div>
-      <span style="font-size:10.5px;color:var(--tl)">${sellers.length} vendedor(es) · ${semanas.length} semana(s)</span>
-    </div>
-    <div style="overflow-x:auto;padding-bottom:4px">
-      <table class="dt" style="min-width:${140+semanas.length*100+90}px">
-        <thead><tr>
-          <th style="min-width:140px">Vendedor</th>
-          ${wLabels.map((l,i)=>`<th class="mapa-week-th${i===semAtualIdx?' mapa-sem-atual':''}">${l}</th>`).join('')}
-          <th class="mapa-week-th mapa-total-col">Total</th>
-        </tr></thead>
-        <tbody>`;
-  sellers.forEach((s,si)=>{
-    const tot=dados[si].reduce((a,v)=>a+v,0);
-    html+=`<tr>
-      <td><div class="sc"><div class="sd" style="background:${s.color||'#2563eb'}"></div>${s.name}</div></td>
-      ${dados[si].map((v,wi)=>`<td class="mapa-cell ${v===0?'mapa-cell-zero':''}${wi===semAtualIdx?' mapa-sem-atual':''}" style="${bgCell(v)};${v?'color:var(--green)':''}">${v||'—'}</td>`).join('')}
-      <td class="mapa-cell mapa-total-col">${tot||'—'}</td>
-    </tr>`;
-  });
-  html+=`<tr class="tr-tot"><td>TOTAL EQUIPE</td>
-    ${totSem.map((v,i)=>`<td class="mapa-cell${i===semAtualIdx?' mapa-sem-atual':''}">${v}</td>`).join('')}
-    <td class="mapa-cell">${totGeral}</td>
-  </tr></tbody></table></div>`;
-  el.innerHTML=html;
 }
 function getMeta(ymKey){
   // Meta total = soma das metas definidas manualmente nos HUBs
@@ -2460,7 +2348,10 @@ function renderDash(){
     metaLabel = 'Soma das metas dos HUBs';
   }
 
-  const realFilt = totalRealizado(ymKey, sid);
+  // Realizado: se vendedor selecionado → individual; senão → soma apenas dos vendedores do escopo
+  const realFilt = sid
+    ? totalRealizado(ymKey, sid)
+    : scopedSellers.reduce((a,s) => a + sellerTotal(ymKey, s.id), 0);
   const gap = Math.max(0, metaFilt-realFilt);
   const proj = duPass>0 ? realFilt/duPass*duTotal : 0;
   const realPct = metaFilt>0 ? realFilt/metaFilt : 0;
@@ -2491,13 +2382,15 @@ function renderDash(){
   // ── Ativação ──
   if(!DB.ativacaoManual) DB.ativacaoManual = {};
   const atvManual = DB.ativacaoManual[ymKey] ?? null;
-  const atvFilt   = atvManual !== null ? atvManual : totalAtivacao(ymKey, sid);
+  const atvAuto   = sid
+    ? totalAtivacao(ymKey, sid)
+    : scopedSellers.reduce((a,s) => a + totalAtivacao(ymKey, s.id), 0);
+  const atvFilt   = atvManual !== null ? atvManual : atvAuto;
   const atvPct    = realFilt > 0 ? atvFilt / realFilt : 0;
-  // Popula o input com o valor salvo (não sobrescreve se usuário está digitando)
   const atvInput = document.getElementById('k-atv-input');
   if(atvInput && document.activeElement !== atvInput){
     atvInput.value = atvManual !== null ? atvManual : '';
-    atvInput.placeholder = totalAtivacao(ymKey, sid); // mostra o auto como placeholder
+    atvInput.placeholder = atvAuto;
   }
   document.getElementById('k-atv-fill').style.width = Math.min(100, atvPct*100).toFixed(1)+'%';
   document.getElementById('k-atv-pct').textContent  = (atvPct*100).toFixed(1)+'%';
@@ -2574,11 +2467,9 @@ function renderDash(){
   });
   document.getElementById('gap-l').innerHTML=gHtml;
 
-  // CHARTS
+  // CHARTS (filtrados pelo vendedor selecionado)
   buildBar(stats, sid, duPass, duTotal);
   buildLine(ymKey, y, m, sid);
-  // MAPA SEMANAL — disponível para todos os usuários
-  renderMapaSemanal(ymKey, scopedSellers, 'dash-mapa-semanal');
 }
 
 function buildDonut(real,gap){
@@ -3598,59 +3489,46 @@ function importExcel(e){
   reader.readAsArrayBuffer(file);
 }
 
-function openModeloExcelModal(){
-  // Preenche meses
-  const mesSel=document.getElementById('modelo-mes-sel');
-  mesSel.innerHTML=MESES.map((n,i)=>`<option value="${i}">${n}</option>`).join('');
-  mesSel.value=today().getMonth();
-  // Preenche anos
-  const anoSel=document.getElementById('modelo-ano-sel');
-  const anoAtual=today().getFullYear();
-  anoSel.innerHTML='';
-  for(let y=2024;y<=2030;y++) anoSel.innerHTML+=`<option value="${y}"${y===anoAtual?' selected':''}>${y}</option>`;
-  // Info de escopo — funciona para todos os papéis
-  const sellers=getScopedSellers();
-  const u=currentUser;
-  let desc='';
-  if(isGerente(u))             desc=`Todos os vendedores (${sellers.length})`;
-  else if(u?.role==='regional'){ const rg=(DB.regionais||[]).find(r=>r.id===u.regionalId); desc=`Regional: ${rg?.nome||'—'} · ${sellers.length} vendedor(es)`; }
-  else if(u?.role==='supervisor'){ const tm=(DB.times||[]).find(t=>t.id===u.timeId); desc=`HUB: ${tm?.nome||'—'} · ${sellers.length} vendedor(es)`; }
-  else desc=`${sellers.length} vendedor(es)`;
-  document.getElementById('modelo-scope-txt').textContent=desc;
-  document.getElementById('modelo-excel-modal').classList.add('show');
-}
-function closeModeloExcelModal(){ document.getElementById('modelo-excel-modal').classList.remove('show'); }
-
 function downloadModeloExcel(){
-  const mesSel=document.getElementById('modelo-mes-sel');
-  const anoSel=document.getElementById('modelo-ano-sel');
-  // Usa seletores do modal se disponíveis, senão mês/ano atual
-  const m=mesSel ? parseInt(mesSel.value) : today().getMonth();
-  const y=anoSel ? parseInt(anoSel.value)  : today().getFullYear();
-  // getScopedSellers funciona para TODOS os papéis automaticamente
-  const sellers=getScopedSellers();
-  const nomes=sellers.map(s=>s.name);
-  if(!nomes.length){ toast('Nenhum vendedor no seu escopo','⚠️'); return; }
+  // Gera dias úteis (Seg–Sex) do mês atual
+  const t=today(), y=t.getFullYear(), m=t.getMonth();
   const dias=getDiasUteis(y,m);
+  const nomes=DB.sellers.map(s=>s.name);
+
   function makeSheet(){
+    // Cabeçalho: VENDEDOR | data1 | data2 | ...
+    // Linha de cabeçalho usa objetos Date para que o Excel reconheça como tipo Data
     const header=['VENDEDOR',...dias];
     const wsData=[header];
-    nomes.forEach(nome=>wsData.push([nome,...dias.map(()=>0)]));
+    nomes.forEach(nome=>{
+      wsData.push([nome,...dias.map(()=>0)]);
+    });
     const ws=XLSX.utils.aoa_to_sheet(wsData,{cellDates:true});
+
+    // Formata células de data na linha 1 (colunas B em diante) como dd/mm/yyyy
     dias.forEach((d,i)=>{
       const cellRef=XLSX.utils.encode_cell({r:0,c:i+1});
-      if(ws[cellRef]){ ws[cellRef].t='d'; ws[cellRef].v=d; ws[cellRef].z='dd/mm/yyyy'; }
+      if(ws[cellRef]){
+        ws[cellRef].t='d';         // tipo date
+        ws[cellRef].v=d;           // valor Date nativo
+        ws[cellRef].z='dd/mm/yyyy'; // formato de exibição
+      }
     });
+
+    // Largura das colunas
     ws['!cols']=[{wch:16},...dias.map(()=>({wch:13}))];
+
+    // Congela linha de cabeçalho e primeira coluna
     ws['!freeze']={xSplit:1,ySplit:1};
+
     return ws;
   }
+
   const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,makeSheet(),'Conquistas');
-  XLSX.utils.book_append_sheet(wb,makeSheet(),'Ativações');
+  XLSX.utils.book_append_sheet(wb, makeSheet(), 'Conquistas');
+  XLSX.utils.book_append_sheet(wb, makeSheet(), 'Ativações');
   XLSX.writeFile(wb,`modelo_vendas_${MESES[m]}_${y}.xlsx`);
-  closeModeloExcelModal();
-  toast(`📥 Modelo ${MESES[m]} ${y} — ${nomes.length} vendedor(es)!`);
+  toast('📥 Modelo Excel baixado!');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -5065,8 +4943,6 @@ function renderPSV(){
   _renderPSVCharts(ymKey,y,m,sellers);
   _renderPhotosRow(sellers);
   _renderPSVSellerChart(ymKey,sellers);
-  // MAPA SEMANAL — disponível para todos os usuários
-  renderMapaSemanal(ymKey, sellers, 'psv-mapa-semanal');
   _renderDPGrid();
   _renderPlanTable();
   setTimeout(_restoreDpFields, 0);
