@@ -2886,14 +2886,16 @@ function addVenda(){
   const ymKey=ym(d.getFullYear(),d.getMonth());
   if(!DB.vendas[ymKey]) DB.vendas[ymKey]=[];
   DB.vendas[ymKey].push({id:Date.now(),sellerId:sid,date,qty,type,ts:new Date().toISOString()});
-  saveDB();
+  localStorage.setItem('bi_v5', JSON.stringify(DB)); // salva local imediatamente
+  flashSaved();
   renderLancar();
   renderDash();
   renderPSVIfActive();
   const s=DB.sellers.find(s=>s.id===sid);
   toast(`✅ ${qty} ${type}(s) registrada(s) — ${s?.name}`);
-  // Reseta quantidade para 1
   document.getElementById('qe-qty').value=1;
+  // Pull-before-push: busca vendas de outros usuários antes de enviar
+  setTimeout(cloudSyncVendas, 200);
 }
 
 function renderLancar(){
@@ -3441,7 +3443,7 @@ function addSeller(){
     const tids=(DB.times||[]).filter(t=>t.regionalId===u.regionalId).map(t=>t.id);
     if(timeId && !tids.includes(timeId)){ toast('HUB não pertence à sua Regional','⚠️'); return; }
   }
-  DB.sellers.push({id:DB.nextId++,name,cpf,meta,color,timeId,admDate,photo});
+  DB.sellers.push({id:DB.nextId++,name,cpf,meta,color,timeId,admDate,photo,_ts:Date.now()});
   saveDB();
   document.getElementById('v-nome').value='';
   document.getElementById('v-cpf').value='';
@@ -3965,7 +3967,8 @@ function importExcel(e){
       window._importPending = true; // flag: há dados importados aguardando push
       // Cancela o debounce e empurra para a nuvem imediatamente
       clearTimeout(saveDB._t);
-      cloudPush().finally(() => {
+      // Pull-before-push: garante que as vendas de outros usuários são preservadas
+      cloudSyncVendas().finally(() => {
         // Mantém o block ativo por mais 30s após o push (GAS pode demorar)
         window._blockPull = Date.now() - 270000; // reinicia: ainda bloqueia por ~30s
         window._importPending = false;
@@ -4162,8 +4165,18 @@ async function cloudPull(){
     if(!rec.users.find(u=>u.role==='gerente'))
       rec.users.unshift({id:1,username:'gerente',password:'gerente123',role:'gerente',nome:'Gerente Geral',regionalId:null,timeId:null,color:'#7c3aed'});
     migrateToDefaultRegional(rec);
-    // ── MERGE: preserva vendas locais que ainda não chegaram na nuvem ──
-    // Evita perder importações de Excel que o cloudPush ainda não confirmou
+
+    // ══════════════════════════════════════════════════════
+    //  MERGE PROFUNDO — preserva dados locais não sincronizados
+    //  Estratégia por seção:
+    //  • vendas        → união por id (sem duplicatas)
+    //  • sellers       → união por id, vence o _ts mais recente
+    //  • hubMetas, sellerMetas, mValues, diasConfig, psvData
+    //                  → union de chaves, local vence em conflito
+    //                    (usuário que está editando tem prioridade)
+    // ══════════════════════════════════════════════════════
+
+    // ── 1. Vendas: union por id em todos os meses ──
     if(DB.vendas && Object.keys(DB.vendas).length) {
       const localVendas = DB.vendas;
       const cloudVendas = rec.vendas || {};
@@ -4174,11 +4187,57 @@ async function cloudPull(){
         if(soLocal.length) {
           cloudVendas[k] = [...cloudVendas[k], ...soLocal];
           cloudVendas[k].sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
-          console.log(`[cloudPull] merge: ${soLocal.length} venda(s) local(is) preservada(s) em ${k}`);
+          console.log(`[merge] vendas: ${soLocal.length} local(is) preservada(s) em ${k}`);
         }
       });
       rec.vendas = cloudVendas;
     }
+
+    // ── 2. Sellers: union por id, _ts mais recente vence ──
+    if(DB.sellers && DB.sellers.length) {
+      const cloudMap = new Map((rec.sellers||[]).map(s=>[s.id, s]));
+      DB.sellers.forEach(local => {
+        const cloud = cloudMap.get(local.id);
+        if(!cloud){
+          // Seller só existe local → preserva
+          cloudMap.set(local.id, local);
+          console.log(`[merge] seller novo local preservado: ${local.name}`);
+        } else if((local._ts||0) > (cloud._ts||0)){
+          // Local é mais recente → local vence
+          cloudMap.set(local.id, local);
+        }
+        // Cloud é mais recente → já está no mapa, local descartado
+      });
+      rec.sellers = [...cloudMap.values()];
+    }
+
+    // ── 3. Dict aninhados: union de chaves, local vence em conflito ──
+    function mergeDeepDict(cloud, local){
+      if(!local || !Object.keys(local).length) return cloud;
+      const result = JSON.parse(JSON.stringify(cloud||{}));
+      Object.keys(local).forEach(k1 => {
+        if(local[k1] !== null && typeof local[k1]==='object' && !Array.isArray(local[k1])){
+          if(!result[k1]) result[k1] = {};
+          Object.keys(local[k1]).forEach(k2 => {
+            result[k1][k2] = local[k1][k2]; // local vence
+          });
+        } else {
+          // Valor escalar: só sobrescreve se local não for null/undefined
+          if(local[k1] != null) result[k1] = local[k1];
+        }
+      });
+      return result;
+    }
+
+    rec.hubMetas         = mergeDeepDict(rec.hubMetas||{},         DB.hubMetas||{});
+    rec.sellerMetas      = mergeDeepDict(rec.sellerMetas||{},      DB.sellerMetas||{});
+    rec.mValues          = mergeDeepDict(rec.mValues||{},          DB.mValues||{});
+    rec.diasConfig       = mergeDeepDict(rec.diasConfig||{},       DB.diasConfig||{});
+    rec.ativacaoManual   = mergeDeepDict(rec.ativacaoManual||{},   DB.ativacaoManual||{});
+    rec.ativacaoManualOv = mergeDeepDict(rec.ativacaoManualOv||{}, DB.ativacaoManualOv||{});
+    if(DB.psvData && Object.keys(DB.psvData).length)
+      rec.psvData = mergeDeepDict(rec.psvData||{}, DB.psvData||{});
+
     DB = rec;
     localStorage.setItem('bi_v5', JSON.stringify(DB));
     setCloudUI('ok','Nuvem ✓');
@@ -4189,6 +4248,58 @@ async function cloudPull(){
     syncLog('Erro: '+err.message);
     console.error('[cloud pull]', err);
     return false;
+  }
+}
+
+// ── Pull-before-push para operações de venda (anti race-condition) ──
+// Garante que antes de enviar as vendas ao Sheets, temos os dados
+// mais recentes dos outros usuários, evitando sobrescrever suas vendas.
+async function cloudSyncVendas(){
+  const cfg = getCfg();
+  if(!cfg.gsUrl){ cloudPush(); return; } // sem nuvem: só salva local
+  try {
+    const res = await fetch(cfg.gsUrl + '?action=get', {cache:'no-store'});
+    if(!res.ok){ cloudPush(); return; }
+    let data; try{ data=await res.json(); }catch(e){ cloudPush(); return; }
+    const rec = data?.record ?? data;
+    if(!rec?.vendas){ cloudPush(); return; }
+
+    const cloudVendas = rec.vendas || {};
+
+    // Injeta vendas locais que o Sheets ainda não tem
+    Object.keys(DB.vendas||{}).forEach(k=>{
+      if(!cloudVendas[k]) cloudVendas[k]=[];
+      const cloudIds = new Set(cloudVendas[k].map(v=>v.id));
+      const soLocal  = (DB.vendas[k]||[]).filter(v=>!cloudIds.has(v.id));
+      if(soLocal.length)
+        cloudVendas[k] = [...cloudVendas[k], ...soLocal].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+    });
+
+    // Detecta vendas do Sheets que o local ainda não tem
+    let cloudHasNew = false;
+    Object.keys(cloudVendas).forEach(k=>{
+      if(!DB.vendas[k]) DB.vendas[k]=[];
+      const localIds = new Set((DB.vendas[k]||[]).map(v=>v.id));
+      const cloudNew = cloudVendas[k].filter(v=>!localIds.has(v.id));
+      if(cloudNew.length){
+        DB.vendas[k] = [...(DB.vendas[k]||[]), ...cloudNew].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+        cloudHasNew = true;
+      }
+    });
+
+    // Atualiza local com o conjunto completo mesclado
+    DB.vendas = cloudVendas;
+    localStorage.setItem('bi_v5', JSON.stringify(DB));
+    cloudPush(); // envia o conjunto já mesclado
+
+    if(cloudHasNew){
+      console.log('[syncVendas] novas vendas da nuvem — atualizando tela');
+      renderDash(); renderPSVIfActive();
+      if(document.getElementById('page-lancar')?.classList.contains('active')) renderLancar();
+    }
+  } catch(e){
+    console.warn('[syncVendas] falhou:', e.message);
+    cloudPush(); // fallback: empurra o que tem
   }
 }
 
