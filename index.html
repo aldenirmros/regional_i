@@ -671,6 +671,8 @@ select.sel:focus{border-color:var(--blue);}
 
 /* ── USER BADGE (topbar) ── */
 .user-badge{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 12px 4px 6px;}
+.user-badge.super-admin{background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(37,99,235,.08));border:1.5px solid rgba(124,58,237,.35);box-shadow:0 0 0 3px rgba(124,58,237,.07);}
+.super-crown{display:inline-flex;align-items:center;gap:3px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-size:9px;font-weight:800;letter-spacing:.5px;padding:2px 6px;border-radius:10px;text-transform:uppercase;margin-left:2px;}
 .user-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;}
 .user-badge-name{font-size:12px;font-weight:600;color:var(--td);}
 .user-badge-role{font-size:10px;color:var(--tl);}
@@ -1991,8 +1993,9 @@ let currentUser  = null;
 let scopeFilter  = {regionalId:null, timeId:null}; // filtro manual do gerente no dash
 let ovRegionalFilter = null; // filtro da página visão geral (gerente)
 let chartBar=null, chartDonut=null, chartLine=null;
-let lancarSellerFilter = null; // filtro de vendedor na página Lançar
-let lancarHubFilter    = null; // filtro de HUB na página Lançar (gerente/regional)
+let lancarSellerFilter  = null; // filtro de vendedor na página Lançar
+let lancarHubFilter     = null; // filtro de HUB na página Lançar (gerente/regional)
+let lancarRegionalFilter= null; // filtro de regional na página Lançar (gerente)
 
 function loadDB() {
   // Retorna apenas esqueleto mínimo — dados reais sempre vêm da nuvem
@@ -2028,12 +2031,14 @@ function migrateToDefaultRegional(d){
   // Cria Aldenir se não existir
   const aldenirExistente = d.users.find(u=>u.username==='aldenir');
   if(!aldenirExistente){
-    d.users.push({id:1002,username:'aldenir',password:'@RThur20',role:'regional',superAdmin:true,nome:'Aldenir',regionalId:rg.id,timeId:null,color:'#2563eb'});
+    d.users.push({id:1002,username:'aldenir',password:'@RThur20',role:'regional',superAdmin:true,nome:'Aldenir',regionalId:rg.id,timeId:null,color:'#7c3aed'});
   } else {
-    // Sempre força a senha correta e superAdmin, independente do que veio da nuvem
+    // Sempre força: senha, superAdmin, role e cor roxa (SUPER)
     aldenirExistente.password   = '@RThur20';
     aldenirExistente.superAdmin = true;
-    aldenirExistente.role       = 'regional';
+    aldenirExistente.role       = 'regional';  // isGerente() retorna true via superAdmin
+    aldenirExistente.color      = '#7c3aed';   // roxo = identidade SUPER
+    aldenirExistente.nome       = aldenirExistente.nome || 'Aldenir';
     if(!aldenirExistente.regionalId) aldenirExistente.regionalId = rg.id;
   }
   // Atribui todos os sellers sem timeId ao CE06 - ALPHA
@@ -2454,9 +2459,17 @@ function onMesChange(){
   currentYM=document.getElementById('mes-sel').value;
   selectedSeller=null;
   ovRegionalFilter=null;
-  // Reseta filtros da página Lançar ao trocar de mês
   lancarSellerFilter=null;
-  lancarHubFilter=null;
+  // Para Aldenir/superAdmin: restaura view padrão CE06-ALPHA ao trocar mês
+  if(currentUser?.username==='aldenir'||currentUser?.superAdmin){
+    const ce06 = (DB.times||[]).find(t=>t.nome==='CE06 - ALPHA'||t.nome==='CE06 - ALFA');
+    lancarHubFilter      = ce06?.id         || null;
+    lancarRegionalFilter = ce06?.regionalId || null;
+    if(ce06) scopeFilter = {regionalId: ce06.regionalId, timeId: ce06.id};
+  } else {
+    lancarHubFilter      = null;
+    lancarRegionalFilter = null;
+  }
   syncCalToBI();
   renderAll();
 }
@@ -2889,12 +2902,33 @@ function renderLancar(){
   const allVs=[...getVendas(ymKey)].sort((a,b)=>b.ts.localeCompare(a.ts));
 
   // ── Monta lista base de vendedores visíveis por patente ──
-  let baseSellers = getScopedSellers(true); // inclui inativos do escopo
-
-  // ── Filtro adicional por HUB (gerente / regional com multi-hub) ──
-  if(lancarHubFilter){
-    baseSellers = baseSellers.filter(s=>s.timeId===lancarHubFilter);
+  // GERENTE (inclui aldenir/superAdmin): usa lancarHubFilter/lancarRegionalFilter DIRETAMENTE
+  // para não ser bloqueado pelo scopeFilter global (CE06-ALFA para aldenir).
+  // OUTROS ROLES: usa getScopedSellers que já respeita o escopo da patente.
+  let baseSellers;
+  if(isGerente(u)){
+    // Todos os sellers, respeitando inativo por data
+    baseSellers = DB.sellers.filter(s=>{
+      if(!s.inativo) return true;
+      if(s.desligamento){
+        const [dy,dm]=s.desligamento.split('-').map(Number);
+        if(y < dy || (y===dy && m <= dm-1)) return true;
+      }
+      return false;
+    });
+    // Aplica filtro de HUB da página lançar
+    if(lancarHubFilter){
+      baseSellers = baseSellers.filter(s=>s.timeId===lancarHubFilter);
+    } else if(lancarRegionalFilter){
+      const tids=(DB.times||[]).filter(t=>t.regionalId===lancarRegionalFilter).map(t=>t.id);
+      baseSellers = baseSellers.filter(s=>tids.includes(s.timeId));
+    }
+  } else {
+    // Regional / Supervisor: escopo já restrito por getScopedSellers
+    baseSellers = getScopedSellers(true);
+    if(lancarHubFilter) baseSellers = baseSellers.filter(s=>s.timeId===lancarHubFilter);
   }
+
   const baseIds = new Set(baseSellers.map(s=>s.id));
 
   // ── Filtro adicional por vendedor individual ──
@@ -2987,59 +3021,64 @@ function _renderLancarFilterBar(baseSellers){
 
   bar.style.display='flex';
 
-  // ── Mostra Regional só para gerente ──
+  // ── Mostra Regional só para gerente (inclui aldenir) ──
   if(isGerente(u) && rgSel){
     rgSel.style.display='';
-    const prev = rgSel.value;
+    const prev = String(lancarRegionalFilter||'');
     rgSel.innerHTML='<option value="">🏠 Todas as Regionais</option>'
-      +(DB.regionais||[]).map(r=>`<option value="${r.id}"${r.id==prev?' selected':''}>${r.nome}</option>`).join('');
+      +(DB.regionais||[]).map(r=>`<option value="${r.id}"${String(r.id)===prev?' selected':''}>${r.nome}</option>`).join('');
+    if(lancarRegionalFilter) rgSel.value=String(lancarRegionalFilter);
   } else if(rgSel){
     rgSel.style.display='none';
   }
 
-  // ── Mostra HUB para gerente e regional com mais de 1 HUB ──
-  const hubsDoEscopo = isGerente(u)
-    ? (DB.times||[]).filter(t => {
-        const rgId = parseInt(document.getElementById('lf-regional')?.value)||null;
-        return rgId ? t.regionalId===rgId : true;
-      })
-    : u?.role==='regional'
-      ? (DB.times||[]).filter(t=>t.regionalId===u.regionalId)
-      : [];
-
-  if(hubsDoEscopo.length > 1 && hubSel){
-    hubSel.style.display='';
-    const prev = String(lancarHubFilter||hubSel.value||'');
-    hubSel.innerHTML='<option value="">🏢 Todos os HUBs</option>'
-      +hubsDoEscopo.map(t=>`<option value="${t.id}"${String(t.id)===prev?' selected':''}>${t.nome}</option>`).join('');
-    if(lancarHubFilter) hubSel.value=String(lancarHubFilter);
+  // ── HUBs disponíveis baseados no filtro de regional ──
+  let hubsDisponiveis;
+  if(isGerente(u)){
+    hubsDisponiveis = lancarRegionalFilter
+      ? (DB.times||[]).filter(t=>t.regionalId===lancarRegionalFilter)
+      : (DB.times||[]);
+  } else if(u?.role==='regional'){
+    hubsDisponiveis = (DB.times||[]).filter(t=>t.regionalId===u.regionalId);
   } else {
-    if(hubSel){ hubSel.style.display='none'; hubSel.value=''; }
-    if(u?.role!=='supervisor' && hubsDoEscopo.length===1 && !lancarHubFilter){
-      // Auto-seleciona o único HUB da regional
+    hubsDisponiveis = [];
+  }
+
+  // ── Mostra HUB para gerente e regional com mais de 1 HUB ──
+  if(hubSel){
+    if(hubsDisponiveis.length > 1){
+      hubSel.style.display='';
+      const prev = String(lancarHubFilter||'');
+      hubSel.innerHTML='<option value="">🏢 Todos os HUBs</option>'
+        +hubsDisponiveis.map(t=>`<option value="${t.id}"${String(t.id)===prev?' selected':''}>${t.nome}</option>`).join('');
+      if(lancarHubFilter) hubSel.value=String(lancarHubFilter);
+    } else {
+      hubSel.style.display='none';
     }
   }
 
-  // ── Vendedores do escopo atual ──
+  // ── Vendedores do escopo atual (ativos) ──
   if(selSel){
-    const prevSel = String(lancarSellerFilter||selSel.value||'');
+    const prev = String(lancarSellerFilter||'');
     const sellers = baseSellers.filter(s=>!s.inativo).sort((a,b)=>a.name.localeCompare(b.name));
-    selSel.innerHTML='<option value="">👤 Todos os Vendedores ('+sellers.length+')</option>'
-      +sellers.map(s=>`<option value="${s.id}"${String(s.id)===prevSel?' selected':''}>${s.name}</option>`).join('');
+    selSel.innerHTML='<option value="">👤 Todos ('+sellers.length+')</option>'
+      +sellers.map(s=>`<option value="${s.id}"${String(s.id)===prev?' selected':''}>${s.name}</option>`).join('');
     if(lancarSellerFilter) selSel.value=String(lancarSellerFilter);
   }
 
   // ── Botão limpar ──
-  const hasFilter = !!(lancarSellerFilter || lancarHubFilter
-    || (isGerente(u) && parseInt(document.getElementById('lf-regional')?.value)));
+  const hasFilter = !!(lancarSellerFilter || lancarHubFilter || lancarRegionalFilter);
   if(clrBtn) clrBtn.style.display = hasFilter ? '' : 'none';
 
   // ── Info contextual ──
   if(info){
     const parts = [];
-    if(isGerente(u)){
-      const rgId = parseInt(document.getElementById('lf-regional')?.value)||null;
-      if(rgId){ const rg=(DB.regionais||[]).find(r=>r.id===rgId); if(rg) parts.push(rg.nome); }
+    if(lancarRegionalFilter){
+      const rg=(DB.regionais||[]).find(r=>r.id===lancarRegionalFilter);
+      if(rg) parts.push(rg.nome);
+    } else if(u?.role==='regional' && !isGerente(u)){
+      const rg=(DB.regionais||[]).find(r=>r.id===u.regionalId);
+      if(rg) parts.push(rg.nome);
     }
     if(lancarHubFilter){
       const tm=(DB.times||[]).find(t=>t.id===lancarHubFilter);
@@ -3047,8 +3086,6 @@ function _renderLancarFilterBar(baseSellers){
     } else if(u?.role==='supervisor'){
       const tm=(DB.times||[]).find(t=>t.id===u.timeId);
       if(tm) parts.push(tm.nome);
-    } else if(u?.role==='regional' && !isGerente(u) && hubsDoEscopo.length===1){
-      parts.push(hubsDoEscopo[0].nome);
     }
     if(lancarSellerFilter){
       const s=DB.sellers.find(x=>x.id===lancarSellerFilter);
@@ -3059,21 +3096,13 @@ function _renderLancarFilterBar(baseSellers){
 }
 
 function onLancarRegionalChange(){
-  // Quando regional muda, reseta HUB e vendedor
-  lancarHubFilter    = null;
-  lancarSellerFilter = null;
+  lancarRegionalFilter = parseInt(document.getElementById('lf-regional')?.value)||null;
+  lancarHubFilter      = null;
+  lancarSellerFilter   = null;
   const hubSel = document.getElementById('lf-hub');
   const selSel = document.getElementById('lf-seller');
   if(hubSel) hubSel.value='';
   if(selSel) selSel.value='';
-  // Atualiza HUBs disponíveis
-  const rgId = parseInt(document.getElementById('lf-regional')?.value)||null;
-  const hubSel2 = document.getElementById('lf-hub');
-  if(hubSel2){
-    const times = rgId ? (DB.times||[]).filter(t=>t.regionalId===rgId) : (DB.times||[]);
-    hubSel2.innerHTML='<option value="">🏢 Todos os HUBs</option>'+times.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
-    hubSel2.style.display = times.length>1?'':'none';
-  }
   renderLancar();
 }
 
@@ -3091,8 +3120,10 @@ function onLancarSellerChange(){
 }
 
 function clearLancarFilter(){
-  lancarSellerFilter = null;
-  lancarHubFilter    = null;
+  const u = currentUser;
+  lancarSellerFilter   = null;
+  lancarHubFilter      = null;
+  lancarRegionalFilter = null;
   const rgSel  = document.getElementById('lf-regional');
   const hubSel = document.getElementById('lf-hub');
   const selSel = document.getElementById('lf-seller');
@@ -4306,39 +4337,72 @@ function doLogout(){
 function applySession(){
   if(!currentUser) return;
   const u=currentUser;
+  const isSuperUser = u.username==='aldenir';
   const colorMap={gerente:'#7c3aed',regional:'#2563eb',supervisor:'#059669'};
-  const color = u.color||colorMap[u.role]||'#2563eb';
+  const color = isSuperUser ? '#7c3aed' : (u.color||colorMap[u.role]||'#2563eb');
   const label = u.nome||u.username;
   const roleLabel = isGerente(u) && u.role!=='gerente'
     ? 'Super Admin'
     : ({gerente:'Gerente',regional:'Admin Regional',supervisor:'Supervisor'}[u.role]||u.role);
-  document.getElementById('ub-avatar').style.background=color;
-  document.getElementById('ub-avatar').textContent=label[0].toUpperCase();
-  document.getElementById('ub-name').textContent=label;
-  document.getElementById('ub-role').textContent=roleLabel;
-  document.getElementById('user-badge').style.display='flex';
+
+  // ── Topbar user badge ──
+  const badge = document.getElementById('user-badge');
+  const avatarEl = document.getElementById('ub-avatar');
+  const nameEl   = document.getElementById('ub-name');
+  const roleEl   = document.getElementById('ub-role');
+  if(avatarEl){ avatarEl.style.background = isSuperUser ? 'linear-gradient(135deg,#7c3aed,#2563eb)' : color; avatarEl.textContent = label[0].toUpperCase(); }
+  if(nameEl) nameEl.textContent = label;
+  if(roleEl){
+    if(isSuperUser){
+      roleEl.innerHTML = `<span class="super-crown">⭐ SUPER</span>`;
+    } else {
+      roleEl.textContent = roleLabel;
+    }
+  }
+  if(badge){
+    if(isSuperUser) badge.classList.add('super-admin');
+    else badge.classList.remove('super-admin');
+    badge.style.display='flex';
+  }
+
+  // ── Navegação ──
   const navRegionais=document.getElementById('nav-regionais');
   if(navRegionais) navRegionais.style.display=isGerente(u)?'':'none';
 
   // Botão "Criar Usuário" exclusivo para Aldenir
   const btnAldenir = document.getElementById('btn-criar-usuario');
-  if(btnAldenir) btnAldenir.style.display = u.username==='aldenir' ? 'inline-flex' : 'none';
+  if(btnAldenir) btnAldenir.style.display = isSuperUser ? 'inline-flex' : 'none';
 
   // Botão "Usuários" para Aldenir e Gerente
   const btnVer = document.getElementById('btn-ver-usuarios');
   if(btnVer) btnVer.style.display = (isGerente(u)) ? 'inline-flex' : 'none';
 
-  // Aldenir → Regional I + CE06 - ALPHA | Regional → sua regional | Supervisor → seu HUB | demais → sem filtro
-  if(u.username==='aldenir'){
-    const ce06 = (DB.times||[]).find(t=>t.nome==='CE06 - ALPHA');
-    if(ce06) scopeFilter = {regionalId: ce06.regionalId, timeId: ce06.id};
+  // ── Escopo inicial ──
+  if(isSuperUser){
+    // Aldenir: view inicial sempre = CE06 - ALPHA, mas pode ver tudo
+    const ce06 = (DB.times||[]).find(t=>t.nome==='CE06 - ALPHA'||t.nome==='CE06 - ALFA');
+    if(ce06){
+      scopeFilter         = {regionalId: ce06.regionalId, timeId: ce06.id};
+      lancarHubFilter     = ce06.id;        // Lançar → CE06 por padrão
+      lancarRegionalFilter= ce06.regionalId;// Lançar → Regional do CE06
+    } else {
+      scopeFilter = {regionalId: null, timeId: null};
+      lancarHubFilter = null; lancarRegionalFilter = null;
+    }
   } else if(u.role==='regional' && !isGerente(u)){
-    scopeFilter = {regionalId: u.regionalId||null, timeId: null};
+    scopeFilter         = {regionalId: u.regionalId||null, timeId: null};
+    lancarHubFilter     = null;
+    lancarRegionalFilter= u.regionalId||null;
   } else if(u.role==='supervisor'){
-    scopeFilter = {regionalId: u.regionalId||null, timeId: u.timeId||null};
+    scopeFilter         = {regionalId: u.regionalId||null, timeId: u.timeId||null};
+    lancarHubFilter     = u.timeId||null;
+    lancarRegionalFilter= u.regionalId||null;
   } else {
-    scopeFilter = {regionalId: null, timeId: null};
+    scopeFilter         = {regionalId: null, timeId: null};
+    lancarHubFilter     = null;
+    lancarRegionalFilter= null;
   }
+  lancarSellerFilter = null;
 
   populateDashFilter();
 }
