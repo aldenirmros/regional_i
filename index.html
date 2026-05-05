@@ -1133,6 +1133,23 @@ select.sel:focus{border-color:var(--blue);}
       </div>
     </div>
 
+    <!-- FILTRO DE VENDEDORES -->
+    <div id="lancar-filter-bar" class="dash-filter" style="margin-bottom:14px;display:none">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--tl)" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <span class="dash-filter-label">Filtrar histórico:</span>
+      <select id="lf-regional" onchange="onLancarRegionalChange()" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12.5px;color:var(--td);outline:none;cursor:pointer">
+        <option value="">🏠 Todas as Regionais</option>
+      </select>
+      <select id="lf-hub" onchange="onLancarHubChange()" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12.5px;color:var(--td);outline:none;cursor:pointer">
+        <option value="">🏢 Todos os HUBs</option>
+      </select>
+      <select id="lf-seller" onchange="onLancarSellerChange()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12.5px;color:var(--td);outline:none;cursor:pointer;min-width:180px">
+        <option value="">👤 Todos os Vendedores</option>
+      </select>
+      <button class="btn-sm btn-sm-g" id="lf-clear-btn" onclick="clearLancarFilter()" style="display:none">✕ Limpar</button>
+      <span id="lf-info" style="font-size:11px;color:var(--tl);margin-left:auto"></span>
+    </div>
+
     <!-- HISTORY -->
     <div class="hist-wrap">
       <div class="hist-head">
@@ -1974,6 +1991,8 @@ let currentUser  = null;
 let scopeFilter  = {regionalId:null, timeId:null}; // filtro manual do gerente no dash
 let ovRegionalFilter = null; // filtro da página visão geral (gerente)
 let chartBar=null, chartDonut=null, chartLine=null;
+let lancarSellerFilter = null; // filtro de vendedor na página Lançar
+let lancarHubFilter    = null; // filtro de HUB na página Lançar (gerente/regional)
 
 function loadDB() {
   // Retorna apenas esqueleto mínimo — dados reais sempre vêm da nuvem
@@ -2435,6 +2454,9 @@ function onMesChange(){
   currentYM=document.getElementById('mes-sel').value;
   selectedSeller=null;
   ovRegionalFilter=null;
+  // Reseta filtros da página Lançar ao trocar de mês
+  lancarSellerFilter=null;
+  lancarHubFilter=null;
   syncCalToBI();
   renderAll();
 }
@@ -2865,43 +2887,58 @@ function renderLancar(){
 
   const u = currentUser;
   const allVs=[...getVendas(ymKey)].sort((a,b)=>b.ts.localeCompare(a.ts));
-  let vs = allVs;
-  // vsHistorico: vendas de vendedores que saíram deste hub (histórico do hub antigo)
-  let vsHistorico = [];
 
+  // ── Monta lista base de vendedores visíveis por patente ──
+  let baseSellers = getScopedSellers(true); // inclui inativos do escopo
+
+  // ── Filtro adicional por HUB (gerente / regional com multi-hub) ──
+  if(lancarHubFilter){
+    baseSellers = baseSellers.filter(s=>s.timeId===lancarHubFilter);
+  }
+  const baseIds = new Set(baseSellers.map(s=>s.id));
+
+  // ── Filtro adicional por vendedor individual ──
+  const sellerIds = lancarSellerFilter
+    ? new Set([lancarSellerFilter])
+    : baseIds;
+
+  // ── Configura barra de filtro ──
+  _renderLancarFilterBar(baseSellers);
+
+  // ── Filtra vendas por escopo + filtro ativo ──
+  const myTid = u?.role==='supervisor' ? u.timeId : (lancarHubFilter||null);
+  let vs = allVs.filter(v => sellerIds.has(v.sellerId));
+
+  // Para supervisor: respeita regra de activeFrom (transferências)
   if(u?.role==='supervisor'){
-    const myTid = u.timeId;
-    const myIds = new Set(getScopedSellers().map(s=>s.id));
-
-    // Vendas atuais: somente dos vendedores que estão no hub agora.
-    // Para vendedores transferidos PARA cá no mesmo mês: filtra a partir de activeFrom.
-    // Para vendedores transferidos PARA cá em mês futuro: não aparecem ainda.
-    vs = allVs.filter(v=>{
-      if(!myIds.has(v.sellerId)) return false;
+    vs = vs.filter(v=>{
       const s = DB.sellers.find(x=>x.id===v.sellerId);
       if(s?.activeFrom && s.timeId===myTid){
         const af = new Date(s.activeFrom+'T00:00:00');
-        // Mês futuro à transferência: vendedor ainda não estava aqui
         if(af >= new Date(y,m+1,1)) return false;
-        // Mesmo mês da transferência: filtra a partir da data de início
         if(af.getFullYear()===y && af.getMonth()===m) return v.date>=s.activeFrom;
       }
       return true;
     });
+  }
 
-    // Histórico: vendas de vendedores que JÁ SAÍRAM deste hub (antes da data de transferência)
+  // ── Histórico de transferidos (só quando o HUB está fixo) ──
+  let vsHistorico = [];
+  const hubIdForHist = u?.role==='supervisor' ? u.timeId : lancarHubFilter;
+  if(hubIdForHist && !lancarSellerFilter){
     (DB.sellers||[]).forEach(s=>{
-      if(s.timeId===myTid) return; // ainda está aqui
-      const lastOut = [...(s.transfers||[])].reverse().find(tr=>tr.fromTimeId===myTid);
+      if(s.timeId===hubIdForHist) return;
+      const lastOut = [...(s.transfers||[])].reverse().find(tr=>tr.fromTimeId===hubIdForHist);
       if(!lastOut) return;
-      // Só inclui vendas que aconteceram ANTES da saída e dentro deste mês
       allVs.filter(v=>v.sellerId===s.id && v.date<lastOut.date)
            .forEach(v=>vsHistorico.push({...v, _transferDate:lastOut.date, _seller:s}));
     });
     vsHistorico.sort((a,b)=>b.ts.localeCompare(a.ts));
   }
 
-  document.getElementById('hist-count').textContent=`${vs.length} registro${vs.length!==1?'s':''}`;
+  // ── Contagem ──
+  const total = vs.length + vsHistorico.length;
+  document.getElementById('hist-count').textContent=`${vs.length} registro${vs.length!==1?'s':''}${vsHistorico.length?` + ${vsHistorico.length} hist.`:''}`;
 
   function buildRow(v, isHist=false){
     const s = isHist ? v._seller : DB.sellers.find(x=>x.id===v.sellerId);
@@ -2919,7 +2956,7 @@ function renderLancar(){
 
   let html='';
   if(vs.length===0 && vsHistorico.length===0){
-    html=`<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--tl)">Nenhuma venda registrada neste mês</td></tr>`;
+    html=`<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--tl)">Nenhuma venda registrada${lancarSellerFilter?' para este vendedor':' neste mês'}</td></tr>`;
   } else {
     if(vs.length===0){
       html=`<tr><td colspan="6" style="text-align:center;padding:16px 24px;color:var(--tl)">Nenhuma venda da equipe atual neste mês</td></tr>`;
@@ -2936,7 +2973,141 @@ function renderLancar(){
   document.getElementById('hist-tb').innerHTML=html;
 }
 
+// ── Monta / atualiza a barra de filtro da página Lançar ──
+function _renderLancarFilterBar(baseSellers){
+  const u = currentUser;
+  const bar = document.getElementById('lancar-filter-bar');
+  if(!bar) return;
+
+  const rgSel  = document.getElementById('lf-regional');
+  const hubSel = document.getElementById('lf-hub');
+  const selSel = document.getElementById('lf-seller');
+  const clrBtn = document.getElementById('lf-clear-btn');
+  const info   = document.getElementById('lf-info');
+
+  bar.style.display='flex';
+
+  // ── Mostra Regional só para gerente ──
+  if(isGerente(u) && rgSel){
+    rgSel.style.display='';
+    const prev = rgSel.value;
+    rgSel.innerHTML='<option value="">🏠 Todas as Regionais</option>'
+      +(DB.regionais||[]).map(r=>`<option value="${r.id}"${r.id==prev?' selected':''}>${r.nome}</option>`).join('');
+  } else if(rgSel){
+    rgSel.style.display='none';
+  }
+
+  // ── Mostra HUB para gerente e regional com mais de 1 HUB ──
+  const hubsDoEscopo = isGerente(u)
+    ? (DB.times||[]).filter(t => {
+        const rgId = parseInt(document.getElementById('lf-regional')?.value)||null;
+        return rgId ? t.regionalId===rgId : true;
+      })
+    : u?.role==='regional'
+      ? (DB.times||[]).filter(t=>t.regionalId===u.regionalId)
+      : [];
+
+  if(hubsDoEscopo.length > 1 && hubSel){
+    hubSel.style.display='';
+    const prev = String(lancarHubFilter||hubSel.value||'');
+    hubSel.innerHTML='<option value="">🏢 Todos os HUBs</option>'
+      +hubsDoEscopo.map(t=>`<option value="${t.id}"${String(t.id)===prev?' selected':''}>${t.nome}</option>`).join('');
+    if(lancarHubFilter) hubSel.value=String(lancarHubFilter);
+  } else {
+    if(hubSel){ hubSel.style.display='none'; hubSel.value=''; }
+    if(u?.role!=='supervisor' && hubsDoEscopo.length===1 && !lancarHubFilter){
+      // Auto-seleciona o único HUB da regional
+    }
+  }
+
+  // ── Vendedores do escopo atual ──
+  if(selSel){
+    const prevSel = String(lancarSellerFilter||selSel.value||'');
+    const sellers = baseSellers.filter(s=>!s.inativo).sort((a,b)=>a.name.localeCompare(b.name));
+    selSel.innerHTML='<option value="">👤 Todos os Vendedores ('+sellers.length+')</option>'
+      +sellers.map(s=>`<option value="${s.id}"${String(s.id)===prevSel?' selected':''}>${s.name}</option>`).join('');
+    if(lancarSellerFilter) selSel.value=String(lancarSellerFilter);
+  }
+
+  // ── Botão limpar ──
+  const hasFilter = !!(lancarSellerFilter || lancarHubFilter
+    || (isGerente(u) && parseInt(document.getElementById('lf-regional')?.value)));
+  if(clrBtn) clrBtn.style.display = hasFilter ? '' : 'none';
+
+  // ── Info contextual ──
+  if(info){
+    const parts = [];
+    if(isGerente(u)){
+      const rgId = parseInt(document.getElementById('lf-regional')?.value)||null;
+      if(rgId){ const rg=(DB.regionais||[]).find(r=>r.id===rgId); if(rg) parts.push(rg.nome); }
+    }
+    if(lancarHubFilter){
+      const tm=(DB.times||[]).find(t=>t.id===lancarHubFilter);
+      if(tm) parts.push(tm.nome);
+    } else if(u?.role==='supervisor'){
+      const tm=(DB.times||[]).find(t=>t.id===u.timeId);
+      if(tm) parts.push(tm.nome);
+    } else if(u?.role==='regional' && !isGerente(u) && hubsDoEscopo.length===1){
+      parts.push(hubsDoEscopo[0].nome);
+    }
+    if(lancarSellerFilter){
+      const s=DB.sellers.find(x=>x.id===lancarSellerFilter);
+      if(s) parts.push(s.name);
+    }
+    info.textContent = parts.length ? parts.join(' › ') : '';
+  }
+}
+
+function onLancarRegionalChange(){
+  // Quando regional muda, reseta HUB e vendedor
+  lancarHubFilter    = null;
+  lancarSellerFilter = null;
+  const hubSel = document.getElementById('lf-hub');
+  const selSel = document.getElementById('lf-seller');
+  if(hubSel) hubSel.value='';
+  if(selSel) selSel.value='';
+  // Atualiza HUBs disponíveis
+  const rgId = parseInt(document.getElementById('lf-regional')?.value)||null;
+  const hubSel2 = document.getElementById('lf-hub');
+  if(hubSel2){
+    const times = rgId ? (DB.times||[]).filter(t=>t.regionalId===rgId) : (DB.times||[]);
+    hubSel2.innerHTML='<option value="">🏢 Todos os HUBs</option>'+times.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+    hubSel2.style.display = times.length>1?'':'none';
+  }
+  renderLancar();
+}
+
+function onLancarHubChange(){
+  lancarHubFilter    = parseInt(document.getElementById('lf-hub')?.value)||null;
+  lancarSellerFilter = null;
+  const selSel = document.getElementById('lf-seller');
+  if(selSel) selSel.value='';
+  renderLancar();
+}
+
+function onLancarSellerChange(){
+  lancarSellerFilter = parseInt(document.getElementById('lf-seller')?.value)||null;
+  renderLancar();
+}
+
+function clearLancarFilter(){
+  lancarSellerFilter = null;
+  lancarHubFilter    = null;
+  const rgSel  = document.getElementById('lf-regional');
+  const hubSel = document.getElementById('lf-hub');
+  const selSel = document.getElementById('lf-seller');
+  if(rgSel)  rgSel.value='';
+  if(hubSel) hubSel.value='';
+  if(selSel) selSel.value='';
+  renderLancar();
+}
+
 function delVenda(id,ymKey){
+  const venda = (DB.vendas[ymKey]||[]).find(v=>String(v.id)===String(id));
+  if(venda){
+    const scopeIds = new Set(getScopedSellers(true).map(s=>s.id));
+    if(!scopeIds.has(venda.sellerId)){ toast('Sem permissão para excluir este registro','⚠️'); return; }
+  }
   DB.vendas[ymKey]=(DB.vendas[ymKey]||[]).filter(v=>String(v.id)!==String(id));
   saveDB(); renderLancar(); renderDash();
   toast('Registro excluído','🗑️');
@@ -2944,7 +3115,10 @@ function delVenda(id,ymKey){
 
 function clearMonthHistory(){
   if(!confirm(`Apagar TODOS os lançamentos de ${MESES[ymToYM(currentYM).m]}?\nEsta ação não pode ser desfeita.`)) return;
-  DB.vendas[currentYM]=[];
+  const scopeIds = new Set(getScopedSellers(true).map(s=>s.id));
+  // Mantém vendas fora do escopo do usuário (outros HUBs/regionais)
+  const existing = DB.vendas[currentYM] || [];
+  DB.vendas[currentYM] = existing.filter(v => !scopeIds.has(v.sellerId));
   saveDB(); renderLancar(); renderDash();
   toast('Histórico do mês limpo','🗑️');
 }
@@ -3132,12 +3306,14 @@ function renderTimesList(){
   const times=isGerente(u)?(DB.times||[]):(u?.role==='regional'?(DB.times||[]).filter(t=>t.regionalId===u.regionalId):(DB.times||[]).filter(t=>t.id===u?.timeId));
   if(!times.length){ el.innerHTML='<div style="color:var(--tl);text-align:center;padding:20px">Nenhum HUB cadastrado</div>'; return; }
   const canEdit = isGerente(u)||u?.role==='regional';
+  const canDelete = isGerente(u); // Só gerente pode remover HUB
   el.innerHTML=times.map(t=>{
     const rg=(DB.regionais||[]).find(r=>r.id===t.regionalId);
     const cnt=DB.sellers.filter(s=>s.timeId===t.id&&!s.inativo).length;
     const sup=DB.users?.find(u=>u.role==='supervisor'&&u.timeId===t.id);
     const hubMeta=getHubMeta(ymKey,t.id);
     const real=DB.sellers.filter(s=>s.timeId===t.id&&!s.inativo).reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
+    const isMySup = u?.role==='supervisor' && u.timeId===t.id;
     return `<div class="time-item" style="flex-direction:column;align-items:stretch;gap:8px">
       <div style="display:flex;align-items:center;gap:10px">
         <div class="time-ic" style="background:${t.color||'#2563eb'}">${t.nome[0]}</div>
@@ -3145,11 +3321,11 @@ function renderTimesList(){
           <div class="time-nm">${t.nome}</div>
           <div class="time-sub">${rg?`Regional: ${rg.nome} · `:''}${cnt} vendedor(es) · Realizado: ${real}${sup?` · Sup: @${sup.username}`:''}</div>
         </div>
-        <button class="btn btn-g" onclick="openHubEditById(${t.id})" style="font-size:11px;padding:4px 10px;border-color:rgba(37,99,235,.3);color:var(--blue)">
+        ${(canEdit||isMySup)?`<button class="btn btn-g" onclick="openHubEditById(${t.id})" style="font-size:11px;padding:4px 10px;border-color:rgba(37,99,235,.3);color:var(--blue)">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           Alterar
-        </button>
-        <button class="del-seller" onclick="delTime(${t.id})">Remover</button>
+        </button>`:''}
+        ${canDelete?`<button class="del-seller" onclick="delTime(${t.id})">Remover</button>`:''}
       </div>
       ${canEdit?`<div class="hub-meta-row">
         <label>Meta ${MESES[m]}:</label>
@@ -3162,9 +3338,17 @@ function renderTimesList(){
 }
 
 function saveHubMeta(timeId){
+  const u = currentUser;
+  // Somente gerente e regional podem alterar meta do HUB
+  if(u?.role==='supervisor'){ toast('Apenas Gerente ou Regional pode alterar a meta do HUB','⚠️'); return; }
   const el=document.getElementById('hmeta-'+timeId);
   if(!el) return;
   const v=parseInt(el.value)||0;
+  // Regional só pode alterar metas de HUBs da própria regional
+  if(u?.role==='regional' && !isGerente(u)){
+    const t=(DB.times||[]).find(x=>x.id===timeId);
+    if(!t || t.regionalId !== u.regionalId){ toast('HUB não pertence à sua Regional','⚠️'); return; }
+  }
   if(!DB.hubMetas) DB.hubMetas={};
   if(!DB.hubMetas[currentYM]) DB.hubMetas[currentYM]={};
   DB.hubMetas[currentYM][timeId]=v;
@@ -3196,7 +3380,8 @@ function renderUserList(){
       </div>
       <div style="display:flex;gap:6px;align-items:center">
         ${canEdit&&!isSelf?`<button class="btn-sm" style="background:var(--blue-g);color:var(--blue);border:1px solid rgba(37,99,235,.2);border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font)" onclick="openEditUserModal(${x.id})">✏️ Editar</button>`:''}
-        ${!isSelf?`<button class="del-seller" onclick="deleteUser(${x.id})">Remover</button>`:'<span style="font-size:10px;color:var(--tl)">você</span>'}
+        ${canEdit&&!isSelf?`<button class="del-seller" onclick="deleteUser(${x.id})">Remover</button>`:''}
+        ${isSelf?`<span style="font-size:10px;color:var(--tl)">você</span>`:''}
       </div>
     </div>`;
   }).join('')+`</div></div>`;
@@ -3213,6 +3398,14 @@ function addSeller(){
   const timeId=timeIdRaw?parseInt(timeIdRaw):null;
   const admDate=document.getElementById('v-adm')?.value||fmtD(today());
   const photo = _newSellerPhoto||null;
+  // Valida escopo: supervisor só pode adicionar no próprio HUB
+  const u = currentUser;
+  if(u?.role==='supervisor'){
+    if(!timeId || timeId !== u.timeId){ toast('Você só pode adicionar vendedores no seu próprio HUB','⚠️'); return; }
+  } else if(u?.role==='regional' && !isGerente(u)){
+    const tids=(DB.times||[]).filter(t=>t.regionalId===u.regionalId).map(t=>t.id);
+    if(timeId && !tids.includes(timeId)){ toast('HUB não pertence à sua Regional','⚠️'); return; }
+  }
   DB.sellers.push({id:DB.nextId++,name,cpf,meta,color,timeId,admDate,photo});
   saveDB();
   document.getElementById('v-nome').value='';
@@ -3227,13 +3420,20 @@ function addSeller(){
 function delSeller(id){
   const s=DB.sellers.find(s=>s.id===id);
   if(!s) return;
+  // Valida escopo
+  const scopeIds = new Set(getScopedSellers(true).map(x=>x.id));
+  if(!scopeIds.has(id)){ toast('Sem permissão para remover este vendedor','⚠️'); return; }
   if(confirm(`Inativar "${s.name}" em vez de excluir?\n\nInativar preserva todo o histórico de vendas.\nCancelar e clicar Excluir remove permanentemente.`)){
     toggleSellerInativo(id,true); return;
   }
 }
 function delSellerPermanent(id){
   const s=DB.sellers.find(s=>s.id===id);
-  if(!s||!confirm(`⚠️ Excluir PERMANENTEMENTE "${s.name}"?\nO histórico de vendas será mantido, mas o vendedor não poderá ser restaurado.`)) return;
+  if(!s) return;
+  // Valida escopo
+  const scopeIds = new Set(getScopedSellers(true).map(x=>x.id));
+  if(!scopeIds.has(id)){ toast('Sem permissão para excluir este vendedor','⚠️'); return; }
+  if(!confirm(`⚠️ Excluir PERMANENTEMENTE "${s.name}"?\nO histórico de vendas será mantido, mas o vendedor não poderá ser restaurado.`)) return;
   DB.sellers=DB.sellers.filter(x=>x.id!==id);
   if(selectedSeller===id) selectedSeller=null;
   saveDB(); renderSellers(); renderDash(); populateQESellers();
@@ -3623,6 +3823,10 @@ function importExcel(e){
 
       let ok = 0, skip = 0;
 
+      // Restringe import ao escopo do usuário logado (supervisor → só seu HUB)
+      const scopedSellersList = getScopedSellers(true); // inclui inativos do escopo
+      const scopedNomeMap = new Map(scopedSellersList.map(s=>[s.name.trim().toUpperCase(), s]));
+
       wb.SheetNames.forEach(sheetName => {
         const ws = wb.Sheets[sheetName];
         if(!ws) return;
@@ -3661,10 +3865,8 @@ function importExcel(e){
             const nomeRaw = String(row[0]).trim().toUpperCase();
             if(!nomeRaw) continue;
 
-            // Busca vendedor (ignora espaços extras)
-            const seller = DB.sellers.find(s =>
-              s.name.trim().toUpperCase() === nomeRaw
-            );
+            // Busca vendedor SOMENTE dentro do escopo do usuário logado
+            const seller = scopedNomeMap.get(nomeRaw);
             if(!seller){ skip++; continue; }
 
             for(const ci in colDates){
@@ -3703,7 +3905,8 @@ function importExcel(e){
             const qtyRaw  = get(['quantidade','qty','qtd','vendas','q']);
             const tipoRaw = get(['tipo','type','t']);
             if(!nomeRaw || !dataRaw){ skip++; return; }
-            const seller = DB.sellers.find(s => s.name.trim().toUpperCase() === nomeRaw.toUpperCase());
+            // Busca vendedor SOMENTE dentro do escopo do usuário logado
+            const seller = scopedNomeMap.get(nomeRaw.toUpperCase());
             if(!seller){ skip++; return; }
             const dateStr = parseCellDate(isNaN(dataRaw) ? dataRaw : Number(dataRaw));
             if(!dateStr || isNaN(new Date(dateStr+'T12:00:00').getTime())){ skip++; return; }
