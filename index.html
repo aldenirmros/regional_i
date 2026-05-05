@@ -4765,41 +4765,46 @@ function _renderDPGrid(){
     {mk:'M1', mc:'#7c3aed', border:'rgba(124,58,237,.2)'},
     {mk:'M2', mc:'#d97706', border:'rgba(217,119,6,.2)'},
   ];
-  function photoSlot(type, mk, color, borderColor){
+
+  // Vendedores disponíveis no escopo atual
+  const scopedSellers = getScopedSellers(true).filter(s=>!s.inativo).sort((a,b)=>a.name.localeCompare(b.name));
+  const sellerOpts = scopedSellers.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  const selStyle = `width:100%;border:1.5px solid var(--border);border-radius:6px;padding:4px 8px;font-family:var(--font);font-size:11px;color:var(--tl);background:var(--bg);outline:none;cursor:pointer;margin-bottom:6px;box-sizing:border-box`;
+
+  function photoSlot(type, mk, color){
     const ico = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
-    return `<div id="dp-photo-${type}-${mk}" onclick="dpUploadPhoto('${type}','${mk}')" title="Clique para adicionar foto"
+    return `<div id="dp-photo-${type}-${mk}" onclick="dpUploadPhoto('${type}','${mk}')" title="Clique para trocar a foto"
       style="width:46px;height:46px;border-radius:50%;flex-shrink:0;cursor:pointer;border:2px dashed ${color};display:flex;align-items:center;justify-content:center;overflow:hidden;background:${color}11">${ico}</div>
       <input type="file" id="dp-file-${type}-${mk}" accept="image/*" style="display:none" onchange="dpSetPhoto(event,'${type}','${mk}')">`;
   }
+
+  function slot(type, mk, label, color){
+    return `
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:${color};margin-bottom:8px">${label}</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${photoSlot(type, mk, color)}
+          <div style="flex:1;min-width:0">
+            <select id="dp-sel-${type}-${mk}" onchange="dpSelectSeller('${type}','${mk}',this.value)" style="${selStyle}">
+              <option value="">🔍 Puxar do cadastro…</option>
+              ${sellerOpts}
+            </select>
+            <input type="text" id="dp-name-${type}-${mk}" placeholder="Ou digitar nome manualmente"
+              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--font);font-size:12px;color:var(--td);background:var(--bg);outline:none;margin-bottom:5px;box-sizing:border-box">
+            <input type="text" inputmode="numeric" id="dp-val-${type}-${mk}" placeholder="R$ 0,00"
+              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;font-weight:700;color:${color};background:var(--bg);outline:none;box-sizing:border-box">
+          </div>
+        </div>
+      </div>`;
+  }
+
   grid.innerHTML = cols.map((c,i)=>`
     <div style="padding:16px 14px;${i<2?'border-right:1px solid var(--border)':''}">
       <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:${c.mc};margin-bottom:14px;display:flex;align-items:center;gap:6px">
         <div style="width:8px;height:8px;border-radius:50%;background:${c.mc}"></div>${c.mk}
       </div>
-      <div style="margin-bottom:14px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#059669;margin-bottom:8px">👍 Promotor</div>
-        <div style="display:flex;align-items:center;gap:10px">
-          ${photoSlot('prom',c.mk,'#059669','#059669')}
-          <div style="flex:1;min-width:0">
-            <input type="text" id="dp-name-prom-${c.mk}" placeholder="Nome do promotor"
-              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--font);font-size:12px;color:var(--td);background:var(--bg);outline:none;margin-bottom:5px;box-sizing:border-box">
-            <input type="text" inputmode="numeric" id="dp-val-prom-${c.mk}" placeholder="R$ 0,00"
-              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;font-weight:700;color:#059669;background:var(--bg);outline:none;box-sizing:border-box">
-          </div>
-        </div>
-      </div>
-      <div>
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#dc2626;margin-bottom:8px">👎 Detrator</div>
-        <div style="display:flex;align-items:center;gap:10px">
-          ${photoSlot('det',c.mk,'#dc2626','#dc2626')}
-          <div style="flex:1;min-width:0">
-            <input type="text" id="dp-name-det-${c.mk}" placeholder="Nome do detrator"
-              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--font);font-size:12px;color:var(--td);background:var(--bg);outline:none;margin-bottom:5px;box-sizing:border-box">
-            <input type="text" inputmode="numeric" id="dp-val-det-${c.mk}" placeholder="R$ 0,00"
-              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626;background:var(--bg);outline:none;box-sizing:border-box">
-          </div>
-        </div>
-      </div>
+      ${slot('prom', c.mk, '👍 Promotor', '#059669')}
+      ${slot('det',  c.mk, '👎 Detrator', '#dc2626')}
     </div>`).join('');
 }
 
@@ -4860,9 +4865,12 @@ function saveDpAll(){
   ['M0','M1','M2'].forEach(mk=>{
     ['prom','det'].forEach(type=>{
       const k=`${type}_${mk}`;
-      const name = document.getElementById(`dp-name-${type}-${mk}`)?.value||'';
-      const val  = document.getElementById(`dp-val-${type}-${mk}`)?.value||'';
-      DB.psvData.dp[ymKey][k] = {name, val};
+      const name     = document.getElementById(`dp-name-${type}-${mk}`)?.value||'';
+      const val      = document.getElementById(`dp-val-${type}-${mk}`)?.value||'';
+      const sellerId = document.getElementById(`dp-sel-${type}-${mk}`)?.value||'';
+      // Salva também a foto no DB (para sincronizar com Google Sheets)
+      const photo    = _dpPhotos[k]||'';
+      DB.psvData.dp[ymKey][k] = {name, val, sellerId, photo};
     });
   });
   saveDB();
@@ -4872,6 +4880,47 @@ function saveDpAll(){
   toast('Detrator & Promotor salvo ✓','💾');
 }
 
+// Preenche automaticamente nome + foto ao selecionar vendedor do cadastro
+function dpSelectSeller(type, mk, val){
+  const ni  = document.getElementById(`dp-name-${type}-${mk}`);
+  const slot= document.getElementById(`dp-photo-${type}-${mk}`);
+  const color = type==='prom'?'#059669':'#dc2626';
+
+  if(!val){
+    // Limpou a seleção — apaga nome e volta ao ícone padrão
+    if(ni) ni.value='';
+    if(slot){
+      const ico=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+      slot.innerHTML=ico; slot.style.cssText=`width:46px;height:46px;border-radius:50%;flex-shrink:0;cursor:pointer;border:2px dashed ${color};display:flex;align-items:center;justify-content:center;overflow:hidden;background:${color}11`;
+      delete _dpPhotos[`${type}_${mk}`]; _saveDpPhotos();
+    }
+    return;
+  }
+
+  const sid = parseInt(val);
+  const s   = DB.sellers.find(x=>x.id===sid);
+  if(!s) return;
+
+  // Preenche o nome
+  if(ni) ni.value = s.name;
+
+  // Preenche a foto
+  if(slot){
+    const photo = s.photo || null;
+    if(photo){
+      slot.innerHTML=`<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+      slot.style.border=`2px solid ${color}`;
+      _dpPhotos[`${type}_${mk}`]=photo;
+      _saveDpPhotos();
+    } else {
+      // Sem foto: mostra inicial com cor do vendedor
+      slot.innerHTML=`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${s.color||color}33;font-size:18px;font-weight:800;color:${s.color||color};font-family:var(--font)">${s.name[0]}</div>`;
+      slot.style.border=`2px solid ${color}`;
+      delete _dpPhotos[`${type}_${mk}`]; _saveDpPhotos();
+    }
+  }
+}
+
 function _restoreDpFields(){
   const ymKey=currentYM;
   const dpDb = (DB.psvData?.dp||{})[ymKey]||{};
@@ -4879,17 +4928,34 @@ function _restoreDpFields(){
     ['prom','det'].forEach(type=>{
       const k=`${type}_${mk}`;
       const d = dpDb[k]||{};
-      const ni=document.getElementById(`dp-name-${type}-${mk}`);
-      const vi=document.getElementById(`dp-val-${type}-${mk}`);
-      if(ni) ni.value=d.name||'';
+      const ni   = document.getElementById(`dp-name-${type}-${mk}`);
+      const vi   = document.getElementById(`dp-val-${type}-${mk}`);
+      const sel  = document.getElementById(`dp-sel-${type}-${mk}`);
+      const slot = document.getElementById(`dp-photo-${type}-${mk}`);
+      const color= type==='prom'?'#059669':'#dc2626';
+
+      if(ni) ni.value = d.name||'';
       if(vi){
-        vi.value=d.val||'';
-        if(d.val) vi.style.color=type==='prom'?'#059669':'#dc2626';
+        vi.value = d.val||'';
+        if(d.val) vi.style.color = color;
       }
-      const photoKey = _dpPhotos[k];
-      if(photoKey){
-        const slot=document.getElementById(`dp-photo-${type}-${mk}`);
-        if(slot){ slot.innerHTML=`<img src="${photoKey}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`; slot.style.border=`2px solid ${type==='prom'?'#059669':'#dc2626'}`; }
+      // Restaura vendedor selecionado
+      if(sel && d.sellerId) sel.value = d.sellerId;
+
+      // Restaura foto: prioriza foto salva no DB, depois localStorage
+      const photo = d.photo || _dpPhotos[k] || null;
+      if(photo && slot){
+        slot.innerHTML=`<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        slot.style.border=`2px solid ${color}`;
+        _dpPhotos[k]=photo; _saveDpPhotos();
+      } else if(d.name && !photo && slot){
+        // Vendedor salvo mas sem foto — mostra inicial
+        const sellerId = d.sellerId ? parseInt(d.sellerId) : null;
+        const s = sellerId ? DB.sellers.find(x=>x.id===sellerId) : null;
+        const sColor = s?.color||color;
+        const inicial = (d.name||'?')[0].toUpperCase();
+        slot.innerHTML=`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${sColor}33;font-size:18px;font-weight:800;color:${sColor};font-family:var(--font)">${inicial}</div>`;
+        slot.style.border=`2px solid ${color}`;
       }
     });
   });
