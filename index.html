@@ -1541,10 +1541,6 @@ select.sel:focus{border-color:var(--blue);}
         <h2 style="font-size:22px;font-weight:800;color:var(--td);margin:0">📊 PSV — Apresentação de Resultados</h2>
         <div id="psv-sub" style="font-size:12px;color:var(--tl);margin-top:3px">—</div>
       </div>
-      <button class="btn" onclick="renderPSV()" style="background:var(--blue-g);color:var(--blue);border:1px solid rgba(37,99,235,.2)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-        Atualizar
-      </button>
       <button class="btn btn-g" onclick="openHubEditModal()" style="font-size:12px">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         Alterar HUB
@@ -1601,7 +1597,13 @@ select.sel:focus{border-color:var(--blue);}
 
     <!-- Detrator / Promotor por Safra -->
     <div class="card" style="margin-bottom:16px">
-      <div class="card-head"><div class="card-title"><div class="ctd" style="background:#7c3aed"></div>Detrator &amp; Promotor por Safra</div></div>
+      <div class="card-head" style="justify-content:space-between">
+        <div class="card-title"><div class="ctd" style="background:#7c3aed"></div>Detrator &amp; Promotor por Safra</div>
+        <button id="dp-save-btn" onclick="saveDpAll()" class="btn" style="background:rgba(5,150,105,.1);color:#059669;border:1px solid rgba(5,150,105,.3);font-size:11px;padding:5px 12px;gap:5px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Salvar
+        </button>
+      </div>
       <div id="psv-dp-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:1px solid var(--border)"></div>
     </div>
 
@@ -2685,6 +2687,7 @@ function renderDash(){
   buildLine(ymKey, y, m, sid);
   // MAPA SEMANAL — disponível para todos os usuários
   renderMapaSemanal(ymKey, scopedSellers, 'dash-mapa-semanal');
+  renderPSVIfActive();
 }
 
 function buildDonut(real,gap){
@@ -2886,6 +2889,7 @@ function addVenda(){
   saveDB();
   renderLancar();
   renderDash();
+  renderPSVIfActive();
   const s=DB.sellers.find(s=>s.id===sid);
   toast(`✅ ${qty} ${type}(s) registrada(s) — ${s?.name}`);
   // Reseta quantidade para 1
@@ -4777,11 +4781,9 @@ function _renderDPGrid(){
           ${photoSlot('prom',c.mk,'#059669','#059669')}
           <div style="flex:1;min-width:0">
             <input type="text" id="dp-name-prom-${c.mk}" placeholder="Nome do promotor"
-              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--font);font-size:12px;color:var(--td);background:var(--bg);outline:none;margin-bottom:5px;box-sizing:border-box"
-              oninput="saveDpData('prom','${c.mk}','name',this.value)">
+              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--font);font-size:12px;color:var(--td);background:var(--bg);outline:none;margin-bottom:5px;box-sizing:border-box">
             <input type="text" inputmode="numeric" id="dp-val-prom-${c.mk}" placeholder="R$ 0,00"
-              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;font-weight:700;color:#059669;background:var(--bg);outline:none;box-sizing:border-box"
-              oninput="saveDpData('prom','${c.mk}','val',this.value)">
+              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;font-weight:700;color:#059669;background:var(--bg);outline:none;box-sizing:border-box">
           </div>
         </div>
       </div>
@@ -4791,11 +4793,9 @@ function _renderDPGrid(){
           ${photoSlot('det',c.mk,'#dc2626','#dc2626')}
           <div style="flex:1;min-width:0">
             <input type="text" id="dp-name-det-${c.mk}" placeholder="Nome do detrator"
-              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--font);font-size:12px;color:var(--td);background:var(--bg);outline:none;margin-bottom:5px;box-sizing:border-box"
-              oninput="saveDpData('det','${c.mk}','name',this.value)">
+              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--font);font-size:12px;color:var(--td);background:var(--bg);outline:none;margin-bottom:5px;box-sizing:border-box">
             <input type="text" inputmode="numeric" id="dp-val-det-${c.mk}" placeholder="R$ 0,00"
-              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626;background:var(--bg);outline:none;box-sizing:border-box"
-              oninput="saveDpData('det','${c.mk}','val',this.value)">
+              style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;font-weight:700;color:#dc2626;background:var(--bg);outline:none;box-sizing:border-box">
           </div>
         </div>
       </div>
@@ -4804,25 +4804,33 @@ function _renderDPGrid(){
 
 function fmtBRL(v){ if(!v) return ''; return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
+// ── Auto-formata TPV enquanto digita (R$ 0.000,00) ──
+function formatTpvInput(input){
+  const digits = input.value.replace(/\D/g,'');
+  if(!digits){ input.value=''; return; }
+  const cents = parseInt(digits)||0;
+  input.value = (cents/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
 function savePsvTpv(input, mk, ymKey){
-  // Remove formatting to get raw number
+  formatTpvInput(input);
   const raw = input.value.replace(/\./g,'').replace(',','.');
   const v = parseFloat(raw)||0;
   if(!DB.psvData) DB.psvData={};
   if(!DB.psvData.tpv) DB.psvData.tpv={};
   if(!DB.psvData.tpv[ymKey]) DB.psvData.tpv[ymKey]={};
   DB.psvData.tpv[ymKey][mk] = v||null;
-  const c = v<15000?'#dc2626':v<20000?'#d97706':'#059669';
+  const c = !v?'var(--tl)':v<15000?'#dc2626':v<20000?'#d97706':'#059669';
   input.style.color = c;
   saveDB();
+  toast('TPV salvo ✓','💾');
 }
 
-// Detrator / Promotor
+// Detrator / Promotor — salvo em DB.psvData.dp[ymKey]
 const _dpPhotos = (() => {
   try { return JSON.parse(localStorage.getItem('psv_dp_photos')||'{}'); } catch(e){ return {}; }
 })();
 function _saveDpPhotos(){ try{ localStorage.setItem('psv_dp_photos', JSON.stringify(_dpPhotos)); }catch(e){} }
-const _dpData   = {}; // {prom_M0: {name, val}, ...}
 
 function dpUploadPhoto(type, mk){
   document.getElementById(`dp-file-${type}-${mk}`)?.click();
@@ -4841,27 +4849,46 @@ function dpSetPhoto(e, type, mk){
   };
   r.readAsDataURL(f);
 }
-function saveDpData(type, mk, field, val){
-  const k=`${type}_${mk}`;
-  if(!_dpData[k]) _dpData[k]={};
-  _dpData[k][field]=val;
-}
-function _restoreDpFields(){
+
+// Salva tudo do DP no DB ao clicar em "Salvar"
+function saveDpAll(){
+  const ymKey=currentYM;
+  if(!DB.psvData) DB.psvData={};
+  if(!DB.psvData.dp) DB.psvData.dp={};
+  if(!DB.psvData.dp[ymKey]) DB.psvData.dp[ymKey]={};
   ['M0','M1','M2'].forEach(mk=>{
     ['prom','det'].forEach(type=>{
       const k=`${type}_${mk}`;
-      const d=_dpData[k]||{};
+      const name = document.getElementById(`dp-name-${type}-${mk}`)?.value||'';
+      const val  = document.getElementById(`dp-val-${type}-${mk}`)?.value||'';
+      DB.psvData.dp[ymKey][k] = {name, val};
+    });
+  });
+  saveDB();
+  // Feedback visual no botão
+  const btn=document.getElementById('dp-save-btn');
+  if(btn){ const old=btn.innerHTML; btn.innerHTML='✅ Salvo!'; setTimeout(()=>btn.innerHTML=old,1800); }
+  toast('Detrator & Promotor salvo ✓','💾');
+}
+
+function _restoreDpFields(){
+  const ymKey=currentYM;
+  const dpDb = (DB.psvData?.dp||{})[ymKey]||{};
+  ['M0','M1','M2'].forEach(mk=>{
+    ['prom','det'].forEach(type=>{
+      const k=`${type}_${mk}`;
+      const d = dpDb[k]||{};
       const ni=document.getElementById(`dp-name-${type}-${mk}`);
       const vi=document.getElementById(`dp-val-${type}-${mk}`);
-      if(ni&&d.name) ni.value=d.name;
-      if(vi&&d.val){
-        vi.value=d.val;
-        const v=parseInt(d.val)||0;
-        vi.style.color=type==='prom'?'#059669':'#dc2626';
+      if(ni) ni.value=d.name||'';
+      if(vi){
+        vi.value=d.val||'';
+        if(d.val) vi.style.color=type==='prom'?'#059669':'#dc2626';
       }
-      if(_dpPhotos[k]){
+      const photoKey = _dpPhotos[k];
+      if(photoKey){
         const slot=document.getElementById(`dp-photo-${type}-${mk}`);
-        if(slot){ slot.innerHTML=`<img src="${_dpPhotos[k]}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`; slot.style.border=`2px solid ${type==='prom'?'#059669':'#dc2626'}`; }
+        if(slot){ slot.innerHTML=`<img src="${photoKey}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`; slot.style.border=`2px solid ${type==='prom'?'#059669':'#dc2626'}`; }
       }
     });
   });
@@ -5540,6 +5567,8 @@ function renderPSV(){
   _renderPlanTable();
   setTimeout(_restoreDpFields, 0);
 }
+// Auto-atualiza PSV se a página estiver aberta
+function renderPSVIfActive(){ if(document.getElementById('page-psv')?.classList.contains('active')) renderPSV(); }
 
 // ── Filtro PSV (mesmas regras do dashboard) ──
 function _renderPSVFilter(){
@@ -5663,7 +5692,9 @@ function _renderPSVKpis(ymKey, y, m, sellers){
             <div style="font-size:9px;color:var(--tl);font-weight:600;margin-bottom:1px">R$</div>
             <input type="text" inputmode="numeric" id="psv-tpv-${s.k}" value="${cur?fmtBRL(cur):''}" placeholder="0,00"
               style="width:100%;text-align:center;border:1px solid var(--border);border-radius:4px;padding:3px 1px;font-family:var(--mono);font-size:11px;font-weight:800;color:${c};background:var(--white);outline:none;"
-              oninput="savePsvTpv(this,'${s.k}','${ymKey}')" onkeydown="if(event.key==='Enter')this.blur()">
+              oninput="formatTpvInput(this);this.style.color='var(--tl)'"
+              onkeydown="if(event.key==='Enter'){savePsvTpv(this,'${s.k}','${ymKey}');this.blur();event.preventDefault()}"
+              onblur="savePsvTpv(this,'${s.k}','${ymKey}')">
           </div>`;
         }).join('')}
       </div>
