@@ -4290,11 +4290,12 @@ function renderAll(){
   const p=document.querySelector('.page.active');
   if(!p) return;
   const id=p.id.replace('page-','');
-  if(id==='dash')      renderDash();
+  if(id==='dash')           renderDash();
   else if(id==='lancar')    renderLancar();
   else if(id==='sellers')   renderSellers();
   else if(id==='regionais') renderRegionais();
   else if(id==='overview')  renderOverview();
+  else if(id==='psv')       setTimeout(renderPSV, 0); // defer para garantir que o DOM do mês já atualizou
 }
 
 // ══════════════════════════════════════════════════════════
@@ -5466,7 +5467,7 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
   document.addEventListener('visibilitychange', async ()=>{
     if(!document.hidden && currentUser){
       const refreshed = await cloudPull();
-      if(refreshed){ populateMes(); populateQESellers(); renderDash(); }
+      if(refreshed){ populateMes(); populateQESellers(); renderDash(); renderPSVIfActive(); }
     }
   });
 })();
@@ -5541,6 +5542,12 @@ function sellerMaturity(s){
 }
 
 function renderPSV(){
+  if(!document.getElementById('page-psv')?.classList.contains('active')) return;
+  // Cancela render anterior pendente (evita duplicação quando online dispara cloudPull + onMesChange juntos)
+  clearTimeout(renderPSV._t);
+  renderPSV._t = setTimeout(_doRenderPSV, 30);
+}
+function _doRenderPSV(){
   if(!document.getElementById('page-psv')?.classList.contains('active')) return;
   const ymKey = currentYM;
   const {y,m} = ymToYM(ymKey);
