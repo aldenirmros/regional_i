@@ -1425,7 +1425,18 @@ select.sel:focus{border-color:var(--blue);}
       </div>
       <div class="kc kc-t"><div class="kc-bar"></div>
         <div class="kc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-        <div class="kc-lbl">Ativações</div><div class="kc-val" id="ov-atv">—</div>
+        <div class="kc-lbl">Ativações</div>
+        <div class="atv-input-wrap">
+          <input type="number" class="atv-input" id="ov-atv-input" min="0" placeholder="0"
+            style="font-size:26px;width:80px"
+            onkeydown="if(event.key==='Enter')saveOvAtvManual()"
+            onblur="saveOvAtvManual()">
+          <button class="atv-save-btn" onclick="saveOvAtvManual()">Salvar</button>
+        </div>
+        <div class="atv-pct-row">
+          <div class="atv-bar"><div class="atv-fill" id="ov-atv-fill" style="width:0%"></div></div>
+          <span class="atv-lbl" id="ov-atv-pct">0%</span>
+        </div>
         <div class="kc-sub" id="ov-atv-s">do realizado</div>
       </div>
       <div class="kc kc-r"><div class="kc-bar"></div>
@@ -3524,6 +3535,19 @@ function previewAtivacao(){
   document.getElementById('k-atv-pct').textContent  = (pct*100).toFixed(1)+'%';
 }
 
+// ── Ativação manual na guia Visão Geral por Regional ──
+function saveOvAtvManual(){
+  const el = document.getElementById('ov-atv-input');
+  const v  = el?.value.trim();
+  const n  = v===''?null:parseInt(v);
+  if(!DB.ativacaoManual) DB.ativacaoManual = {};
+  if(n===null) delete DB.ativacaoManual[currentYM];
+  else DB.ativacaoManual[currentYM] = n;
+  saveDB();
+  renderOverview();
+  toast('Ativação salva ✓');
+}
+
 // ── Helper: converte qualquer valor de célula de data em 'YYYY-MM-DD' ──
 function parseCellDate(v){
   if(v==null || v==='') return '';
@@ -4143,15 +4167,17 @@ function renderOverview(){
 
   // Calcula stats por time
   function timeStats(tm){
-    const sellers = DB.sellers.filter(s=>s.timeId===tm.id);
-    const real    = sellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
-    const meta    = sellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
-    const pct     = meta>0?real/meta:0;
-    const gap     = Math.max(0,meta-real);
-    const proj    = duPass>0?real/duPass*duTotal:0;
-    const atvM    = (DB.ativacaoManual||{})[ymKey];
-    const atv     = atvM!=null ? atvM : sellers.reduce((a,s)=>a+totalAtivacao(ymKey,s.id),0);
-    const atvP    = real>0?atv/real:0;
+    const allSellers = DB.sellers.filter(s=>s.timeId===tm.id);
+    const sellers    = allSellers.filter(s=>!s.inativo); // apenas vendedores ativos
+    const real  = sellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
+    const hubM  = getHubMeta(ymKey, tm.id);
+    const meta  = hubM || sellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
+    const pct   = meta>0?real/meta:0;
+    const gap   = Math.max(0,meta-real);
+    const proj  = duPass>0?real/duPass*duTotal:0;
+    const atvM  = (DB.ativacaoManual||{})[ymKey];
+    const atv   = atvM!=null ? atvM : sellers.reduce((a,s)=>a+totalAtivacao(ymKey,s.id),0);
+    const atvP  = real>0?atv/real:0;
     return {sellers:sellers.length,real,meta,pct,gap,proj,atv,atvP};
   }
 
@@ -4171,8 +4197,17 @@ function renderOverview(){
   document.getElementById('ov-real-s').textContent=`${(tPct*100).toFixed(1)}% da meta`;
   document.getElementById('ov-meta').textContent=tMeta;
   document.getElementById('ov-meta-s').textContent=`${regionaisVisiveis.length} regional(is) · ${timesVisiveis.length} HUB(s)`;
-  document.getElementById('ov-atv').textContent=tAtv;
   document.getElementById('ov-atv-s').textContent=tReal>0?`${(tAtvP*100).toFixed(1)}% do realizado`:'—';
+  // Input manual ativação
+  const ovAtvInput = document.getElementById('ov-atv-input');
+  if(ovAtvInput && document.activeElement !== ovAtvInput){
+    ovAtvInput.value = tAtvM !== null ? tAtvM : '';
+    ovAtvInput.placeholder = String(tReal>0 ? Math.round(tReal*0) : 0); // placeholder auto
+  }
+  const ovAtvFill = document.getElementById('ov-atv-fill');
+  const ovAtvPct  = document.getElementById('ov-atv-pct');
+  if(ovAtvFill) ovAtvFill.style.width = Math.min(100, tAtvP*100).toFixed(1)+'%';
+  if(ovAtvPct)  ovAtvPct.textContent  = (tAtvP*100).toFixed(1)+'%';
   document.getElementById('ov-gap').textContent=tGap;
 
   // Tabela: agrupa times por regional
@@ -4185,9 +4220,10 @@ function renderOverview(){
     rgCount++;
 
     // Linha de cabeçalho da regional
-    const rgSellers = DB.sellers.filter(s=>rgTimes.map(t=>t.id).includes(s.timeId));
+    const rgSellers = DB.sellers.filter(s=>rgTimes.map(t=>t.id).includes(s.timeId)&&!s.inativo);
     const rgReal    = rgSellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
-    const rgMeta    = rgSellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
+    const rgHubM    = rgTimes.reduce((a,t)=>a+getHubMeta(ymKey,t.id),0);
+    const rgMeta    = rgHubM || rgSellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
     const rgPct     = rgMeta>0?rgReal/rgMeta:0;
     const rgGap     = Math.max(0,rgMeta-rgReal);
     const pcColor   = rgPct>=1?'var(--green)':rgPct>=0.6?'var(--orange)':'var(--red)';
@@ -4341,8 +4377,6 @@ function saveMInline(input, timeId, key, ymKey){
   if(!DB.mValues) DB.mValues={};
   if(!DB.mValues[ymKey]) DB.mValues[ymKey]={};
   if(!DB.mValues[ymKey][timeId]) DB.mValues[ymKey][timeId]={};
-  const prev = DB.mValues[ymKey][timeId][key];
-  if(n===prev || (n===null && prev===undefined)) return;
   if(n===null) delete DB.mValues[ymKey][timeId][key];
   else DB.mValues[ymKey][timeId][key] = n;
   input.className = 'm-inline-inp ' + (n==null?'m-empty':n<26?'m-red':n<=29?'m-yellow':'m-green');
@@ -5207,14 +5241,13 @@ function _renderPSVKpis(ymKey, y, m, sellers){
     {lbl:'Ativado',   val:atv,     color:'#d97706'},
     {lbl:'% Meta',    val:pct+'%', color:pct>=100?'#059669':pct>=80?'#d97706':'#dc2626'},
   ];
-  // SAFRA: M0/M1 vêm dos mValues (cadastrados na guia Resultado por Time)
+  // SAFRA: M0/M1/M2 espelhados da soma dos HUBs cadastrados na guia Visão Geral por Regional
   const tidsNoScope = [...new Set(sellers.map(s=>s.timeId).filter(Boolean))];
 
-  // Tenta primeiro o total geral manual, senão soma por hub
-  const totMv = (DB.mValues||{})[ymKey]?.['total']||{};
-  let safraM0 = totMv.M0 ?? tidsNoScope.reduce((a,tid)=>a+((DB.mValues||{})[ymKey]?.[tid]?.M0||0),0);
-  let safraM1 = totMv.M1 ?? tidsNoScope.reduce((a,tid)=>a+((DB.mValues||{})[ymKey]?.[tid]?.M1||0),0);
-  let safraM2 = totMv.M2 ?? tidsNoScope.reduce((a,tid)=>a+((DB.mValues||{})[ymKey]?.[tid]?.M2||0),0);
+  // Soma diretamente dos valores individuais dos HUBs (espelho da Visão Geral)
+  let safraM0 = tidsNoScope.reduce((a,tid)=>a+((DB.mValues||{})[ymKey]?.[tid]?.M0||0),0);
+  let safraM1 = tidsNoScope.reduce((a,tid)=>a+((DB.mValues||{})[ymKey]?.[tid]?.M1||0),0);
+  let safraM2 = tidsNoScope.reduce((a,tid)=>a+((DB.mValues||{})[ymKey]?.[tid]?.M2||0),0);
 
   const safraCols = [
     {k:'M0', v:safraM0, c:'#2563eb', bg:'rgba(37,99,235,.07)', border:'rgba(37,99,235,.2)'},
