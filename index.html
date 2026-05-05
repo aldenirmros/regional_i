@@ -3722,11 +3722,16 @@ function importExcel(e){
       });
 
       saveDB();
-      // Bloqueia cloudPull por 15s para não sobrescrever os dados recém-importados
+      // Bloqueia cloudPull por 5min para não sobrescrever os dados recém-importados
       window._blockPull = Date.now();
+      window._importPending = true; // flag: há dados importados aguardando push
       // Cancela o debounce e empurra para a nuvem imediatamente
       clearTimeout(saveDB._t);
-      cloudPush();
+      cloudPush().finally(() => {
+        // Mantém o block ativo por mais 30s após o push (GAS pode demorar)
+        window._blockPull = Date.now() - 270000; // reinicia: ainda bloqueia por ~30s
+        window._importPending = false;
+      });
       renderLancar(); renderDash();
       if(ok > 0){
         toast(`✅ ${ok} registro(s) importado(s)${skip?` · ${skip} ignorado(s)`:''}`);
@@ -3874,8 +3879,8 @@ async function cloudPush(){
 }
 
 async function cloudPull(){
-  // Se houve importação de Excel nos últimos 15s, não sobrescreve o banco local
-  if(window._blockPull && Date.now() - window._blockPull < 15000) return false;
+  // Se houve importação de Excel nos últimos 5min, não sobrescreve o banco local
+  if(window._blockPull && Date.now() - window._blockPull < 300000) return false;
   const cfg = getCfg();
   if(!cfg.gsUrl) return false;
   setCloudUI('sync','Carregando…');
@@ -3919,6 +3924,23 @@ async function cloudPull(){
     if(!rec.users.find(u=>u.role==='gerente'))
       rec.users.unshift({id:1,username:'gerente',password:'gerente123',role:'gerente',nome:'Gerente Geral',regionalId:null,timeId:null,color:'#7c3aed'});
     migrateToDefaultRegional(rec);
+    // ── MERGE: preserva vendas locais que ainda não chegaram na nuvem ──
+    // Evita perder importações de Excel que o cloudPush ainda não confirmou
+    if(DB.vendas && Object.keys(DB.vendas).length) {
+      const localVendas = DB.vendas;
+      const cloudVendas = rec.vendas || {};
+      Object.keys(localVendas).forEach(k => {
+        if(!cloudVendas[k]) cloudVendas[k] = [];
+        const cloudIds = new Set(cloudVendas[k].map(v => v.id));
+        const soLocal = localVendas[k].filter(v => !cloudIds.has(v.id));
+        if(soLocal.length) {
+          cloudVendas[k] = [...cloudVendas[k], ...soLocal];
+          cloudVendas[k].sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+          console.log(`[cloudPull] merge: ${soLocal.length} venda(s) local(is) preservada(s) em ${k}`);
+        }
+      });
+      rec.vendas = cloudVendas;
+    }
     DB = rec;
     localStorage.setItem('bi_v5', JSON.stringify(DB));
     setCloudUI('ok','Nuvem ✓');
