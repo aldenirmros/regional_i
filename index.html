@@ -3226,15 +3226,6 @@ function renderSellers(){
     const tbu=document.getElementById('tab-btn-users');
     if(tbt) tbt.style.display='none';
     if(tbu) tbu.style.display='none';
-    // Pré-seleciona o HUB do supervisor mas permite trocar
-    const vtEl2=document.getElementById('v-time');
-    if(vtEl2 && u.timeId){
-      const ts2=(DB.times||[]).filter(t=>t.id===u.timeId||(t.id&&true)); // mostra todos
-      const myScopeTs=isGerente(u)?(DB.times||[]):(DB.times||[]).filter(t=>t.id===u.timeId);
-      vtEl2.innerHTML=myScopeTs.map(t=>`<option value="${t.id}"${t.id===u.timeId?' selected':''}>${t.nome}</option>`).join('');
-      vtEl2.value=u.timeId;
-      vtEl2.disabled=false; // permite escolher
-    }
   } else if(u?.role==='regional'){
     const rg=(DB.regionais||[]).find(x=>x.id===u.regionalId);
     if(banner){ banner.style.display='flex'; lbl.textContent=`Regional: ${rg?.nome||'—'}`; }
@@ -3245,9 +3236,17 @@ function renderSellers(){
   // Popula select de Time
   const vtEl=document.getElementById('v-time');
   if(vtEl){
-    const ts=u?.role==='regional'?(DB.times||[]).filter(t=>t.regionalId===u.regionalId):(DB.times||[]);
-    vtEl.innerHTML=`<option value="">— Sem time —</option>`
-      +ts.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+    if(u?.role==='supervisor' && u.timeId){
+      // Supervisor: mostra apenas o próprio HUB, pré-selecionado e fixo
+      const supT=(DB.times||[]).filter(t=>t.id===u.timeId);
+      vtEl.innerHTML=supT.map(t=>`<option value="${t.id}" selected>${t.nome}</option>`).join('');
+      vtEl.value=String(u.timeId);
+      vtEl.disabled=false;
+    } else {
+      const ts=u?.role==='regional'&&!isGerente(u)?(DB.times||[]).filter(t=>t.regionalId===u.regionalId):(DB.times||[]);
+      vtEl.innerHTML=`<option value="">— Sem time —</option>`
+        +ts.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+    }
   }
   // Popula select Regional no form de time
   const trgEl=document.getElementById('time-regional');
@@ -3427,7 +3426,6 @@ function renderUserList(){
 function addSeller(){
   const name=document.getElementById('v-nome').value.trim().toUpperCase();
   if(!name){ toast('Informe o nome','⚠️'); return; }
-  if(DB.sellers.find(s=>s.name===name)){ toast('Vendedor já existe','⚠️'); return; }
   const meta=parseInt(document.getElementById('v-meta').value)||14;
   const color=document.getElementById('v-cor').value;
   const cpf=document.getElementById('v-cpf').value.trim();
@@ -3443,7 +3441,12 @@ function addSeller(){
     const tids=(DB.times||[]).filter(t=>t.regionalId===u.regionalId).map(t=>t.id);
     if(timeId && !tids.includes(timeId)){ toast('HUB não pertence à sua Regional','⚠️'); return; }
   }
-  DB.sellers.push({id:DB.nextId++,name,cpf,meta,color,timeId,admDate,photo,_ts:Date.now()});
+  // Gera ID seguro: usa DB.nextId se válido, senão usa max(IDs existentes)+1
+  const _safeId = (DB.nextId && DB.nextId > 0 && Number.isFinite(DB.nextId))
+    ? DB.nextId
+    : Math.max(0, ...(DB.sellers.map(s=>Number(s.id)||0))) + 1;
+  DB.nextId = _safeId + 1;
+  DB.sellers.push({id:_safeId,name,cpf,meta,color,timeId,admDate,photo,_ts:Date.now()});
   saveDB();
   document.getElementById('v-nome').value='';
   document.getElementById('v-cpf').value='';
