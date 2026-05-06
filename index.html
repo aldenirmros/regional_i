@@ -3237,11 +3237,11 @@ function renderSellers(){
   const vtEl=document.getElementById('v-time');
   if(vtEl){
     if(u?.role==='supervisor' && u.timeId){
-      // Supervisor: mostra apenas o próprio HUB, pré-selecionado e fixo
+      // Supervisor: mostra apenas o próprio HUB, desabilitado (timeId é forçado no código)
       const supT=(DB.times||[]).filter(t=>t.id===u.timeId);
       vtEl.innerHTML=supT.map(t=>`<option value="${t.id}" selected>${t.nome}</option>`).join('');
       vtEl.value=String(u.timeId);
-      vtEl.disabled=false;
+      vtEl.disabled=true; // travado — addSeller() usa u.timeId diretamente
     } else {
       const ts=u?.role==='regional'&&!isGerente(u)?(DB.times||[]).filter(t=>t.regionalId===u.regionalId):(DB.times||[]);
       vtEl.innerHTML=`<option value="">— Sem time —</option>`
@@ -3429,24 +3429,27 @@ function addSeller(){
   const meta=parseInt(document.getElementById('v-meta').value)||14;
   const color=document.getElementById('v-cor').value;
   const cpf=document.getElementById('v-cpf').value.trim();
-  const timeIdRaw=document.getElementById('v-time')?.value;
-  const timeId=timeIdRaw?parseInt(timeIdRaw):null;
   const admDate=document.getElementById('v-adm')?.value||fmtD(today());
   const photo = _newSellerPhoto||null;
-  // Valida escopo: supervisor só pode adicionar no próprio HUB
   const u = currentUser;
+  // Determina timeId de forma segura — supervisor usa sempre seu próprio HUB
+  let timeId;
   if(u?.role==='supervisor'){
-    if(!timeId || timeId !== u.timeId){ toast('Você só pode adicionar vendedores no seu próprio HUB','⚠️'); return; }
+    if(!u.timeId){ toast('Seu usuário não está vinculado a nenhum HUB','⚠️'); return; }
+    timeId = u.timeId; // força o HUB do supervisor, ignora o select
   } else if(u?.role==='regional' && !isGerente(u)){
+    const timeIdRaw=document.getElementById('v-time')?.value;
+    timeId=timeIdRaw?Number(timeIdRaw):null;
     const tids=(DB.times||[]).filter(t=>t.regionalId===u.regionalId).map(t=>t.id);
     if(timeId && !tids.includes(timeId)){ toast('HUB não pertence à sua Regional','⚠️'); return; }
+  } else {
+    const timeIdRaw=document.getElementById('v-time')?.value;
+    timeId=timeIdRaw?Number(timeIdRaw):null;
   }
-  // Gera ID seguro: usa DB.nextId se válido, senão usa max(IDs existentes)+1
-  const _safeId = (DB.nextId && DB.nextId > 0 && Number.isFinite(DB.nextId))
-    ? DB.nextId
-    : Math.max(0, ...(DB.sellers.map(s=>Number(s.id)||0))) + 1;
-  DB.nextId = _safeId + 1;
-  DB.sellers.push({id:_safeId,name,cpf,meta,color,timeId,admDate,photo,_ts:Date.now()});
+  // ID único baseado em timestamp — evita colisão em cadastros simultâneos
+  const newId = Date.now();
+  DB.nextId = newId + 1; // mantém nextId atualizado para compatibilidade
+  DB.sellers.push({id:newId,name,cpf,meta,color,timeId,admDate,photo,_ts:newId});
   saveDB();
   document.getElementById('v-nome').value='';
   document.getElementById('v-cpf').value='';
@@ -4196,22 +4199,25 @@ async function cloudPull(){
       rec.vendas = cloudVendas;
     }
 
-    // ── 2. Sellers: union por id, _ts mais recente vence ──
-    if(DB.sellers && DB.sellers.length) {
+    // ── 2. Sellers: union completa — NUNCA perde vendedor local ──
+    {
       const cloudMap = new Map((rec.sellers||[]).map(s=>[s.id, s]));
-      DB.sellers.forEach(local => {
+      (DB.sellers||[]).forEach(local => {
         const cloud = cloudMap.get(local.id);
         if(!cloud){
-          // Seller só existe local → preserva
+          // Seller só existe localmente (ainda não chegou na nuvem) → sempre preserva
           cloudMap.set(local.id, local);
-          console.log(`[merge] seller novo local preservado: ${local.name}`);
-        } else if((local._ts||0) > (cloud._ts||0)){
-          // Local é mais recente → local vence
+          console.log('[merge] vendedor local preservado:', local.name, 'id:', local.id);
+        } else if((local._ts||0) >= (cloud._ts||0)){
+          // Local igual ou mais recente → local vence (garante que cadastro recém-feito vença)
           cloudMap.set(local.id, local);
         }
-        // Cloud é mais recente → já está no mapa, local descartado
+        // Caso cloud seja mais recente → cloud já está no mapa, ok
       });
       rec.sellers = [...cloudMap.values()];
+      // Atualiza nextId para garantir unicidade mesmo após merge
+      const maxId = Math.max(0, ...rec.sellers.map(s=>Number(s.id)||0));
+      rec.nextId = Math.max(rec.nextId||0, maxId + 1);
     }
 
     // ── 3. Dict aninhados: union de chaves, local vence em conflito ──
