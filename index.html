@@ -4307,7 +4307,7 @@ async function cloudPull(){
   try{
     const res = await fetch(cfg.gsUrl+'?action=get',{
       cache:'no-store',
-      signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout)
+      signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function')
               ? AbortSignal.timeout(15000) : undefined
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -4512,7 +4512,17 @@ function doLogin(){
   document.getElementById('login-ov').classList.add('hidden');
   applySession();
   const navEl = document.querySelector('.ni.on') || document.querySelectorAll('.ni')[0];
-  goPage('dash', navEl);
+  // ── Puxa dados frescos da nuvem após login (garante dados atualizados em qualquer browser) ──
+  const loginBtn = document.querySelector('.login-btn');
+  if(loginBtn){ loginBtn.textContent='Carregando…'; loginBtn.disabled=true; }
+  cloudPull().then(ok=>{
+    if(ok){ populateMes(); populateQESellers(); }
+    goPage('dash', navEl);
+    if(loginBtn){ loginBtn.textContent='Entrar'; loginBtn.disabled=false; }
+  }).catch(()=>{
+    goPage('dash', navEl);
+    if(loginBtn){ loginBtn.textContent='Entrar'; loginBtn.disabled=false; }
+  });
 }
 
 function doLogout(){
@@ -5699,8 +5709,11 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
   const sess = getSession();
   hideLoading();
 
-  if(sess && DB.users?.find(u=>u.id===sess.id)){
-    currentUser = sess;
+  const dbUser = sess ? DB.users?.find(u=>u.id===sess.id) : null;
+  if(sess && dbUser){
+    // Usa o objeto do DB (mais recente) em vez do objeto da sessão (pode estar desatualizado)
+    currentUser = {...dbUser, ...( sess.password ? {password: sess.password} : {} )};
+    setSession(currentUser); // atualiza sessão com dados frescos
     document.getElementById('login-ov').classList.add('hidden');
     applySession(); renderDash();
   } else {
