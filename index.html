@@ -4235,7 +4235,7 @@ function _deepMerge(cloud, local) {
     if (!local.vendas?.[k]) return; // ok, cloud já tem
   });
 
-  // ── função auxiliar para union de arrays por id com _ts ──
+  // ── mergeArr: local vence em empate (para sellers — local pode ter novos não enviados) ──
   function mergeArr(cloudArr, localArr) {
     const map = new Map((cloudArr||[]).map(x => [String(x.id), x]));
     (localArr||[]).forEach(loc => {
@@ -4245,11 +4245,22 @@ function _deepMerge(cloud, local) {
     });
     return [...map.values()];
   }
+  // ── mergeArrCloudWins: nuvem vence (para users/times/regionais — admin gerencia na nuvem) ──
+  function mergeArrCloudWins(cloudArr, localArr) {
+    const map = new Map((cloudArr||[]).map(x => [String(x.id), x]));
+    (localArr||[]).forEach(loc => {
+      const key = String(loc.id);
+      const cl  = map.get(key);
+      // Local só vence se for ESTRITAMENTE mais recente que o cloud
+      if (!cl || (loc._ts||0) > (cl._ts||0)) map.set(key, loc);
+    });
+    return [...map.values()];
+  }
 
-  r.sellers   = mergeArr(r.sellers,   local.sellers);
-  r.times     = mergeArr(r.times,     local.times);
-  r.regionais = mergeArr(r.regionais, local.regionais);
-  r.users     = mergeArr(r.users,     local.users);
+  r.sellers   = mergeArr(r.sellers,       local.sellers);  // local vence em empate (novos vendedores)
+  r.times     = mergeArrCloudWins(r.times,     local.times);     // nuvem vence (admin cria HUBs)
+  r.regionais = mergeArrCloudWins(r.regionais, local.regionais); // nuvem vence
+  r.users     = mergeArrCloudWins(r.users,     local.users);     // nuvem vence (admin gerencia usuários)
 
   // ── nextId: máximo garantido ──
   const maxSellerId = Math.max(0, ...r.sellers.map(s=>Number(s.id)||0));
@@ -4491,6 +4502,24 @@ function renderAll(){
 // ══════════════════════════════════════════════════════════
 function getSession(){ try{ return JSON.parse(sessionStorage.getItem('bi_sess')||'null'); }catch(e){return null;} }
 function setSession(u){ sessionStorage.setItem('bi_sess',JSON.stringify(u)); currentUser=u; }
+
+// Atualiza currentUser com a versão mais recente do banco (pós-cloudPull)
+// Preserva a senha da sessão que não é armazenada no DB por segurança
+function _refreshCurrentUserFromDB(){
+  if(!currentUser) return;
+  const fresh = DB.users?.find(u=>u.id===currentUser.id);
+  if(!fresh) return;
+  // Detecta se o escopo mudou (timeId ou regionalId alterados pelo admin)
+  const scopeChanged = fresh.timeId !== currentUser.timeId
+                    || fresh.regionalId !== currentUser.regionalId
+                    || fresh.role !== currentUser.role;
+  currentUser = fresh;
+  setSession(fresh);
+  if(scopeChanged){
+    applySession(); // re-aplica o escopo correto
+    console.log('[auth] escopo do usuário atualizado da nuvem:', fresh.username);
+  }
+}
 function clearSession(){ sessionStorage.removeItem('bi_sess'); currentUser=null; }
 
 function doLogin(){
@@ -4516,7 +4545,17 @@ function doLogin(){
   const loginBtn = document.querySelector('.login-btn');
   if(loginBtn){ loginBtn.textContent='Carregando…'; loginBtn.disabled=true; }
   cloudPull().then(ok=>{
-    if(ok){ populateMes(); populateQESellers(); }
+    if(ok){
+      // ── Atualiza currentUser com dados FRESCOS da nuvem ──
+      // Garante que mudanças de timeId/role/regionalId feitas pelo admin reflitam imediatamente
+      const freshUser = DB.users?.find(u=>u.id===currentUser.id);
+      if(freshUser){
+        currentUser = freshUser;
+        setSession(freshUser);
+        applySession(); // re-aplica escopo com dados atualizados
+      }
+      populateMes(); populateQESellers();
+    }
     goPage('dash', navEl);
     if(loginBtn){ loginBtn.textContent='Entrar'; loginBtn.disabled=false; }
   }).catch(()=>{
@@ -5727,14 +5766,20 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
   setInterval(async ()=>{
     if(document.hidden || !currentUser || _syncRunning) return;
     const refreshed = await cloudPull();
-    if(refreshed){ populateMes(); populateQESellers(); renderDash(); renderPSVIfActive(); }
+    if(refreshed){
+      _refreshCurrentUserFromDB();
+      populateMes(); populateQESellers(); renderDash(); renderPSVIfActive();
+    }
   }, 30_000);
 
   // ── Atualiza ao voltar do background ──
   document.addEventListener('visibilitychange', async ()=>{
     if(!document.hidden && currentUser){
       const refreshed = await cloudPull();
-      if(refreshed){ populateMes(); populateQESellers(); renderDash(); renderPSVIfActive(); }
+      if(refreshed){
+        _refreshCurrentUserFromDB();
+        populateMes(); populateQESellers(); renderDash(); renderPSVIfActive();
+      }
     }
   });
 })();
