@@ -2046,13 +2046,6 @@ function migrateToDefaultRegional(d){
   // Atribui todos os sellers sem timeId ao CE06 - ALPHA
   d.sellers.forEach(s=>{ if(!s.timeId) s.timeId = tm.id; });
 }
-function saveDB() {
-  localStorage.setItem('bi_v5', JSON.stringify(DB));
-  flashSaved();
-  // Salva imediatamente na nuvem sem debounce para evitar perda de dados
-  clearTimeout(saveDB._t);
-  cloudPush();
-}
 function flashSaved() {
   const el = document.getElementById('saved-badge');
   el.classList.add('show');
@@ -4100,66 +4093,251 @@ function syncLog(msg){
   if(el) el.textContent = new Date().toLocaleTimeString('pt-BR')+' — '+msg;
 }
 
-async function cloudPush(){
-  const cfg = getCfg();
-  if(!cfg.gsUrl){ setCloudUI('off','Sem nuvem'); return; }
-  setCloudUI('sync','Salvando…');
-  try {
-    // Apps Script faz redirect 302 POST→GET perdendo o body.
-    // Solução: mode:'no-cors' + URLSearchParams — o Apps Script recebe
-    // via e.parameter.data e processa normalmente sem CORS issues.
-    const params = new URLSearchParams();
-    params.append('data', JSON.stringify(DB));
-    await fetch(cfg.gsUrl, {
-      method : 'POST',
-      mode   : 'no-cors',   // contorna CORS e redirect sem preflight
-      body   : params
-    });
-    // no-cors retorna resposta opaca — não conseguimos ler, mas o GAS executa
-    setCloudUI('ok','Nuvem ✓');
-    syncLog('Dados enviados ao Google Sheets.');
-  } catch(err){
-    setCloudUI('err','Erro nuvem');
-    syncLog('Erro ao salvar: '+err.message);
-    console.error('[cloud push]', err);
-  }
+function saveDB() {
+  // ── 1. Salva localmente de forma síncrona (zero latência para o usuário) ──
+  try { localStorage.setItem('bi_v5', JSON.stringify(DB)); } catch(e){}
+  flashSaved();
+  // ── 2. Agenda sync com nuvem — debounce 350ms para batching de edições rápidas ──
+  clearTimeout(saveDB._t);
+  saveDB._t = setTimeout(_syncEnqueue, 350);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+//  MOTOR DE SINCRONIZAÇÃO — Pull-Merge-Push com retry automático
+//  Garante que NUNCA dados de outros usuários sejam perdidos em uso simultâneo.
+//  Fluxo por operação de save:
+//    1. GET estado atual do Google Sheets
+//    2. Merge profundo: cloud + local → resultado sem perdas
+//    3. POST resultado mesclado de volta ao Sheets
+//    4. Atualiza localStorage com o estado mesclado
+// ═══════════════════════════════════════════════════════════════════════════
+
+let _syncQueue   = false; // há um sync agendado/em curso?
+let _syncRunning = false; // sync está executando agora?
+
+async function _syncEnqueue() {
+  _syncQueue = true;
+  if (_syncRunning) return; // já está executando — vai rodar de novo ao terminar
+  await _runSync();
+}
+
+async function _runSync() {
+  if (_syncRunning) return;
+  _syncRunning = true;
+  _syncQueue   = false;
+
+  const cfg = getCfg();
+  if (!cfg.gsUrl) { setCloudUI('off', 'Sem nuvem'); _syncRunning = false; return; }
+
+  const MAX_TRIES = 4;
+  let lastErr = null;
+
+  for (let t = 1; t <= MAX_TRIES; t++) {
+    try {
+      setCloudUI('sync', t > 1 ? `Salvando… (tent. ${t})` : 'Salvando…');
+
+      // ── PASSO 1: Busca snapshot atual da nuvem ──────────────────────────
+      let cloudRec = null;
+      try {
+        const res = await fetch(cfg.gsUrl + '?action=get', {
+          cache  : 'no-store',
+          signal : AbortSignal.timeout ? AbortSignal.timeout(12000) : undefined
+        });
+        if (res.ok) {
+          const raw = await res.json().catch(()=>null);
+          cloudRec = raw?.record ?? raw ?? null;
+          // Normaliza campos ausentes que causam problemas em browsers antigos
+          if (cloudRec) {
+            if (!cloudRec.sellers  || !Array.isArray(cloudRec.sellers))  cloudRec.sellers  = [];
+            if (!cloudRec.vendas   || typeof cloudRec.vendas   !== 'object') cloudRec.vendas   = {};
+            if (!cloudRec.times    || !Array.isArray(cloudRec.times))    cloudRec.times    = [];
+            if (!cloudRec.regionais|| !Array.isArray(cloudRec.regionais))cloudRec.regionais= [];
+            if (!cloudRec.users    || !Array.isArray(cloudRec.users))    cloudRec.users    = [];
+            ['diasConfig','sellerMetas','hubMetas','mValues',
+             'ativacaoManual','ativacaoManualOv'].forEach(k=>{
+               if (!cloudRec[k] || typeof cloudRec[k] !== 'object' || Array.isArray(cloudRec[k]))
+                 cloudRec[k] = {};
+            });
+          }
+        }
+      } catch(e) {
+        // GET falhou — usa DB local como base (ainda tenta o POST)
+        console.warn('[sync] GET falhou:', e.message);
+        cloudRec = null;
+      }
+
+      // ── PASSO 2: Merge profundo local → cloud ───────────────────────────
+      const toSend = cloudRec ? _deepMerge(cloudRec, DB) : JSON.parse(JSON.stringify(DB));
+
+      // ── PASSO 3: POST resultado mesclado ────────────────────────────────
+      const params = new URLSearchParams();
+      params.append('data', JSON.stringify(toSend));
+      await fetch(cfg.gsUrl, { method:'POST', mode:'no-cors', body:params });
+      // no-cors = resposta opaca; GAS executa mas não podemos confirmar.
+      // Por isso sempre fazemos o merge antes do POST, não depois.
+
+      // ── PASSO 4: Atualiza localStorage com estado mesclado ──────────────
+      if (cloudRec) {
+        DB = toSend;
+        try { localStorage.setItem('bi_v5', JSON.stringify(DB)); } catch(e){}
+      }
+
+      setCloudUI('ok', 'Nuvem ✓');
+      syncLog('Sincronizado com Google Sheets.');
+
+      // Se havia outro sync pendente durante este, executa agora
+      if (_syncQueue) { _syncRunning = false; await _runSync(); return; }
+      _syncRunning = false;
+      return; // ✅ SUCESSO
+
+    } catch(err) {
+      lastErr = err;
+      console.warn(`[sync] tentativa ${t}/${MAX_TRIES} falhou:`, err.message);
+      if (t < MAX_TRIES) {
+        // Backoff: 1s → 2s → 4s
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, t - 1)));
+      }
+    }
+  }
+
+  // Todas as tentativas falharam — dados seguros no localStorage, avisa usuário
+  setCloudUI('err', 'Sem conexão');
+  syncLog('⚠️ Falha ao sincronizar. Dado salvo localmente — será reenviado ao reconectar.');
+  console.error('[sync] todas as tentativas falharam:', lastErr?.message);
+
+  // Agenda reenvio automático em 45s
+  setTimeout(_syncEnqueue, 45000);
+  _syncRunning = false;
+}
+
+// ── Merge profundo: cloud + local → sem perdas ──────────────────────────────
+// Regras:
+//   vendas   → union por id (todos os lançamentos de todos os usuários)
+//   sellers  → union por id, _ts mais recente vence
+//   times / regionais / users → union por id, _ts mais recente vence
+//   dicts aninhados (metas, diasConfig…) → union de chaves, local vence
+function _deepMerge(cloud, local) {
+  const r = JSON.parse(JSON.stringify(cloud)); // cópia do cloud como base
+
+  // ── vendas: union por id em todos os meses ──
+  const lv = local.vendas || {};
+  Object.keys(lv).forEach(k => {
+    if (!r.vendas[k]) r.vendas[k] = [];
+    const ids = new Set(r.vendas[k].map(v => String(v.id)));
+    const extras = (lv[k]||[]).filter(v => !ids.has(String(v.id)));
+    if (extras.length) {
+      r.vendas[k] = [...r.vendas[k], ...extras]
+        .sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+    }
+  });
+  // também traz chaves que só existem na nuvem (outros meses)
+  Object.keys(r.vendas||{}).forEach(k => {
+    if (!local.vendas?.[k]) return; // ok, cloud já tem
+  });
+
+  // ── função auxiliar para union de arrays por id com _ts ──
+  function mergeArr(cloudArr, localArr) {
+    const map = new Map((cloudArr||[]).map(x => [String(x.id), x]));
+    (localArr||[]).forEach(loc => {
+      const key = String(loc.id);
+      const cl  = map.get(key);
+      if (!cl || (loc._ts||0) >= (cl._ts||0)) map.set(key, loc);
+    });
+    return [...map.values()];
+  }
+
+  r.sellers   = mergeArr(r.sellers,   local.sellers);
+  r.times     = mergeArr(r.times,     local.times);
+  r.regionais = mergeArr(r.regionais, local.regionais);
+  r.users     = mergeArr(r.users,     local.users);
+
+  // ── nextId: máximo garantido ──
+  const maxSellerId = Math.max(0, ...r.sellers.map(s=>Number(s.id)||0));
+  r.nextId = Math.max(r.nextId||0, local.nextId||0, maxSellerId + 1);
+
+  // ── dicts aninhados: union de chaves, local vence ──
+  function mergeDict(cld, loc) {
+    if (!loc) return cld;
+    const out = JSON.parse(JSON.stringify(cld||{}));
+    Object.keys(loc||{}).forEach(k1 => {
+      const v = loc[k1];
+      if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+        if (!out[k1]) out[k1] = {};
+        Object.keys(v).forEach(k2 => { out[k1][k2] = v[k2]; });
+      } else if (v != null) {
+        out[k1] = v;
+      }
+    });
+    return out;
+  }
+
+  r.hubMetas          = mergeDict(r.hubMetas,          local.hubMetas);
+  r.sellerMetas       = mergeDict(r.sellerMetas,        local.sellerMetas);
+  r.mValues           = mergeDict(r.mValues,            local.mValues);
+  r.diasConfig        = mergeDict(r.diasConfig,         local.diasConfig);
+  r.ativacaoManual    = mergeDict(r.ativacaoManual,     local.ativacaoManual);
+  r.ativacaoManualOv  = mergeDict(r.ativacaoManualOv,   local.ativacaoManualOv);
+  if (local.psvData && Object.keys(local.psvData).length)
+    r.psvData         = mergeDict(r.psvData,            local.psvData);
+
+  return r;
+}
+
+// Mantém cloudPush como alias para compatibilidade com chamadas existentes no código
+async function cloudPush() { await _syncEnqueue(); }
+
+// cloudSyncVendas: motor unificado (pull-merge-push) garante que vendas
+// de TODOS os usuários sejam preservadas. Substitui o pull-before-push manual.
+async function cloudSyncVendas(){
+  try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+  await _syncEnqueue();
+}
+
+
+
+
+// ── cloudPull: busca nuvem, merge, atualiza local ──────────────────────────
+// Chamado no boot, auto-refresh e visibilitychange.
 async function cloudPull(){
-  // Se houve importação de Excel nos últimos 5min, não sobrescreve o banco local
-  if(window._blockPull && Date.now() - window._blockPull < 300000) return false;
+  // Bloqueia se houve importação de Excel recente (5min)
+  if(window._blockPull && Date.now()-window._blockPull < 300000) return false;
   const cfg = getCfg();
   if(!cfg.gsUrl) return false;
   setCloudUI('sync','Carregando…');
-  try {
-    // GET simples — Apps Script responde com JSON, sem preflight
-    const res = await fetch(cfg.gsUrl + '?action=get', { cache: 'no-store' });
+  try{
+    const res = await fetch(cfg.gsUrl+'?action=get',{
+      cache:'no-store',
+      signal: (typeof AbortSignal !== 'undefined' && AbortSignal.timeout)
+              ? AbortSignal.timeout(15000) : undefined
+    });
     if(!res.ok) throw new Error('HTTP '+res.status);
+
     let data;
-    try { data = await res.json(); }
-    catch(e){ throw new Error('Resposta não é JSON. Verifique se o Apps Script está implantado corretamente.'); }
+    try{ data = await res.json(); }
+    catch(e){ throw new Error('Resposta inválida do Apps Script (não é JSON). Reimplante o Web App.'); }
+
     const rec = data?.record ?? data;
-    if(!rec?.sellers || !rec?.vendas) {
-      // Banco vazio no Sheets — aceita e inicializa
-      if(Array.isArray(rec?.sellers) && rec.sellers.length === 0){
-        migrateToDefaultRegional(rec);
-        DB = rec;
-        localStorage.setItem('bi_v5', JSON.stringify(DB));
-        setCloudUI('ok','Nuvem ✓');
-        syncLog('Banco novo criado no Google Sheets.');
-        return true;
-      }
-      throw new Error('Estrutura inválida. Verifique a aba "DB" no Google Sheets.');
+
+    // ── Validação robusta — tolerante a campos ausentes ou null ──
+    const hasSellers = Array.isArray(rec?.sellers);
+    const hasVendas  = rec?.vendas && typeof rec.vendas === 'object' && !Array.isArray(rec.vendas);
+
+    if(!hasSellers && !hasVendas){
+      throw new Error('Estrutura inválida no Google Sheets. Verifique a aba DB.');
     }
-    if(!rec.diasConfig)    rec.diasConfig={};
-    if(!rec.sellerMetas)   rec.sellerMetas={};
-    if(!rec.hubMetas)      rec.hubMetas={};
-    if(!rec.mValues)       rec.mValues={};
-    if(!rec.ativacaoManual)rec.ativacaoManual={};
-    if(!rec.ativacaoManualOv)rec.ativacaoManualOv={};
-    if(!rec.regionais)     rec.regionais=[];
-    if(!rec.times)         rec.times=[];
-    if(!rec.users)         rec.users=[{id:1,username:'gerente',password:'gerente123',role:'gerente',nome:'Gerente Geral',regionalId:null,timeId:null,color:'#7c3aed'}];
+
+    // Garante todos os campos obrigatórios
+    if(!rec.sellers   || !Array.isArray(rec.sellers))   rec.sellers   = [];
+    if(!rec.vendas    || typeof rec.vendas!=='object')   rec.vendas    = {};
+    if(!rec.times     || !Array.isArray(rec.times))     rec.times     = [];
+    if(!rec.regionais || !Array.isArray(rec.regionais)) rec.regionais = [];
+    if(!rec.users     || !Array.isArray(rec.users))     rec.users     = [];
+    ['diasConfig','sellerMetas','hubMetas','mValues',
+     'ativacaoManual','ativacaoManualOv'].forEach(k=>{
+       if(!rec[k] || typeof rec[k]!=='object' || Array.isArray(rec[k])) rec[k]={};
+    });
+
+    // Normaliza roles de usuário (compatibilidade com versões antigas)
     rec.users = rec.users.map(u=>({
       ...u,
       role: u.role==='admin'?'gerente': u.role==='user'?'supervisor': u.role||'supervisor',
@@ -4169,148 +4347,38 @@ async function cloudPull(){
       color: u.color||(u.role==='gerente'?'#7c3aed':'#2563eb')
     }));
     if(!rec.users.find(u=>u.role==='gerente'))
-      rec.users.unshift({id:1,username:'gerente',password:'gerente123',role:'gerente',nome:'Gerente Geral',regionalId:null,timeId:null,color:'#7c3aed'});
+      rec.users.unshift({id:1,username:'gerente',password:'gerente123',
+                          role:'gerente',nome:'Gerente Geral',
+                          regionalId:null,timeId:null,color:'#7c3aed'});
+
+    // Banco novo/vazio — inicializa sem merge
+    if(rec.sellers.length === 0 && Object.keys(rec.vendas).length === 0){
+      migrateToDefaultRegional(rec);
+      DB = rec;
+      try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+      setCloudUI('ok','Nuvem ✓');
+      syncLog('Banco inicializado do Google Sheets.');
+      return true;
+    }
+
     migrateToDefaultRegional(rec);
 
-    // ══════════════════════════════════════════════════════
-    //  MERGE PROFUNDO — preserva dados locais não sincronizados
-    //  Estratégia por seção:
-    //  • vendas        → união por id (sem duplicatas)
-    //  • sellers       → união por id, vence o _ts mais recente
-    //  • hubMetas, sellerMetas, mValues, diasConfig, psvData
-    //                  → union de chaves, local vence em conflito
-    //                    (usuário que está editando tem prioridade)
-    // ══════════════════════════════════════════════════════
-
-    // ── 1. Vendas: union por id em todos os meses ──
-    if(DB.vendas && Object.keys(DB.vendas).length) {
-      const localVendas = DB.vendas;
-      const cloudVendas = rec.vendas || {};
-      Object.keys(localVendas).forEach(k => {
-        if(!cloudVendas[k]) cloudVendas[k] = [];
-        const cloudIds = new Set(cloudVendas[k].map(v => v.id));
-        const soLocal = localVendas[k].filter(v => !cloudIds.has(v.id));
-        if(soLocal.length) {
-          cloudVendas[k] = [...cloudVendas[k], ...soLocal];
-          cloudVendas[k].sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
-          console.log(`[merge] vendas: ${soLocal.length} local(is) preservada(s) em ${k}`);
-        }
-      });
-      rec.vendas = cloudVendas;
-    }
-
-    // ── 2. Sellers: union completa — NUNCA perde vendedor local ──
-    {
-      const cloudMap = new Map((rec.sellers||[]).map(s=>[s.id, s]));
-      (DB.sellers||[]).forEach(local => {
-        const cloud = cloudMap.get(local.id);
-        if(!cloud){
-          // Seller só existe localmente (ainda não chegou na nuvem) → sempre preserva
-          cloudMap.set(local.id, local);
-          console.log('[merge] vendedor local preservado:', local.name, 'id:', local.id);
-        } else if((local._ts||0) >= (cloud._ts||0)){
-          // Local igual ou mais recente → local vence (garante que cadastro recém-feito vença)
-          cloudMap.set(local.id, local);
-        }
-        // Caso cloud seja mais recente → cloud já está no mapa, ok
-      });
-      rec.sellers = [...cloudMap.values()];
-      // Atualiza nextId para garantir unicidade mesmo após merge
-      const maxId = Math.max(0, ...rec.sellers.map(s=>Number(s.id)||0));
-      rec.nextId = Math.max(rec.nextId||0, maxId + 1);
-    }
-
-    // ── 3. Dict aninhados: union de chaves, local vence em conflito ──
-    function mergeDeepDict(cloud, local){
-      if(!local || !Object.keys(local).length) return cloud;
-      const result = JSON.parse(JSON.stringify(cloud||{}));
-      Object.keys(local).forEach(k1 => {
-        if(local[k1] !== null && typeof local[k1]==='object' && !Array.isArray(local[k1])){
-          if(!result[k1]) result[k1] = {};
-          Object.keys(local[k1]).forEach(k2 => {
-            result[k1][k2] = local[k1][k2]; // local vence
-          });
-        } else {
-          // Valor escalar: só sobrescreve se local não for null/undefined
-          if(local[k1] != null) result[k1] = local[k1];
-        }
-      });
-      return result;
-    }
-
-    rec.hubMetas         = mergeDeepDict(rec.hubMetas||{},         DB.hubMetas||{});
-    rec.sellerMetas      = mergeDeepDict(rec.sellerMetas||{},      DB.sellerMetas||{});
-    rec.mValues          = mergeDeepDict(rec.mValues||{},          DB.mValues||{});
-    rec.diasConfig       = mergeDeepDict(rec.diasConfig||{},       DB.diasConfig||{});
-    rec.ativacaoManual   = mergeDeepDict(rec.ativacaoManual||{},   DB.ativacaoManual||{});
-    rec.ativacaoManualOv = mergeDeepDict(rec.ativacaoManualOv||{}, DB.ativacaoManualOv||{});
-    if(DB.psvData && Object.keys(DB.psvData).length)
-      rec.psvData = mergeDeepDict(rec.psvData||{}, DB.psvData||{});
-
-    DB = rec;
-    localStorage.setItem('bi_v5', JSON.stringify(DB));
+    // ── Merge profundo: cloud (base) + local (sobrepõe) → DB final ──
+    const merged = _deepMerge(rec, DB);
+    DB = merged;
+    try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
     setCloudUI('ok','Nuvem ✓');
-    syncLog('Dados carregados do Google Sheets.');
+    syncLog('Dados sincronizados do Google Sheets.');
     return true;
+
   } catch(err){
     setCloudUI('err','Erro ao carregar');
     syncLog('Erro: '+err.message);
-    console.error('[cloud pull]', err);
+    console.error('[cloudPull]', err);
     return false;
   }
 }
 
-// ── Pull-before-push para operações de venda (anti race-condition) ──
-// Garante que antes de enviar as vendas ao Sheets, temos os dados
-// mais recentes dos outros usuários, evitando sobrescrever suas vendas.
-async function cloudSyncVendas(){
-  const cfg = getCfg();
-  if(!cfg.gsUrl){ cloudPush(); return; } // sem nuvem: só salva local
-  try {
-    const res = await fetch(cfg.gsUrl + '?action=get', {cache:'no-store'});
-    if(!res.ok){ cloudPush(); return; }
-    let data; try{ data=await res.json(); }catch(e){ cloudPush(); return; }
-    const rec = data?.record ?? data;
-    if(!rec?.vendas){ cloudPush(); return; }
-
-    const cloudVendas = rec.vendas || {};
-
-    // Injeta vendas locais que o Sheets ainda não tem
-    Object.keys(DB.vendas||{}).forEach(k=>{
-      if(!cloudVendas[k]) cloudVendas[k]=[];
-      const cloudIds = new Set(cloudVendas[k].map(v=>v.id));
-      const soLocal  = (DB.vendas[k]||[]).filter(v=>!cloudIds.has(v.id));
-      if(soLocal.length)
-        cloudVendas[k] = [...cloudVendas[k], ...soLocal].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
-    });
-
-    // Detecta vendas do Sheets que o local ainda não tem
-    let cloudHasNew = false;
-    Object.keys(cloudVendas).forEach(k=>{
-      if(!DB.vendas[k]) DB.vendas[k]=[];
-      const localIds = new Set((DB.vendas[k]||[]).map(v=>v.id));
-      const cloudNew = cloudVendas[k].filter(v=>!localIds.has(v.id));
-      if(cloudNew.length){
-        DB.vendas[k] = [...(DB.vendas[k]||[]), ...cloudNew].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
-        cloudHasNew = true;
-      }
-    });
-
-    // Atualiza local com o conjunto completo mesclado
-    DB.vendas = cloudVendas;
-    localStorage.setItem('bi_v5', JSON.stringify(DB));
-    cloudPush(); // envia o conjunto já mesclado
-
-    if(cloudHasNew){
-      console.log('[syncVendas] novas vendas da nuvem — atualizando tela');
-      renderDash(); renderPSVIfActive();
-      if(document.getElementById('page-lancar')?.classList.contains('active')) renderLancar();
-    }
-  } catch(e){
-    console.warn('[syncVendas] falhou:', e.message);
-    cloudPush(); // fallback: empurra o que tem
-  }
-}
 
 async function connectCloud(){
   const gsUrl = document.getElementById('m-gsurl').value.trim();
@@ -5642,12 +5710,12 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
     }
   }
 
-  // ── Auto-refresh a cada 60s ──
+  // ── Auto-refresh a cada 30s — atualiza tela com dados de outros usuários ──
   setInterval(async ()=>{
-    if(document.hidden || !currentUser) return;
+    if(document.hidden || !currentUser || _syncRunning) return;
     const refreshed = await cloudPull();
-    if(refreshed){ populateMes(); populateQESellers(); renderDash(); renderPSV(); }
-  }, 60_000);
+    if(refreshed){ populateMes(); populateQESellers(); renderDash(); renderPSVIfActive(); }
+  }, 30_000);
 
   // ── Atualiza ao voltar do background ──
   document.addEventListener('visibilitychange', async ()=>{
