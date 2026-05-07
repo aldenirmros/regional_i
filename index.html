@@ -2,7 +2,12 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff">
 <title>Acompanhamento de Vendas</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -721,6 +726,32 @@ select.sel:focus{border-color:var(--blue);}
 .login-remember{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tl);margin-top:-4px;margin-bottom:4px;cursor:pointer;}
 .login-remember input{width:15px;height:15px;accent-color:var(--blue);cursor:pointer;}
 
+/* ── BOTÕES ATUALIZAR / SALVAR ── */
+.btn-refresh{background:transparent;border:1.5px solid var(--border);color:var(--tm);border-radius:var(--rs);padding:6px 12px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s var(--ease);flex-shrink:0;}
+.btn-refresh:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-g);}
+.btn-refresh svg{transition:transform .5s;}
+.btn-refresh.spinning svg{animation:spinOnce .7s linear;}
+@keyframes spinOnce{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.btn-refresh.loading{opacity:.6;pointer-events:none;}
+.btn-save-now{background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:6px 12px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s var(--ease);flex-shrink:0;}
+.btn-save-now:hover{background:var(--green-l);transform:translateY(-1px);}
+.btn-save-now.saving{opacity:.6;pointer-events:none;}
+.btn-save-now svg{transition:transform .4s;}
+#sync-status-bar{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg);flex-shrink:0;white-space:nowrap;transition:all .3s;}
+#sync-status-bar.ok{color:var(--green);border-color:rgba(5,150,105,.3);background:rgba(5,150,105,.07);}
+#sync-status-bar.err{color:var(--red);border-color:rgba(220,38,38,.3);background:rgba(220,38,38,.07);}
+#sync-status-bar.sync{color:var(--orange);border-color:rgba(217,119,6,.3);background:rgba(217,119,6,.07);}
+#sync-status-bar .ss-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+#sync-status-bar.ok .ss-dot{background:var(--green);box-shadow:0 0 0 2px rgba(5,150,105,.25);}
+#sync-status-bar.err .ss-dot{background:var(--red);animation:pulse 1.2s infinite;}
+#sync-status-bar.sync .ss-dot{background:var(--orange);animation:pulse .8s infinite;}
+@media(max-width:768px){
+  #sync-status-bar span{display:none;}
+  .btn-refresh span{display:none;}
+  .btn-save-now span{display:none;}
+  .btn-refresh,.btn-save-now{padding:6px 8px;}
+}
+
 /* change password btn */
 .chpw-btn{background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:10.5px;font-weight:600;color:var(--tl);cursor:pointer;font-family:var(--font);transition:all .12s;white-space:nowrap;}
 .chpw-btn:hover{border-color:var(--blue);color:var(--blue);}
@@ -848,7 +879,22 @@ select.sel:focus{border-color:var(--blue);}
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
       Salvo
     </div>
-    <div class="cloud-pill" id="cloud-pill" onclick="openCloudModal()" title="Sincronização na nuvem">
+    <!-- STATUS DE SYNC visível para todos -->
+    <div id="sync-status-bar" class="sync">
+      <div class="ss-dot"></div>
+      <span id="sync-status-txt">Conectando…</span>
+    </div>
+    <!-- BOTÃO ATUALIZAR -->
+    <button class="btn-refresh" id="btn-global-refresh" onclick="manualRefresh()" title="Buscar dados mais recentes da nuvem">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="refresh-icon"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <span>Atualizar</span>
+    </button>
+    <!-- BOTÃO SALVAR -->
+    <button class="btn-save-now" id="btn-global-save" onclick="manualSave()" title="Salvar e sincronizar agora">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      <span>Salvar</span>
+    </button>
+    <div class="cloud-pill" id="cloud-pill" onclick="openCloudModal()" title="Configurações de sincronização">
       <div class="cloud-dot off" id="cloud-dot"></div>
       <span id="cloud-txt">Conectando…</span>
     </div>
@@ -4087,6 +4133,57 @@ function setCloudUI(state, txt){
   const label = document.getElementById('cloud-txt');
   if(dot)  { dot.className='cloud-dot '+state; }
   if(label){ label.textContent = txt; }
+  // ── Atualiza a barra de status global ──
+  const bar = document.getElementById('sync-status-bar');
+  const stxt = document.getElementById('sync-status-txt');
+  if(bar){
+    bar.className = 'sync'; // reset
+    const map = {ok:'ok', err:'err', sync:'sync', off:'err'};
+    bar.classList.add(map[state]||'sync');
+  }
+  if(stxt){
+    const labels = {ok:'Sincronizado', err:'Sem conexão', sync:'Salvando…', off:'Sem nuvem'};
+    stxt.textContent = labels[state] || txt;
+  }
+}
+
+// ── Atualizar manualmente (pull da nuvem + re-render) ──
+async function manualRefresh(){
+  const btn = document.getElementById('btn-global-refresh');
+  if(btn){ btn.classList.add('spinning','loading'); }
+  toast('🔄 Buscando dados da nuvem…','🔄');
+  try {
+    const refreshed = await cloudPull();
+    if(refreshed){
+      _refreshCurrentUserFromDB();
+      populateMes(); populateQESellers();
+      renderAll();
+      toast('✅ Dados atualizados com sucesso!');
+    } else {
+      toast('⚠️ Sem conexão com a nuvem. Usando dados locais.','⚠️');
+    }
+  } catch(e){
+    toast('❌ Erro ao atualizar: ' + e.message,'⚠️');
+  } finally {
+    if(btn){ btn.classList.remove('spinning','loading'); }
+  }
+}
+
+// ── Salvar manualmente (force push imediato) ──
+async function manualSave(){
+  const btn = document.getElementById('btn-global-save');
+  if(btn){ btn.classList.add('saving'); btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Salvando…</span>'; }
+  try {
+    saveDB();
+    // Força sync imediato (sem debounce)
+    clearTimeout(saveDB._t);
+    await _syncEnqueue();
+    toast('💾 Dados salvos e sincronizados!');
+  } catch(e){
+    toast('❌ Erro ao salvar: ' + e.message,'⚠️');
+  } finally {
+    if(btn){ btn.classList.remove('saving'); btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Salvar</span>'; }
+  }
 }
 function syncLog(msg){
   const el=document.getElementById('sync-log');
@@ -5768,7 +5865,7 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
     const refreshed = await cloudPull();
     if(refreshed){
       _refreshCurrentUserFromDB();
-      populateMes(); populateQESellers(); renderDash(); renderPSVIfActive();
+      populateMes(); populateQESellers(); renderAll(); renderPSVIfActive();
     }
   }, 30_000);
 
@@ -5778,7 +5875,7 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
       const refreshed = await cloudPull();
       if(refreshed){
         _refreshCurrentUserFromDB();
-        populateMes(); populateQESellers(); renderDash(); renderPSVIfActive();
+        populateMes(); populateQESellers(); renderAll(); renderPSVIfActive();
       }
     }
   });
@@ -6436,6 +6533,30 @@ function psvSavePlan(){
     if(badge){ badge.style.opacity='1'; clearTimeout(badge._t); badge._t=setTimeout(()=>badge.style.opacity='0',2200); }
   }catch(e){ toast('⚠️ Erro ao salvar plano.'); }
 }
+
+// ── Atalho de teclado: Ctrl+S / Cmd+S → Salvar ──
+document.addEventListener('keydown', function(e){
+  if((e.ctrlKey || e.metaKey) && e.key === 's'){
+    e.preventDefault();
+    if(currentUser) manualSave();
+  }
+});
+
+// ── Detecta reconexão de rede → atualiza automaticamente ──
+window.addEventListener('online', async function(){
+  if(!currentUser) return;
+  toast('🌐 Conexão restaurada — atualizando…');
+  const refreshed = await cloudPull();
+  if(refreshed){
+    _refreshCurrentUserFromDB();
+    populateMes(); populateQESellers(); renderAll();
+    await _syncEnqueue(); // reenvia dados pendentes
+  }
+});
+window.addEventListener('offline', function(){
+  setCloudUI('err', 'Sem conexão');
+  toast('⚠️ Sem internet. Dados salvos localmente.', '⚠️');
+});
 </script>
 
 <!-- ══ FOOTER ══ -->
