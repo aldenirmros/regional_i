@@ -1203,8 +1203,8 @@ canvas { display:block; max-width:100%; }
           <div class="card-title"><div class="ctd" style="background:var(--green)"></div>Realizado vs Meta</div>
           <button class="chart-maximize-btn" onclick="maximizeChart('donut')" title="Maximizar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
         </div>
-        <div class="dw" style="height:180px">
-          <canvas id="ch-donut" style="max-height:165px"></canvas>
+        <div class="dw" style="position:relative;height:180px;padding:14px;">
+          <canvas id="ch-donut"></canvas>
           <div class="dc2"><div class="dpct" id="donut-p">0%</div><div class="dlbl">da meta</div></div>
         </div>
         <div class="leg">
@@ -2343,33 +2343,113 @@ function loadDB() {
 }
 
 // Migra sellers sem timeId para Regional I / CE06 - ALPHA (cria se não existir)
+// ══════════════════════════════════════════════════════════════
+//  UNIFICAR DUPLICATAS — Regional I e CE06 - Alfa
+//  Chamado automaticamente em toda sincronização com a nuvem.
+// ══════════════════════════════════════════════════════════════
+function unificarDuplicatas(db) {
+  if(!db) return db;
+
+  const RG_ID  = 1001;  // id canônico da Regional I
+  const TM_ID  = 2001;  // id canônico do CE06 - Alfa
+
+  // ── 1. Normaliza nomes e coleta IDs duplicados de Regionais ───────────
+  const rgAliases = {};  // idAntigo → idCanônico
+  const rgSeen    = {};  // nomeNorm → idCanônico
+
+  db.regionais = (db.regionais||[]).reduce((acc, r) => {
+    const nNorm = (r.nome||'').trim().toUpperCase().replace(/\s+/g,' ');
+    const isR1  = /^REGIONAL\s*(I|1)$/i.test(nNorm);
+
+    if (isR1) {
+      if (!rgSeen['R1']) {
+        // Primeiro "Regional I" encontrado → torna-se o canônico
+        rgSeen['R1'] = RG_ID;
+        rgAliases[r.id] = RG_ID;
+        acc.push({ ...r, id: RG_ID, nome: 'Regional I' });
+      } else {
+        // Duplicata → mapeia para o canônico
+        rgAliases[r.id] = RG_ID;
+      }
+    } else {
+      acc.push(r);
+    }
+    return acc;
+  }, []);
+
+  // ── 2. Atualiza regionalId nos times e users ───────────────────────────
+  db.times = (db.times||[]).map(t => ({
+    ...t,
+    regionalId: rgAliases[t.regionalId] ?? t.regionalId
+  }));
+  db.users = (db.users||[]).map(u => ({
+    ...u,
+    regionalId: rgAliases[u.regionalId] ?? u.regionalId
+  }));
+
+  // ── 3. Normaliza nomes e coleta IDs duplicados de Times ───────────────
+  const tmAliases = {};  // idAntigo → idCanônico
+  const tmSeen    = {};  // nomeNorm → idCanônico
+
+  db.times = (db.times||[]).reduce((acc, t) => {
+    const nNorm = (t.nome||'').trim().toUpperCase().replace(/[\s\-]+/g,'');
+    const isCe06 = /CE0?6/i.test(nNorm);
+
+    if (isCe06) {
+      if (!tmSeen['CE06']) {
+        tmSeen['CE06'] = TM_ID;
+        tmAliases[t.id] = TM_ID;
+        acc.push({ ...t, id: TM_ID, nome: 'CE06 - Alfa', regionalId: RG_ID });
+      } else {
+        tmAliases[t.id] = TM_ID;
+      }
+    } else {
+      acc.push(t);
+    }
+    return acc;
+  }, []);
+
+  // ── 4. Atualiza timeId em sellers e users ──────────────────────────────
+  db.sellers = (db.sellers||[]).map(s => ({
+    ...s,
+    timeId: tmAliases[s.timeId] ?? s.timeId
+  }));
+  db.users = (db.users||[]).map(u => ({
+    ...u,
+    timeId: tmAliases[u.timeId] ?? u.timeId
+  }));
+
+  return db;
+}
+
 function migrateToDefaultRegional(d){
-  // Verifica se já existe a regional padrão
-  let rg = d.regionais.find(r=>r.nome==='Regional I');
-  if(!rg){
-    rg = {id:1001, nome:'Regional I', color:'#2563eb'};
-    d.regionais.push(rg);
+  // Garante Regional I e CE06 - Alfa existem antes de unificar
+  if(!d.regionais.find(r=>r.id===1001||/^REGIONAL\s*(I|1)$/i.test(r.nome||''))){
+    d.regionais.push({id:1001, nome:'Regional I', color:'#2563eb'});
   }
-  let tm = d.times.find(t=>t.nome==='CE06 - ALPHA'&&t.regionalId===rg.id);
-  if(!tm){
-    tm = {id:2001, nome:'CE06 - ALPHA', regionalId:rg.id, color:'#2563eb'};
-    d.times.push(tm);
+  if(!d.times.find(t=>t.id===2001||/CE0?6/i.test(t.nome||''))){
+    d.times.push({id:2001, nome:'CE06 - Alfa', regionalId:1001, color:'#2563eb'});
   }
-  // Cria Aldenir se não existir
-  const aldenirExistente = d.users.find(u=>u.username==='aldenir');
-  if(!aldenirExistente){
-    d.users.push({id:1002,username:'aldenir',password:'@RThur20',role:'regional',superAdmin:true,nome:'Aldenir',regionalId:rg.id,timeId:null,color:'#7c3aed'});
+
+  // Unifica duplicatas (Regional I e CE06 - Alfa)
+  unificarDuplicatas(d);
+
+  // Cria / normaliza usuário Aldenir
+  const aldenir = d.users.find(u=>u.username==='aldenir');
+  if(!aldenir){
+    d.users.push({id:1002,username:'aldenir',password:'@RThur20',role:'regional',
+                  superAdmin:true,nome:'Aldenir',regionalId:1001,timeId:null,color:'#7c3aed'});
   } else {
-    // Sempre força: senha, superAdmin, role e cor roxa (SUPER)
-    aldenirExistente.password   = '@RThur20';
-    aldenirExistente.superAdmin = true;
-    aldenirExistente.role       = 'regional';  // isGerente() retorna true via superAdmin
-    aldenirExistente.color      = '#7c3aed';   // roxo = identidade SUPER
-    aldenirExistente.nome       = aldenirExistente.nome || 'Aldenir';
-    if(!aldenirExistente.regionalId) aldenirExistente.regionalId = rg.id;
+    aldenir.password   = '@RThur20';
+    aldenir.superAdmin = true;
+    aldenir.role       = 'regional';
+    aldenir.color      = '#7c3aed';
+    aldenir.nome       = aldenir.nome || 'Aldenir';
+    if(!aldenir.regionalId) aldenir.regionalId = 1001;
   }
-  // Atribui todos os sellers sem timeId ao CE06 - ALPHA
-  d.sellers.forEach(s=>{ if(!s.timeId) s.timeId = tm.id; });
+
+  // Garante que sellers sem timeId vão para o CE06 - Alfa
+  d.sellers.forEach(s=>{ if(!s.timeId) s.timeId = 2001; });
 }
 function flashSaved() {
   const el = document.getElementById('saved-badge');
@@ -3011,9 +3091,20 @@ function renderDash(){
 function buildDonut(real,gap){
   const ctx=document.getElementById('ch-donut').getContext('2d');
   if(chartDonut) chartDonut.destroy();
-  chartDonut=new Chart(ctx,{type:'doughnut',data:{datasets:[{data:[real,Math.max(0,gap)],backgroundColor:['#059669','#e2e8f0'],borderWidth:0,hoverOffset:4}]},
-    options:{cutout:'70%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const l=['Realizado','Restante'];return ` ${l[c.dataIndex]}: ${c.raw}`;}}}}
-  ,animation:{animateRotate:true,duration:800}}});
+  chartDonut=new Chart(ctx,{
+    type:'doughnut',
+    data:{datasets:[{data:[real,Math.max(0,gap)],backgroundColor:['#059669','#e2e8f0'],borderWidth:0,hoverOffset:4}]},
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      cutout:'70%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>{const l=['Realizado','Restante'];return ` ${l[c.dataIndex]}: ${c.raw}`;}}}
+      },
+      animation:{animateRotate:true,duration:800}
+    }
+  });
 }
 
 function buildBar(stats, sid, duPass, duTotal){
@@ -4374,7 +4465,7 @@ function downloadModeloExcel(){
 const CLOUD_LS   = 'bi_cloud_v2';
 // URL do Google Apps Script gravada diretamente no HTML — mesmo banco em TODOS os dispositivos
 // Substitua pela URL do seu Web App depois de implantar o Apps Script
-const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbz5Ih4Lf4OWWtsdjvMlMN38pX-iTiiKgGjjWe9ZS3yLDQxo4XxjVePfZfTi3iG35E0N/exec';
+const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbz9vPhKTTGJBwrqpo2CkOrvcpZgqKeZeXrEEEAtaprTPqx17vm_-gCsLDdOQsi4ft1B/exec';
 
 function getCfg(){
   try{
@@ -4396,7 +4487,7 @@ async function exportHtmlWithGsUrl(){
   try{
     const res  = await fetch(window.location.href);
     let   html = await res.text();
-    html = html.replace(/const HARDCODED_GS_URL = '[^']*';/, `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbz5Ih4Lf4OWWtsdjvMlMN38pX-iTiiKgGjjWe9ZS3yLDQxo4XxjVePfZfTi3iG35E0N/exec';`);
+    html = html.replace(/const HARDCODED_GS_URL = '[^']*';/, `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbz9vPhKTTGJBwrqpo2CkOrvcpZgqKeZeXrEEEAtaprTPqx17vm_-gCsLDdOQsi4ft1B/exec';`);
     const blob = new Blob([html],{type:'text/html'});
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -4405,7 +4496,7 @@ async function exportHtmlWithGsUrl(){
     toast('✅ HTML baixado com URL embutida!');
   } catch(e){
     toast('Para embutir a URL, edite manualmente a linha HARDCODED_GS_URL no HTML.','⚠️');
-    prompt('Substitua a linha HARDCODED_GS_URL no HTML por:', `const HARDCODED_GS_URL = 'hhttps://script.google.com/macros/s/AKfycbz5Ih4Lf4OWWtsdjvMlMN38pX-iTiiKgGjjWe9ZS3yLDQxo4XxjVePfZfTi3iG35E0N/exec';`);
+    prompt('Substitua a linha HARDCODED_GS_URL no HTML por:', `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbz9vPhKTTGJBwrqpo2CkOrvcpZgqKeZeXrEEEAtaprTPqx17vm_-gCsLDdOQsi4ft1B/exec';`);
   }
 }
 function setCfg(c){ localStorage.setItem(CLOUD_LS, JSON.stringify(c)); }
@@ -4542,6 +4633,9 @@ async function _runSync() {
                if (!cloudRec[k] || typeof cloudRec[k] !== 'object' || Array.isArray(cloudRec[k]))
                  cloudRec[k] = {};
             });
+            // Normaliza nome para times e regionais (compatível com GAS antigo/novo)
+            cloudRec.times     = cloudRec.times.map(t=>({...t, nome:t.nome||t.name||'', color:t.color||'#2563eb'})).filter(t=>t.nome);
+            cloudRec.regionais = cloudRec.regionais.map(r=>({...r, nome:r.nome||r.name||'', color:r.color||'#2563eb'})).filter(r=>r.nome);
           }
         }
       } catch(e) {
@@ -4773,7 +4867,28 @@ async function cloudPull(){
 
     migrateToDefaultRegional(rec);
 
-    // ── Nuvem é a verdade absoluta ─────────────────────────────────────────
+    // ── Normaliza campos críticos — compatível com GAS antigo e novo ──────────
+    // times e regionais: garante 'nome' independente do campo que o GAS enviou
+    rec.times = (rec.times||[]).map(t=>({
+      ...t,
+      nome : t.nome || t.name || '',
+      color: t.color || '#2563eb'
+    })).filter(t => t.nome); // remove times sem nome
+
+    rec.regionais = (rec.regionais||[]).map(r=>({
+      ...r,
+      nome : r.nome || r.name || '',
+      color: r.color || '#2563eb'
+    })).filter(r => r.nome); // remove regionais sem nome
+
+    // sellers: garante 'name' e campos numéricos
+    rec.sellers = (rec.sellers||[]).map(s=>({
+      ...s,
+      name  : s.name || s.nome || '',
+      meta  : Number(s.meta) || 0,
+      color : s.color || '#2563eb',
+      timeId: s.timeId != null ? s.timeId : null
+    })).filter(s => s.name);
     // Vendas pendentes locais (lançadas e ainda não confirmadas na nuvem)
     // são re-adicionadas para evitar perda durante o ciclo save→pull.
     const pendVendas = {};
@@ -5567,6 +5682,8 @@ function renderOverview(){
         }]
       },
       options:{
+        responsive:true,
+        maintainAspectRatio:false,
         cutout:'70%',
         plugins:{legend:{display:false},tooltip:{enabled:false}},
         animation:{duration:600,easing:'easeInOutQuart'}
@@ -7264,7 +7381,5 @@ window.addEventListener('offline', function(){
   ">Aldenir Medeiros</span>
 </footer>
 
-  
-  
 </body>
 </html>
