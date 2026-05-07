@@ -722,41 +722,35 @@ select.sel:focus{border-color:var(--blue);}
 .hub-meta-row input:focus{border-color:var(--blue);}
 .hub-meta-row .save-meta-btn{background:var(--blue);color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .12s;}
 
+/* ── TOPBAR NOVOS ELEMENTOS ── */
+#_sb{position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;pointer-events:none;background:transparent;transition:background .3s;}
+#_sb.s{background:linear-gradient(90deg,var(--blue),var(--cyan),var(--blue));background-size:200% 100%;animation:_sbm 1.2s linear infinite;}
+#_sb.e{background:var(--red);}
+@keyframes _sbm{0%{background-position:0% 0}100%{background-position:200% 0}}
+.spill{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;flex-shrink:0;white-space:nowrap;cursor:default;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.spill .sd{width:6px;height:6px;border-radius:50%;flex-shrink:0;transition:background .3s;}
+.spill.ok{color:var(--green);border-color:rgba(5,150,105,.3);background:rgba(5,150,105,.07);}
+.spill.ok .sd{background:var(--green);box-shadow:0 0 0 2px rgba(5,150,105,.2);}
+.spill.sy{color:var(--orange);border-color:rgba(217,119,6,.3);background:rgba(217,119,6,.07);}
+.spill.sy .sd{background:var(--orange);animation:pulse .8s infinite;}
+.spill.er{color:var(--red);border-color:rgba(220,38,38,.3);background:rgba(220,38,38,.07);}
+.spill.er .sd{background:var(--red);animation:pulse 1.2s infinite;}
+.btn-rf{background:var(--bg);border:1.5px solid var(--border);color:var(--tm);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+.btn-rf:hover,.btn-rf:active{border-color:var(--blue);color:var(--blue);background:#eff6ff;}
+.btn-rf .ico{display:inline-flex;}
+.btn-rf.sp .ico{animation:_rfsp .65s linear;}
+@keyframes _rfsp{to{transform:rotate(360deg)}}
+.btn-sv{background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+.btn-sv:hover,.btn-sv:active{background:var(--green-l);}
+.btn-rf:disabled,.btn-sv:disabled{opacity:.55;pointer-events:none;}
+@media(max-width:768px){
+  .spill .sl,.btn-rf .rl,.btn-sv .svl{display:none;}
+  .btn-rf,.btn-sv{padding:7px 9px;}
+}
+
 /* remember me */
 .login-remember{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tl);margin-top:-4px;margin-bottom:4px;cursor:pointer;}
 .login-remember input{width:15px;height:15px;accent-color:var(--blue);cursor:pointer;}
-
-/* ── BARRA DE PROGRESSO TOPO (sync) ── */
-#_syncbar{position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .3s;}
-#_syncbar.on{opacity:1;background:linear-gradient(90deg,var(--blue),var(--cyan),var(--blue));background-size:200%;animation:_sbslide 1.2s linear infinite;}
-#_syncbar.err{opacity:1;background:var(--red);}
-@keyframes _sbslide{0%{background-position:0%}100%{background-position:200%}}
-
-/* ── SYNC STATUS PILL ── */
-.sync-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;flex-shrink:0;white-space:nowrap;transition:all .25s;-webkit-tap-highlight-color:transparent;}
-.sync-pill .sp-dot{width:6px;height:6px;border-radius:50%;background:var(--tl);flex-shrink:0;transition:background .3s;}
-.sync-pill.ok{color:var(--green);border-color:rgba(5,150,105,.3);background:rgba(5,150,105,.07);}
-.sync-pill.ok .sp-dot{background:var(--green);box-shadow:0 0 0 2px rgba(5,150,105,.2);}
-.sync-pill.syncing{color:var(--orange);border-color:rgba(217,119,6,.3);background:rgba(217,119,6,.07);}
-.sync-pill.syncing .sp-dot{background:var(--orange);animation:pulse .8s infinite;}
-.sync-pill.error{color:var(--red);border-color:rgba(220,38,38,.3);background:rgba(220,38,38,.07);}
-.sync-pill.error .sp-dot{background:var(--red);animation:pulse 1.2s infinite;}
-
-/* ── BOTÕES ATUALIZAR / SALVAR ── */
-.btn-rt{background:transparent;border:1.5px solid var(--border);color:var(--tm);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s var(--ease);flex-shrink:0;-webkit-tap-highlight-color:transparent;}
-.btn-rt:hover,.btn-rt:active{border-color:var(--blue);color:var(--blue);background:var(--blue-g);}
-.btn-rt .btn-rt-ico{display:inline-flex;transition:transform .6s;}
-.btn-rt.spinning .btn-rt-ico{animation:_rtSpin .7s linear;}
-@keyframes _rtSpin{to{transform:rotate(360deg)}}
-.btn-sv{background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s var(--ease);flex-shrink:0;-webkit-tap-highlight-color:transparent;}
-.btn-sv:hover,.btn-sv:active{background:var(--green-l);}
-.btn-sv:disabled,.btn-rt:disabled{opacity:.55;pointer-events:none;}
-
-@media(max-width:768px){
-  .sync-pill .sp-lbl{display:none;}
-  .btn-rt .btn-rt-lbl,.btn-sv .btn-sv-lbl{display:none;}
-  .btn-rt,.btn-sv{padding:7px 9px;}
-}
 
 /* change password btn */
 .chpw-btn{background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:10.5px;font-weight:600;color:var(--tl);cursor:pointer;font-family:var(--font);transition:all .12s;white-space:nowrap;}
@@ -766,8 +760,7 @@ select.sel:focus{border-color:var(--blue);}
 </style>
 </head>
 <body>
-<div id="_syncbar"></div>
-
+<div id="_sb"></div>
 <!-- ══ LOGIN ══ -->
 <!-- ══ TELA DE CARREGAMENTO ══ -->
 <div id="loading-ov" style="position:fixed;inset:0;background:linear-gradient(135deg,#0b0d17,#0f172a,#1e1b4b);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px">
@@ -886,22 +879,14 @@ select.sel:focus{border-color:var(--blue);}
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
       Salvo
     </div>
-    <!-- STATUS PILL — visível para todos -->
-    <div class="sync-pill" id="sync-pill">
-      <div class="sp-dot"></div>
-      <span class="sp-lbl" id="sync-pill-txt">Conectando…</span>
-    </div>
-    <!-- BOTÃO ATUALIZAR — visível para todos -->
-    <button class="btn-rt" id="btn-rt" onclick="doManualRefresh(this)" title="Atualizar dados da nuvem agora">
-      <span class="btn-rt-ico">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      </span>
-      <span class="btn-rt-lbl">Atualizar</span>
+    <div class="spill" id="spill"><div class="sd"></div><span class="sl" id="spill-t">Conectando…</span></div>
+    <button class="btn-rf" id="btnRf" onclick="doRefresh(this)" title="Atualizar agora">
+      <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>
+      <span class="rl">Atualizar</span>
     </button>
-    <!-- BOTÃO SALVAR — visível para todos -->
-    <button class="btn-sv" id="btn-sv" onclick="doManualSave(this)" title="Salvar e sincronizar agora (Ctrl+S)">
+    <button class="btn-sv" id="btnSv" onclick="doSave(this)" title="Salvar agora (Ctrl+S)">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      <span class="btn-sv-lbl">Salvar</span>
+      <span class="svl">Salvar</span>
     </button>
     <div class="cloud-pill" id="cloud-pill" onclick="openCloudModal()" title="Sincronização na nuvem">
       <div class="cloud-dot off" id="cloud-dot"></div>
@@ -4113,7 +4098,11 @@ function getCfg(){
     const hurl = (HARDCODED_GS_URL||'').trim();
     if(hurl){ c.gsUrl=hurl; }
     return c;
-  } catch(e){ return {}; }
+  } catch(e){
+    // localStorage falhou (iOS modo privado, etc) — ainda retorna a URL hardcoded
+    const hurl = (HARDCODED_GS_URL||'').trim();
+    return hurl ? {gsUrl:hurl} : {};
+  }
 }
 
 // Gera e baixa o HTML com a URL do Apps Script já embutida
@@ -4138,19 +4127,19 @@ async function exportHtmlWithGsUrl(){
 function setCfg(c){ localStorage.setItem(CLOUD_LS, JSON.stringify(c)); }
 
 function setCloudUI(state, txt){
-  // ── Original: cloud-dot + cloud-txt (mantido intacto) ──
+  // Original (mantido intacto)
   const dot = document.getElementById('cloud-dot');
   const label = document.getElementById('cloud-txt');
   if(dot)  { dot.className='cloud-dot '+state; }
   if(label){ label.textContent = txt; }
-
-  // ── Novo: sync-pill + barra de progresso ──
-  const pill = document.getElementById('sync-pill');
-  const ptxt = document.getElementById('sync-pill-txt');
-  const bar  = document.getElementById('_syncbar');
-  if(pill){ pill.className = 'sync-pill ' + (state==='ok'?'ok': state==='sync'?'syncing':'error'); }
+  // Novos elementos
+  const pill = document.getElementById('spill');
+  const ptxt = document.getElementById('spill-t');
+  const bar  = document.getElementById('_sb');
+  const cls = state==='ok'?'ok': state==='sync'?'sy':'er';
+  if(pill){ pill.className='spill '+cls; }
   if(ptxt){ ptxt.textContent = state==='ok'?'Sincronizado': state==='sync'?'Salvando…': state==='off'?'Sem nuvem':'Sem conexão'; }
-  if(bar) { bar.className = state==='sync'?'on': state==='err'||state==='off'?'err':''; }
+  if(bar) { bar.className = state==='sync'?'s': (state==='err'||state==='off')?'e':''; }
 }
 function syncLog(msg){
   const el=document.getElementById('sync-log');
@@ -4380,7 +4369,11 @@ async function cloudPull(){
   if(!cfg.gsUrl) return false;
   setCloudUI('sync','Carregando…');
   try{
-    const res = await fetch(cfg.gsUrl+'?action=get',{
+    // ── Cache-busting via URL timestamp: garante que Chrome/Android/iOS
+    //    nunca sirvam resposta cacheada (CDN, proxy, cache HTTP do browser).
+    //    O parâmetro _t é ignorado pelo Apps Script (apenas lê e.parameter.action).
+    const url = cfg.gsUrl+'?action=get&_t='+Date.now();
+    const res = await fetch(url,{
       cache:'no-store',
       signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function')
               ? AbortSignal.timeout(15000) : undefined
@@ -4438,12 +4431,13 @@ async function cloudPull(){
 
     migrateToDefaultRegional(rec);
 
-    // ── Merge profundo: cloud (base) + local (sobrepõe) → DB final ──
-    const merged = _deepMerge(rec, DB);
+    // ── Merge para LEITURA: nuvem prevalece, só conserva vendas locais ainda não salvas ──
+    // Diferente do merge de ESCRITA (_deepMerge), aqui a nuvem é a fonte da verdade.
+    const merged = _pullMerge(rec, DB);
     DB = merged;
     try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
     setCloudUI('ok','Nuvem ✓');
-    syncLog('Dados sincronizados do Google Sheets.');
+    syncLog('Sincronizado — '+new Date().toLocaleTimeString('pt-BR'));
     return true;
 
   } catch(err){
@@ -4452,6 +4446,38 @@ async function cloudPull(){
     console.error('[cloudPull]', err);
     return false;
   }
+}
+
+// ── _pullMerge: merge para LEITURA — nuvem é fonte da verdade ──────────────
+// Nuvem vence em tudo exceto vendas (union) e sellers novos locais (id > cloud maxId).
+function _pullMerge(cloud, local){
+  // Começa com cópia fiel da nuvem
+  const r = JSON.parse(JSON.stringify(cloud));
+
+  // Vendas: union — mantém vendas locais que ainda não foram salvas na nuvem
+  const lv = local.vendas || {};
+  Object.keys(lv).forEach(k=>{
+    if(!r.vendas[k]) r.vendas[k] = [];
+    const ids = new Set(r.vendas[k].map(v=>String(v.id)));
+    const extras = (lv[k]||[]).filter(v=>!ids.has(String(v.id)));
+    if(extras.length){
+      r.vendas[k] = [...r.vendas[k], ...extras]
+        .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+    }
+  });
+
+  // Sellers: mantém sellers locais que ainda não existem na nuvem (recém-criados)
+  const cloudSellerIds = new Set(r.sellers.map(s=>String(s.id)));
+  const newLocal = (local.sellers||[]).filter(s=>!cloudSellerIds.has(String(s.id)));
+  if(newLocal.length) r.sellers = [...r.sellers, ...newLocal];
+
+  // nextId: o maior de tudo
+  const maxId = Math.max(0, ...(r.sellers||[]).map(s=>Number(s.id)||0));
+  r.nextId = Math.max(r.nextId||0, local.nextId||0, maxId+1);
+
+  // Tudo mais (metas, config, times, regionais, users): nuvem vence totalmente.
+  // Isso garante que updates de outros usuários sejam SEMPRE vistos.
+  return r;
 }
 
 
@@ -5826,77 +5852,70 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
     }
   }
 
-  // ── Auto-refresh a cada 20s quando página visível ──
-  setInterval(async ()=>{
-    if(document.hidden || !currentUser || _syncRunning) return;
-    const refreshed = await cloudPull();
-    if(refreshed){
+  // ══ MOTOR DE ATUALIZAÇÃO EM TEMPO REAL — Cross-Platform ══
+  // Cobre: iOS Safari, Android Chrome, Firefox Mobile, Edge, Samsung Browser
+
+  // Helper: pull + render completo (todas as páginas)
+  async function _autoUpdate(label){
+    if(!currentUser || _syncRunning) return;
+    const ok = await cloudPull();
+    if(ok){
       _refreshCurrentUserFromDB();
       populateMes(); populateQESellers(); renderAll(); renderPSVIfActive();
     }
-  }, 20000);
-
-  // ── visibilitychange: Chrome/Firefox/Edge ao voltar para aba ──
-  document.addEventListener('visibilitychange', async ()=>{
-    if(!document.hidden && currentUser){
-      const refreshed = await cloudPull();
-      if(refreshed){
-        _refreshCurrentUserFromDB();
-        populateMes(); populateQESellers(); renderAll(); renderPSVIfActive();
-      }
-    }
-  });
-
-  // ── pageshow: CRÍTICO para iOS Safari — BFCache restaura página sem disparar visibilitychange ──
-  window.addEventListener('pageshow', async (e)=>{
-    if(!currentUser) return;
-    // e.persisted=true significa que voltou do cache (iOS BFCache)
-    if(e.persisted){
-      const refreshed = await cloudPull();
-      if(refreshed){ _refreshCurrentUserFromDB(); populateMes(); populateQESellers(); renderAll(); }
-    }
-  });
-
-  // ── focus: desktop browsers ao voltar para janela ──
-  window.addEventListener('focus', async ()=>{
-    if(!currentUser || _syncRunning) return;
-    const refreshed = await cloudPull();
-    if(refreshed){ _refreshCurrentUserFromDB(); populateMes(); populateQESellers(); renderAll(); }
-  });
-
-  // ── online: reconectou à internet → re-sync imediato ──
-  window.addEventListener('online', async ()=>{
-    if(!currentUser) return;
-    toast('🌐 Conexão restaurada — sincronizando…');
-    const refreshed = await cloudPull();
-    if(refreshed){ _refreshCurrentUserFromDB(); populateMes(); populateQESellers(); renderAll(); }
-    await cloudPush(); // reenviar dados que ficaram pendentes
-  });
-
-  // ── offline: avisa usuário ──
-  window.addEventListener('offline', ()=>{
-    setCloudUI('err', 'Sem conexão');
-    toast('⚠️ Sem internet. Dados salvos localmente.', '⚠️');
-  });
-
-  // ── pagehide/beforeunload: salva com sendBeacon antes de fechar (mobile) ──
-  function _beaconSave(){
-    const cfg = getCfg();
-    if(!cfg.gsUrl || typeof navigator.sendBeacon !== 'function') return;
-    try{
-      const p = new URLSearchParams();
-      p.append('data', JSON.stringify(DB));
-      navigator.sendBeacon(cfg.gsUrl, p);
-    }catch(e){}
   }
-  window.addEventListener('pagehide',    _beaconSave);
-  window.addEventListener('beforeunload', _beaconSave);
 
-  // ── Ctrl+S / Cmd+S → salvar ──
-  document.addEventListener('keydown', (e)=>{
-    if((e.ctrlKey||e.metaKey) && e.key==='s'){
-      e.preventDefault();
-      if(currentUser) doManualSave(document.getElementById('btn-sv'));
+  // 1. Polling a cada 15s — mais frequente que os 30s originais
+  //    Só dispara quando página visível (não desperdiça bateria em background)
+  setInterval(()=>{ if(!document.hidden) _autoUpdate('poll'); }, 15000);
+
+  // 2. visibilitychange — Chrome/Firefox/Edge ao voltar para aba
+  document.addEventListener('visibilitychange', ()=>{
+    if(!document.hidden) _autoUpdate('visibility');
+  });
+
+  // 3. pageshow — OBRIGATÓRIO para iOS Safari (BFCache)
+  //    iOS congela a página e restaura sem disparar visibilitychange
+  window.addEventListener('pageshow', e=>{
+    if(e.persisted) _autoUpdate('pageshow-bfcache');
+  });
+
+  // 4. focus — desktop ao voltar para janela/aba
+  window.addEventListener('focus', ()=>{ _autoUpdate('focus'); });
+
+  // 5. online — reconectou à internet
+  window.addEventListener('online', async ()=>{
+    toast('🌐 Conexão restaurada — sincronizando…');
+    await _autoUpdate('online');
+    saveDB(); // reenvia dados pendentes
+  });
+
+  // 6. offline — avisa usuário
+  window.addEventListener('offline', ()=>{
+    setCloudUI('err','Sem conexão');
+    toast('⚠️ Sem internet. Dados salvos localmente.','⚠️');
+  });
+
+  // 7. pagehide + beforeunload — salva com sendBeacon ao fechar (mobile)
+  function _beacon(){
+    const cfg=getCfg(); if(!cfg.gsUrl||typeof navigator.sendBeacon!=='function') return;
+    try{ const p=new URLSearchParams(); p.append('data',JSON.stringify(DB)); navigator.sendBeacon(cfg.gsUrl,p); }catch(e){}
+  }
+  window.addEventListener('pagehide',    _beacon);
+  window.addEventListener('beforeunload', _beacon);
+
+  // 8. Ctrl+S / Cmd+S — salvar
+  document.addEventListener('keydown', e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='s'){ e.preventDefault(); if(currentUser) doSave(document.getElementById('btnSv')); }
+  });
+
+  // 9. localStorage broadcast — sincroniza múltiplas abas do mesmo browser instantaneamente
+  window.addEventListener('storage', e=>{
+    if(e.key==='bi_v5' && e.newValue && currentUser){
+      try{
+        const fresh=JSON.parse(e.newValue);
+        if(fresh?.sellers){ DB=fresh; renderAll(); }
+      }catch(ex){}
     }
   });
 })();
@@ -6554,10 +6573,9 @@ function psvSavePlan(){
   }catch(e){ toast('⚠️ Erro ao salvar plano.'); }
 }
 
-// ══ ATUALIZAR E SALVAR MANUAL (botões da topbar) ══
-
-async function doManualRefresh(btn){
-  if(btn){ btn.classList.add('spinning'); btn.disabled=true; }
+// ══ BOTÕES MANUAIS ══
+async function doRefresh(btn){
+  if(btn){ btn.disabled=true; btn.classList.add('sp'); }
   try{
     const ok = await cloudPull();
     if(ok){
@@ -6565,27 +6583,24 @@ async function doManualRefresh(btn){
       populateMes(); populateQESellers(); renderAll(); renderPSVIfActive();
       toast('✅ Dados atualizados!');
     } else {
-      toast('⚠️ Sem conexão com a nuvem. Verifique sua internet.','⚠️');
+      toast('⚠️ Sem conexão com a nuvem.','⚠️');
     }
-  } catch(e){
-    toast('❌ Erro: '+e.message,'⚠️');
-  } finally {
-    if(btn){ btn.disabled=false; setTimeout(()=>btn.classList.remove('spinning'),700); }
+  } catch(e){ toast('❌ Erro: '+e.message,'⚠️'); }
+  finally{
+    if(btn){ btn.disabled=false; setTimeout(()=>btn.classList.remove('sp'),700); }
   }
 }
 
-async function doManualSave(btn){
-  if(btn){ btn.disabled=true; }
+async function doSave(btn){
+  if(btn) btn.disabled=true;
   try{
-    saveDB(); // salva local + agenda debounce
-    clearTimeout(saveDB._t); // cancela debounce
-    await _syncEnqueue(); // força sync imediato
-    toast('💾 Salvo e sincronizado com sucesso!');
-  } catch(e){
-    toast('❌ Erro ao salvar: '+e.message,'⚠️');
-  } finally {
-    if(btn) btn.disabled=false;
-  }
+    try{ localStorage.setItem('bi_v5',JSON.stringify(DB)); }catch(e){}
+    flashSaved();
+    clearTimeout(saveDB._t);
+    await _syncEnqueue();
+    toast('💾 Salvo e sincronizado!');
+  } catch(e){ toast('❌ Erro ao salvar: '+e.message,'⚠️'); }
+  finally{ if(btn) btn.disabled=false; }
 }
 </script>
 
