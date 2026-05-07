@@ -849,9 +849,9 @@ select.sel:focus{border-color:var(--blue);}
     <div class="tip">Portal de Processos</div>
   </div>
   <div class="sb-spacer"></div>
-  <div class="ni" onclick="exportBk()" style="margin-bottom:6px">
+  <div class="ni" onclick="openBkModal()" style="margin-bottom:6px">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    <div class="tip">Exportar Backup</div>
+    <div class="tip">Backup / Restaurar</div>
   </div>
   <div class="ni" onclick="document.getElementById('imp').click()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -1941,6 +1941,87 @@ select.sel:focus{border-color:var(--blue);}
     <div class="modal-acts">
       <button class="btn btn-g" onclick="closeChangePwModal()">Cancelar</button>
       <button class="btn btn-green" onclick="doChangePassword()">💾 Salvar Nova Senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL BACKUP / RESTAURAÇÃO ══ -->
+<div class="modal-ov" id="bk-modal" onclick="if(event.target===this)closeBkModal()">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-x" onclick="closeBkModal()">✕</div>
+    <div class="modal-h">🗄️ Backup &amp; Restauração</div>
+    <div class="modal-s" style="margin-bottom:18px;">Exporte o banco do Google Sheets ou restaure a partir de um arquivo.</div>
+
+    <!-- STATUS ATUAL -->
+    <div id="bk-status" style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:11px 14px;margin-bottom:18px;font-size:12px;color:#166534;display:flex;align-items:center;gap:8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+      <span id="bk-status-txt">Conectado ao Google Sheets</span>
+    </div>
+
+    <!-- EXPORTAR -->
+    <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px;">
+      <div style="background:var(--bg);padding:12px 16px;border-bottom:1px solid var(--border);">
+        <div style="font-size:13px;font-weight:700;color:var(--td);margin-bottom:2px;">⬇️ Exportar Backup</div>
+        <div style="font-size:11.5px;color:var(--tl);">Baixa exatamente o que está salvo no Google Sheets agora.</div>
+      </div>
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+        <button id="bk-exp-cloud-btn" onclick="bkExportCloud()" style="background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:11px 18px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;transition:background .15s;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Baixar Backup do Google Sheets (.json)
+        </button>
+        <button onclick="exportBk()" style="background:transparent;border:1.5px solid var(--border);color:var(--tm);border-radius:var(--rs);padding:9px 18px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Baixar Cópia Local (dados em memória)
+        </button>
+      </div>
+    </div>
+
+    <!-- IMPORTAR / RESTAURAR -->
+    <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px;">
+      <div style="background:var(--bg);padding:12px 16px;border-bottom:1px solid var(--border);">
+        <div style="font-size:13px;font-weight:700;color:var(--td);margin-bottom:2px;">⬆️ Importar e Restaurar</div>
+        <div style="font-size:11.5px;color:var(--tl);">Selecione um arquivo .json exportado anteriormente. O banco será substituído e sincronizado com a nuvem.</div>
+      </div>
+      <div style="padding:14px 16px;">
+        <!-- Drop zone -->
+        <div id="bk-drop" onclick="document.getElementById('bk-file').click()"
+          ondragover="event.preventDefault();this.style.borderColor='var(--blue)';this.style.background='#eff6ff';"
+          ondragleave="this.style.borderColor='var(--border)';this.style.background='';"
+          ondrop="bkHandleDrop(event)"
+          style="border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .15s;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--tl)" stroke-width="1.5" style="margin-bottom:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div style="font-size:13px;font-weight:600;color:var(--tm);margin-bottom:4px;">Clique ou arraste o arquivo aqui</div>
+          <div style="font-size:11.5px;color:var(--tl);">Aceita arquivos .json exportados por este sistema</div>
+        </div>
+        <input type="file" id="bk-file" accept=".json" style="display:none" onchange="bkHandleFile(event)">
+
+        <!-- Preview do arquivo selecionado -->
+        <div id="bk-preview" style="display:none;margin-top:12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--td)" id="bk-fname">—</div>
+              <div style="font-size:11px;color:var(--tl)" id="bk-finfo">—</div>
+            </div>
+            <button onclick="bkClearFile()" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--tl);cursor:pointer;">✕</button>
+          </div>
+          <button id="bk-restore-btn" onclick="bkDoRestore()" style="background:var(--blue);color:#fff;border:none;border-radius:var(--rs);padding:11px 18px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+            Restaurar Este Backup
+          </button>
+        </div>
+
+        <!-- Progresso -->
+        <div id="bk-progress" style="display:none;margin-top:12px;text-align:center;">
+          <div style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 8px;"></div>
+          <div id="bk-progress-txt" style="font-size:12px;color:var(--tl);">Processando…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aviso -->
+    <div style="background:#fefce8;border:1px solid #fde047;border-radius:8px;padding:10px 13px;font-size:11.5px;color:#854d0e;display:flex;gap:8px;">
+      <span>⚠️</span>
+      <span>Restaurar substitui <strong>todo o banco de dados</strong> pelo conteúdo do arquivo. Esta ação não pode ser desfeita — exporte um backup antes.</span>
     </div>
   </div>
 </div>
@@ -4820,27 +4901,192 @@ function copyGsUrl(){
 // ══════════════════════════════════════════════════════════
 //  BACKUP
 // ══════════════════════════════════════════════════════════
-function exportBk(){
-  const data=JSON.stringify(DB,null,2);
-  const a=document.createElement('a');
-  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);
-  a.download=`bi_vendas_backup_${fmtD(today())}.json`;
-  a.click();
-  toast('Backup exportado!');
+// ═══════════════════════════════════════════════════════════════════════════
+//  MODAL BACKUP / RESTAURAÇÃO
+// ═══════════════════════════════════════════════════════════════════════════
+
+let _bkFileData = null; // JSON do arquivo selecionado
+
+function openBkModal(){
+  _bkFileData = null;
+  document.getElementById('bk-preview').style.display  = 'none';
+  document.getElementById('bk-progress').style.display = 'none';
+  document.getElementById('bk-drop').style.display     = '';
+  document.getElementById('bk-file').value             = '';
+  const cfg = getCfg();
+  const stxt = document.getElementById('bk-status-txt');
+  const sbox = document.getElementById('bk-status');
+  if(cfg.gsUrl){
+    stxt.textContent = 'Conectado: ' + cfg.gsUrl.replace('https://script.google.com/macros/s/','…/').replace('/exec','');
+    sbox.style.background='#f0fdf4'; sbox.style.borderColor='#86efac'; sbox.style.color='#166534';
+  } else {
+    stxt.textContent = '⚠️ Sem URL configurada — só exportação local disponível.';
+    sbox.style.background='#fefce8'; sbox.style.borderColor='#fde047'; sbox.style.color='#854d0e';
+  }
+  document.getElementById('bk-modal').classList.add('show');
 }
-function importBk(e){
-  const file=e.target.files[0]; if(!file) return;
-  const r=new FileReader();
-  r.onload=ev=>{
+function closeBkModal(){ document.getElementById('bk-modal').classList.remove('show'); }
+
+// ── Exportar do Google Sheets ─────────────────────────────────────────────
+async function bkExportCloud(){
+  const cfg = getCfg();
+  if(!cfg.gsUrl){ toast('Configure a URL do Apps Script primeiro','⚠️'); return; }
+  const btn = document.getElementById('bk-exp-cloud-btn');
+  if(btn){ btn.disabled=true; btn.innerHTML='⏳ Baixando da nuvem…'; }
+  try{
+    const url = cfg.gsUrl + '?action=get&_t=' + Date.now();
+    const res = await fetch(url, { cache:'no-store' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const txt = await res.text();
+    // Valida que é JSON válido com estrutura correta
+    const d = JSON.parse(txt);
+    if(!d.sellers && !d.vendas) throw new Error('Resposta inválida do servidor');
+    // Baixa
+    const nome = 'backup_GS_' + new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'-') + '.json';
+    _bkDownload(JSON.stringify(d, null, 2), nome, 'application/json');
+    toast('✅ Backup do Google Sheets baixado: ' + nome);
+  } catch(e){
+    toast('❌ Erro ao exportar: ' + e.message,'⚠️');
+  } finally {
+    if(btn){ btn.disabled=false; btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Baixar Backup do Google Sheets (.json)'; }
+  }
+}
+
+// ── Exportar cópia local ──────────────────────────────────────────────────
+function exportBk(){
+  const nome = 'backup_local_' + new Date().toISOString().slice(0,16).replace('T','_').replace(/:/g,'-') + '.json';
+  _bkDownload(JSON.stringify(DB, null, 2), nome, 'application/json');
+  toast('✅ Cópia local baixada: ' + nome);
+}
+
+function _bkDownload(content, filename, mime){
+  const blob = new Blob([content], { type: mime });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), { href: url, download: filename });
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+// ── Drag & Drop ───────────────────────────────────────────────────────────
+function bkHandleDrop(e){
+  e.preventDefault();
+  const drop = document.getElementById('bk-drop');
+  drop.style.borderColor = 'var(--border)';
+  drop.style.background  = '';
+  const file = e.dataTransfer?.files?.[0];
+  if(file) _bkReadFile(file);
+}
+function bkHandleFile(e){ const f = e.target.files?.[0]; if(f) _bkReadFile(f); }
+
+function _bkReadFile(file){
+  if(!file.name.endsWith('.json') && file.type !== 'application/json'){
+    toast('⚠️ Selecione um arquivo .json','⚠️'); return;
+  }
+  const reader = new FileReader();
+  reader.onload = ev => {
     try{
-      const d=JSON.parse(ev.target.result);
-      if(!d.sellers||!d.vendas) throw new Error();
-      DB=d; saveDB(); renderAll();
-      toast('Backup importado com sucesso!');
-    } catch { toast('Arquivo inválido','❌'); }
-    e.target.value='';
+      const d = JSON.parse(ev.target.result);
+      // Validação básica
+      if(!d || typeof d !== 'object') throw new Error('Arquivo não é um objeto JSON');
+      if(!d.sellers && !d.vendas)     throw new Error('Arquivo não parece ser um backup deste sistema');
+      _bkFileData = d;
+      // Mostra preview
+      const sellers = (d.sellers||[]).length;
+      const meses   = Object.keys(d.vendas||{}).length;
+      const vendas  = Object.values(d.vendas||{}).reduce((s,v)=>s+(v?.length||0),0);
+      document.getElementById('bk-fname').textContent = file.name;
+      document.getElementById('bk-finfo').textContent =
+        sellers + ' vendedores · ' + meses + ' meses · ' + vendas + ' lançamentos · ' +
+        (file.size > 1024*1024 ? (file.size/1024/1024).toFixed(1)+'MB' : Math.round(file.size/1024)+'KB');
+      document.getElementById('bk-drop').style.display    = 'none';
+      document.getElementById('bk-preview').style.display = '';
+    } catch(e){
+      toast('❌ ' + e.message,'⚠️');
+    }
   };
-  r.readAsText(file);
+  reader.readAsText(file);
+}
+
+function bkClearFile(){
+  _bkFileData = null;
+  document.getElementById('bk-file').value             = '';
+  document.getElementById('bk-preview').style.display  = 'none';
+  document.getElementById('bk-drop').style.display     = '';
+}
+
+// ── Restaurar ─────────────────────────────────────────────────────────────
+async function bkDoRestore(){
+  if(!_bkFileData){ toast('Nenhum arquivo selecionado','⚠️'); return; }
+  const d = _bkFileData;
+  const sellers = (d.sellers||[]).length;
+  const vendas  = Object.values(d.vendas||{}).reduce((s,v)=>s+(v?.length||0),0);
+
+  if(!confirm(
+    '⚠️ CONFIRMAR RESTAURAÇÃO\n\n' +
+    'Este backup contém:\n' +
+    '  • ' + sellers + ' vendedores\n' +
+    '  • ' + vendas  + ' lançamentos\n\n' +
+    'O banco de dados atual será SUBSTITUÍDO por este backup.\n\n' +
+    'Deseja continuar?'
+  )) return;
+
+  const btn = document.getElementById('bk-restore-btn');
+  const prog = document.getElementById('bk-progress');
+  const prevTxt = document.getElementById('bk-progress-txt');
+
+  document.getElementById('bk-preview').style.display = 'none';
+  prog.style.display = '';
+
+  const step = t => { if(prevTxt) prevTxt.textContent = t; };
+
+  try{
+    step('Validando dados…');
+    await new Promise(r=>setTimeout(r,300));
+
+    // 1. Aplica localmente
+    step('Aplicando dados localmente…');
+    DB = JSON.parse(JSON.stringify(d)); // cópia limpa
+    try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+    await new Promise(r=>setTimeout(r,300));
+
+    // 2. Envia direto para a nuvem (POST direto, sem merge — restauração total)
+    const cfg = getCfg();
+    if(cfg.gsUrl){
+      step('Enviando para o Google Sheets…');
+      const params = new URLSearchParams();
+      params.append('data', JSON.stringify(DB));
+      await fetch(cfg.gsUrl, { method:'POST', mode:'no-cors', keepalive:true, body:params });
+      await new Promise(r=>setTimeout(r,1200)); // aguarda GAS processar
+
+      // 3. Confirma com um pull
+      step('Confirmando sincronização…');
+      await cloudPull();
+    }
+
+    // 4. Atualiza UI
+    step('Atualizando interface…');
+    _refreshCurrentUserFromDB();
+    populateMes(); populateQESellers(); renderAll();
+
+    prog.style.display = 'none';
+    toast('✅ Banco restaurado com sucesso!');
+    closeBkModal();
+  } catch(e){
+    prog.style.display = 'none';
+    document.getElementById('bk-preview').style.display = '';
+    toast('❌ Erro ao restaurar: ' + e.message,'⚠️');
+  }
+}
+
+// Mantém compatibilidade com o input antigo da sidebar
+function importBk(e){
+  const file = e?.target?.files?.[0];
+  if(!file) return;
+  openBkModal();
+  setTimeout(()=>_bkReadFile(file), 300);
+  e.target.value = '';
 }
 
 // ══════════════════════════════════════════════════════════
