@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -722,35 +722,35 @@ select.sel:focus{border-color:var(--blue);}
 .hub-meta-row input:focus{border-color:var(--blue);}
 .hub-meta-row .save-meta-btn{background:var(--blue);color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .12s;}
 
-/* ── TOPBAR NOVOS ELEMENTOS ── */
-#_sb{position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;pointer-events:none;background:transparent;transition:background .3s;}
-#_sb.s{background:linear-gradient(90deg,var(--blue),var(--cyan),var(--blue));background-size:200% 100%;animation:_sbm 1.2s linear infinite;}
-#_sb.e{background:var(--red);}
-@keyframes _sbm{0%{background-position:0% 0}100%{background-position:200% 0}}
-.spill{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;flex-shrink:0;white-space:nowrap;cursor:default;transition:all .2s;-webkit-tap-highlight-color:transparent;}
-.spill .sd{width:6px;height:6px;border-radius:50%;flex-shrink:0;transition:background .3s;}
-.spill.ok{color:var(--green);border-color:rgba(5,150,105,.3);background:rgba(5,150,105,.07);}
-.spill.ok .sd{background:var(--green);box-shadow:0 0 0 2px rgba(5,150,105,.2);}
-.spill.sy{color:var(--orange);border-color:rgba(217,119,6,.3);background:rgba(217,119,6,.07);}
-.spill.sy .sd{background:var(--orange);animation:pulse .8s infinite;}
-.spill.er{color:var(--red);border-color:rgba(220,38,38,.3);background:rgba(220,38,38,.07);}
-.spill.er .sd{background:var(--red);animation:pulse 1.2s infinite;}
-.btn-rf{background:var(--bg);border:1.5px solid var(--border);color:var(--tm);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
-.btn-rf:hover,.btn-rf:active{border-color:var(--blue);color:var(--blue);background:#eff6ff;}
-.btn-rf .ico{display:inline-flex;}
-.btn-rf.sp .ico{animation:_rfsp .65s linear;}
-@keyframes _rfsp{to{transform:rotate(360deg)}}
-.btn-sv{background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
-.btn-sv:hover,.btn-sv:active{background:var(--green-l);}
-.btn-rf:disabled,.btn-sv:disabled{opacity:.55;pointer-events:none;}
-@media(max-width:768px){
-  .spill .sl,.btn-rf .rl,.btn-sv .svl{display:none;}
-  .btn-rf,.btn-sv{padding:7px 9px;}
-}
-
 /* remember me */
 .login-remember{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tl);margin-top:-4px;margin-bottom:4px;cursor:pointer;}
 .login-remember input{width:15px;height:15px;accent-color:var(--blue);cursor:pointer;}
+
+/* ── BOTÕES ATUALIZAR / SALVAR ── */
+.btn-refresh{background:transparent;border:1.5px solid var(--border);color:var(--tm);border-radius:var(--rs);padding:6px 12px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s var(--ease);flex-shrink:0;}
+.btn-refresh:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-g);}
+.btn-refresh svg{transition:transform .5s;}
+.btn-refresh.spinning svg{animation:spinOnce .7s linear;}
+@keyframes spinOnce{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.btn-refresh.loading{opacity:.6;pointer-events:none;}
+.btn-save-now{background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:6px 12px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s var(--ease);flex-shrink:0;}
+.btn-save-now:hover{background:var(--green-l);transform:translateY(-1px);}
+.btn-save-now.saving{opacity:.6;pointer-events:none;}
+.btn-save-now svg{transition:transform .4s;}
+#sync-status-bar{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg);flex-shrink:0;white-space:nowrap;transition:all .3s;}
+#sync-status-bar.ok{color:var(--green);border-color:rgba(5,150,105,.3);background:rgba(5,150,105,.07);}
+#sync-status-bar.err{color:var(--red);border-color:rgba(220,38,38,.3);background:rgba(220,38,38,.07);}
+#sync-status-bar.sync{color:var(--orange);border-color:rgba(217,119,6,.3);background:rgba(217,119,6,.07);}
+#sync-status-bar .ss-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+#sync-status-bar.ok .ss-dot{background:var(--green);box-shadow:0 0 0 2px rgba(5,150,105,.25);}
+#sync-status-bar.err .ss-dot{background:var(--red);animation:pulse 1.2s infinite;}
+#sync-status-bar.sync .ss-dot{background:var(--orange);animation:pulse .8s infinite;}
+@media(max-width:768px){
+  #sync-status-bar span{display:none;}
+  .btn-refresh span{display:none;}
+  .btn-save-now span{display:none;}
+  .btn-refresh,.btn-save-now{padding:6px 8px;}
+}
 
 /* change password btn */
 .chpw-btn{background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:10.5px;font-weight:600;color:var(--tl);cursor:pointer;font-family:var(--font);transition:all .12s;white-space:nowrap;}
@@ -760,7 +760,7 @@ select.sel:focus{border-color:var(--blue);}
 </style>
 </head>
 <body>
-<div id="_sb"></div>
+
 <!-- ══ LOGIN ══ -->
 <!-- ══ TELA DE CARREGAMENTO ══ -->
 <div id="loading-ov" style="position:fixed;inset:0;background:linear-gradient(135deg,#0b0d17,#0f172a,#1e1b4b);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px">
@@ -879,16 +879,22 @@ select.sel:focus{border-color:var(--blue);}
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
       Salvo
     </div>
-    <div class="spill" id="spill"><div class="sd"></div><span class="sl" id="spill-t">Conectando…</span></div>
-    <button class="btn-rf" id="btnRf" onclick="doRefresh(this)" title="Atualizar agora">
-      <span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>
-      <span class="rl">Atualizar</span>
+    <!-- STATUS DE SYNC visível para todos -->
+    <div id="sync-status-bar" class="sync">
+      <div class="ss-dot"></div>
+      <span id="sync-status-txt">Conectando…</span>
+    </div>
+    <!-- BOTÃO ATUALIZAR -->
+    <button class="btn-refresh" id="btn-global-refresh" onclick="manualRefresh()" title="Buscar dados mais recentes da nuvem">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="refresh-icon"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <span>Atualizar</span>
     </button>
-    <button class="btn-sv" id="btnSv" onclick="doSave(this)" title="Salvar agora (Ctrl+S)">
+    <!-- BOTÃO SALVAR -->
+    <button class="btn-save-now" id="btn-global-save" onclick="manualSave()" title="Salvar e sincronizar agora">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      <span class="svl">Salvar</span>
+      <span>Salvar</span>
     </button>
-    <div class="cloud-pill" id="cloud-pill" onclick="openCloudModal()" title="Sincronização na nuvem">
+    <div class="cloud-pill" id="cloud-pill" onclick="openCloudModal()" title="Configurações de sincronização">
       <div class="cloud-dot off" id="cloud-dot"></div>
       <span id="cloud-txt">Conectando…</span>
     </div>
@@ -1939,48 +1945,133 @@ select.sel:focus{border-color:var(--blue);}
   </div>
 </div>
 
-<!-- ══ MODAL NUVEM ══ -->
+<!-- ══ MODAL NUVEM (com Backup / Restauração / Exportação) ══ -->
 <div class="modal-ov" id="cloud-modal" onclick="if(event.target===this)closeCloudModal()">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width:560px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
     <div class="modal-x" onclick="closeCloudModal()">✕</div>
-    <div class="modal-h">📊 Sincronização — Google Sheets</div>
-    <div class="modal-s">Dados salvos no Google Sheets — o mesmo banco em qualquer dispositivo.</div>
+    <div class="modal-h">☁️ Google Sheets — Sincronização</div>
 
-    <!-- Painel de status e URL atual -->
-    <div id="cloud-bin-panel" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 14px;margin-bottom:14px;">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#166534;margin-bottom:6px;">✅ Google Sheets ativo</div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <code id="cloud-bin-display" style="flex:1;font-family:var(--mono);font-size:10px;color:#166534;background:#dcfce7;padding:6px 10px;border-radius:6px;word-break:break-all;border:1px solid #86efac"></code>
-        <button onclick="copyGsUrl()" style="background:#16a34a;color:#fff;border:none;border-radius:7px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap">📋 Copiar</button>
+    <!-- ABAS -->
+    <div id="cm-tabs" style="display:flex;gap:2px;margin:12px 0 0;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <button id="cm-tab-config"  onclick="cmTab('config')"  style="padding:8px 14px;font-size:12px;font-weight:600;font-family:var(--font);border:none;background:none;cursor:pointer;border-bottom:2px solid var(--blue);color:var(--blue);">⚙️ Configuração</button>
+      <button id="cm-tab-backup"  onclick="cmTab('backup')"  style="padding:8px 14px;font-size:12px;font-weight:600;font-family:var(--font);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--tl);">🗄️ Backups</button>
+      <button id="cm-tab-export"  onclick="cmTab('export')"  style="padding:8px 14px;font-size:12px;font-weight:600;font-family:var(--font);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--tl);">📤 Exportar</button>
+    </div>
+
+    <!-- CORPO (scroll) -->
+    <div style="overflow-y:auto;flex:1;padding:16px 0 4px;">
+
+      <!-- ── ABA CONFIGURAÇÃO ─────────────────────────────────────── -->
+      <div id="cm-pane-config">
+        <!-- URL ativa -->
+        <div id="cloud-bin-panel" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#166534;margin-bottom:6px;">✅ Google Sheets ativo</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <code id="cloud-bin-display" style="flex:1;font-family:var(--mono);font-size:10px;color:#166534;background:#dcfce7;padding:6px 10px;border-radius:6px;word-break:break-all;border:1px solid #86efac"></code>
+            <button onclick="copyGsUrl()" style="background:#16a34a;color:#fff;border:none;border-radius:7px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap">📋 Copiar</button>
+          </div>
+        </div>
+
+        <div class="modal-hint">
+          <strong>🔧 Como configurar:</strong><br>
+          1. Crie uma planilha no Google Sheets com uma aba chamada <b>DB</b><br>
+          2. No menu <b>Extensões → Apps Script</b>, cole o arquivo <b>appsscript.gs</b><br>
+          3. Clique em <b>Implantar → Novo Implantação → App da Web</b><br>
+          4. Defina acesso: <b>Qualquer pessoa</b> — copie a URL<br>
+          5. Cole a URL abaixo e clique em <b>Conectar</b>
+        </div>
+
+        <div class="modal-warn" id="cloud-warn"></div>
+        <div class="mf">
+          <label>URL do Apps Script (Web App)</label>
+          <input type="text" id="m-gsurl" placeholder="https://script.google.com/macros/s/..." autocomplete="off" style="font-family:var(--mono);font-size:11.5px;">
+        </div>
+        <div class="modal-acts">
+          <button class="btn btn-g" onclick="disconnectCloud()">Desconectar</button>
+          <button class="btn" style="background:var(--orange)" onclick="exportHtmlWithGsUrl()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Baixar HTML
+          </button>
+          <button class="btn btn-green" onclick="connectCloud()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+            Conectar
+          </button>
+        </div>
+        <div class="sync-log" id="sync-log">—</div>
       </div>
-      <div style="font-size:10.5px;color:#166534;margin-top:6px;">Cole esta URL em outro dispositivo para sincronizar.</div>
-    </div>
 
-    <div class="modal-hint">
-      <strong>🔧 Como configurar o Google Sheets:</strong><br>
-      1. Crie uma planilha no Google Sheets com uma aba chamada <b>DB</b><br>
-      2. No menu <b>Extensões → Apps Script</b>, cole o código do arquivo <b>appsscript.gs</b><br>
-      3. Clique em <b>Implantar → Novo Implantação → App da Web</b><br>
-      4. Defina acesso: <b>Qualquer pessoa</b> — copie a URL gerada<br>
-      5. Cole a URL abaixo e clique em <b>Conectar</b>
-    </div>
-    <div class="modal-warn" id="cloud-warn"></div>
-    <div class="mf">
-      <label>URL do Apps Script (Web App)</label>
-      <input type="text" id="m-gsurl" placeholder="https://script.google.com/macros/s/..." autocomplete="off" style="font-family:var(--mono);font-size:11.5px;">
-    </div>
-    <div class="modal-acts">
-      <button class="btn btn-g" onclick="disconnectCloud()">Desconectar</button>
-      <button class="btn" style="background:var(--orange)" onclick="exportHtmlWithGsUrl()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Baixar HTML Atualizado
-      </button>
-      <button class="btn btn-green" onclick="connectCloud()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-        Conectar &amp; Sincronizar
-      </button>
-    </div>
-    <div class="sync-log" id="sync-log">—</div>
+      <!-- ── ABA BACKUP / RESTAURAÇÃO ─────────────────────────────── -->
+      <div id="cm-pane-backup" style="display:none;">
+        <!-- Criar backup -->
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--td);margin-bottom:10px;">💾 Criar Backup Agora</div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="bk-label" placeholder="Nome do backup (opcional)" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 11px;font-family:var(--font);font-size:12.5px;color:var(--td);outline:none;">
+            <button onclick="gsCreateBackup()" style="background:var(--blue);color:#fff;border:none;border-radius:var(--rs);padding:8px 16px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+              Criar Backup
+            </button>
+          </div>
+          <div style="font-size:11px;color:var(--tl);margin-top:6px;">Os dados atuais serão salvos na aba "Backups" da sua planilha.</div>
+        </div>
+
+        <!-- Lista de backups -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-size:12px;font-weight:700;color:var(--td);">🗂️ Backups Disponíveis</div>
+          <button onclick="gsLoadBackupList()" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-family:var(--font);font-size:11px;color:var(--tl);cursor:pointer;">🔄 Atualizar</button>
+        </div>
+        <div id="bk-list" style="min-height:60px;max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;">
+          <div style="padding:20px;text-align:center;color:var(--tl);font-size:12px;">Clique em "Atualizar" para carregar os backups.</div>
+        </div>
+      </div>
+
+      <!-- ── ABA EXPORTAÇÃO ─────────────────────────────────────────── -->
+      <div id="cm-pane-export" style="display:none;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+
+          <!-- Exportar JSON local -->
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;">
+            <div style="font-size:12px;font-weight:700;color:var(--td);margin-bottom:4px;">📦 Exportar JSON (local)</div>
+            <div style="font-size:11px;color:var(--tl);margin-bottom:10px;">Baixa o banco de dados atual diretamente do seu dispositivo.</div>
+            <button onclick="exportBk()" style="background:var(--blue);color:#fff;border:none;border-radius:var(--rs);padding:9px 18px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;">
+              ⬇️ Baixar JSON
+            </button>
+          </div>
+
+          <!-- Exportar JSON da nuvem -->
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;">
+            <div style="font-size:12px;font-weight:700;color:var(--td);margin-bottom:4px;">☁️ Exportar JSON (Google Sheets)</div>
+            <div style="font-size:11px;color:var(--tl);margin-bottom:10px;">Baixa exatamente o que está salvo na nuvem — garante que você tem a versão mais recente.</div>
+            <button onclick="gsExportJson()" style="background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:9px 18px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;">
+              ⬇️ Baixar JSON da Nuvem
+            </button>
+          </div>
+
+          <!-- Exportar CSV -->
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;">
+            <div style="font-size:12px;font-weight:700;color:var(--td);margin-bottom:4px;">📊 Exportar CSV (planilha Excel)</div>
+            <div style="font-size:11px;color:var(--tl);margin-bottom:10px;">Exporta as vendas em formato CSV compatível com Excel e Google Sheets.</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select id="exp-mes" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:var(--rs);padding:7px 10px;font-family:var(--font);font-size:12px;color:var(--td);outline:none;cursor:pointer;">
+                <option value="">Todos os meses</option>
+              </select>
+              <button onclick="gsExportCsv()" style="background:var(--orange);color:#fff;border:none;border-radius:var(--rs);padding:9px 18px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">
+                ⬇️ Baixar CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Restaurar de arquivo local -->
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;">
+            <div style="font-size:12px;font-weight:700;color:var(--td);margin-bottom:4px;">📂 Importar / Restaurar de Arquivo</div>
+            <div style="font-size:11px;color:var(--tl);margin-bottom:10px;">Carrega um arquivo JSON exportado anteriormente e sincroniza com a nuvem.</div>
+            <button onclick="document.getElementById('imp').click()" style="background:var(--purple);color:#fff;border:none;border-radius:var(--rs);padding:9px 18px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;">
+              📂 Selecionar Arquivo JSON
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- fim scroll -->
   </div>
 </div>
 
@@ -4089,19 +4180,18 @@ function downloadModeloExcel(){
 const CLOUD_LS   = 'bi_cloud_v2';
 // URL do Google Apps Script gravada diretamente no HTML — mesmo banco em TODOS os dispositivos
 // Substitua pela URL do seu Web App depois de implantar o Apps Script
-const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbwj2KXnNtRGUd8wpdSVZ9DfCNpHfMJlCAqX_duG2MIL0LeR0J2OyHc0ToK7k5nOIiZg/exec';
+const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbzBWAQ4uLiK3_Xcmbiqm1ZpOsfoXvNrRhGB5oidZ0KPSQQG0nXdcxPtqRM0hZyAg2sP/exec';
 
 function getCfg(){
   try{
     const c = JSON.parse(localStorage.getItem(CLOUD_LS)||'{}');
-    // HARDCODED_GS_URL tem prioridade — sincroniza todos os dispositivos
     const hurl = (HARDCODED_GS_URL||'').trim();
-    if(hurl){ c.gsUrl=hurl; }
+    if(hurl){ c.gsUrl = hurl; }
     return c;
   } catch(e){
-    // localStorage falhou (iOS modo privado, etc) — ainda retorna a URL hardcoded
+    // localStorage indisponível (iOS modo privado, Samsung Browser, etc.)
     const hurl = (HARDCODED_GS_URL||'').trim();
-    return hurl ? {gsUrl:hurl} : {};
+    return hurl ? { gsUrl: hurl } : {};
   }
 }
 
@@ -4127,19 +4217,65 @@ async function exportHtmlWithGsUrl(){
 function setCfg(c){ localStorage.setItem(CLOUD_LS, JSON.stringify(c)); }
 
 function setCloudUI(state, txt){
-  // Original (mantido intacto)
-  const dot = document.getElementById('cloud-dot');
+  // cloud-dot e cloud-txt (cloud pill no topbar)
+  const dot   = document.getElementById('cloud-dot');
   const label = document.getElementById('cloud-txt');
-  if(dot)  { dot.className='cloud-dot '+state; }
-  if(label){ label.textContent = txt; }
-  // Novos elementos
-  const pill = document.getElementById('spill');
-  const ptxt = document.getElementById('spill-t');
-  const bar  = document.getElementById('_sb');
-  const cls = state==='ok'?'ok': state==='sync'?'sy':'er';
-  if(pill){ pill.className='spill '+cls; }
-  if(ptxt){ ptxt.textContent = state==='ok'?'Sincronizado': state==='sync'?'Salvando…': state==='off'?'Sem nuvem':'Sem conexão'; }
-  if(bar) { bar.className = state==='sync'?'s': (state==='err'||state==='off')?'e':''; }
+  if(dot)   dot.className   = 'cloud-dot ' + state;
+  if(label) label.textContent = txt;
+
+  // sync-status-bar (pill de status)
+  const bar  = document.getElementById('sync-status-bar');
+  const stxt = document.getElementById('sync-status-txt');
+  if(bar){
+    bar.className = '';
+    bar.classList.add(state === 'ok' ? 'ok' : state === 'sync' ? 'sync' : 'err');
+  }
+  if(stxt){
+    stxt.textContent = state==='ok' ? 'Sincronizado'
+                     : state==='sync' ? 'Salvando…'
+                     : state==='off'  ? 'Sem nuvem'
+                     : 'Sem conexão';
+  }
+}
+
+// ── Atualizar manualmente ──
+async function manualRefresh(){
+  const btn = document.getElementById('btn-global-refresh');
+  const ico = document.getElementById('refresh-icon');
+  if(btn) btn.disabled = true;
+  if(ico) ico.style.animation = 'spin .7s linear';
+  try {
+    const ok = await cloudPull();
+    if(ok){
+      _refreshCurrentUserFromDB();
+      populateMes(); populateQESellers(); renderAll(); renderPSVIfActive();
+      toast('✅ Dados atualizados!');
+    } else {
+      toast('⚠️ Sem conexão com a nuvem.','⚠️');
+    }
+  } catch(e){
+    toast('❌ Erro: ' + e.message,'⚠️');
+  } finally {
+    if(btn) btn.disabled = false;
+    if(ico) setTimeout(()=>{ ico.style.animation = ''; }, 750);
+  }
+}
+
+// ── Salvar manualmente ──
+async function manualSave(){
+  const btn = document.getElementById('btn-global-save');
+  if(btn) btn.disabled = true;
+  try {
+    try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+    flashSaved();
+    clearTimeout(saveDB._t);
+    await _syncEnqueue();
+    toast('💾 Salvo e sincronizado!');
+  } catch(e){
+    toast('❌ Erro ao salvar: ' + e.message,'⚠️');
+  } finally {
+    if(btn) btn.disabled = false;
+  }
 }
 function syncLog(msg){
   const el=document.getElementById('sync-log');
@@ -4192,7 +4328,8 @@ async function _runSync() {
       // ── PASSO 1: Busca snapshot atual da nuvem ──────────────────────────
       let cloudRec = null;
       try {
-        const res = await fetch(cfg.gsUrl + '?action=get', {
+        // Timestamp na URL: impede que browsers/CDN/proxies retornem cache antigo
+        const res = await fetch(cfg.gsUrl + '?action=get&_t=' + Date.now(), {
           cache  : 'no-store',
           signal : AbortSignal.timeout ? AbortSignal.timeout(12000) : undefined
         });
@@ -4214,7 +4351,6 @@ async function _runSync() {
           }
         }
       } catch(e) {
-        // GET falhou — usa DB local como base (ainda tenta o POST)
         console.warn('[sync] GET falhou:', e.message);
         cloudRec = null;
       }
@@ -4225,9 +4361,8 @@ async function _runSync() {
       // ── PASSO 3: POST resultado mesclado ────────────────────────────────
       const params = new URLSearchParams();
       params.append('data', JSON.stringify(toSend));
+      // keepalive: true → requisição completa mesmo se usuário fechar a aba (mobile)
       await fetch(cfg.gsUrl, { method:'POST', mode:'no-cors', keepalive:true, body:params });
-      // no-cors = resposta opaca; GAS executa mas não podemos confirmar.
-      // Por isso sempre fazemos o merge antes do POST, não depois.
 
       // ── PASSO 4: Atualiza localStorage com estado mesclado ──────────────
       if (cloudRec) {
@@ -4360,124 +4495,87 @@ async function cloudSyncVendas(){
 
 
 
-// ── cloudPull: busca nuvem, merge, atualiza local ──────────────────────────
-// Chamado no boot, auto-refresh e visibilitychange.
+// ── cloudPull: busca SEMPRE o banco mais recente do Google Sheets ─────────
+// Regra: nuvem é a fonte da verdade. Só conserva vendas locais pendentes.
 async function cloudPull(){
-  // Bloqueia se houve importação de Excel recente (5min)
   if(window._blockPull && Date.now()-window._blockPull < 300000) return false;
   const cfg = getCfg();
   if(!cfg.gsUrl) return false;
   setCloudUI('sync','Carregando…');
   try{
-    // ── Cache-busting via URL timestamp: garante que Chrome/Android/iOS
-    //    nunca sirvam resposta cacheada (CDN, proxy, cache HTTP do browser).
-    //    O parâmetro _t é ignorado pelo Apps Script (apenas lê e.parameter.action).
-    const url = cfg.gsUrl+'?action=get&_t='+Date.now();
-    const res = await fetch(url,{
-      cache:'no-store',
+    // Timestamp garante URL única: nenhum browser, CDN ou proxy reutiliza cache
+    const url = cfg.gsUrl + '?action=get&_t=' + Date.now();
+    const res = await fetch(url, {
+      cache : 'no-store',
       signal: (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function')
               ? AbortSignal.timeout(15000) : undefined
     });
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
 
     let data;
     try{ data = await res.json(); }
-    catch(e){ throw new Error('Resposta inválida do Apps Script (não é JSON). Reimplante o Web App.'); }
+    catch(e){ throw new Error('Resposta inválida do Apps Script. Reimplante o Web App.'); }
 
     const rec = data?.record ?? data;
 
-    // ── Validação robusta — tolerante a campos ausentes ou null ──
     const hasSellers = Array.isArray(rec?.sellers);
     const hasVendas  = rec?.vendas && typeof rec.vendas === 'object' && !Array.isArray(rec.vendas);
-
-    if(!hasSellers && !hasVendas){
+    if(!hasSellers && !hasVendas)
       throw new Error('Estrutura inválida no Google Sheets. Verifique a aba DB.');
-    }
 
-    // Garante todos os campos obrigatórios
+    // Normaliza campos ausentes
     if(!rec.sellers   || !Array.isArray(rec.sellers))   rec.sellers   = [];
     if(!rec.vendas    || typeof rec.vendas!=='object')   rec.vendas    = {};
     if(!rec.times     || !Array.isArray(rec.times))     rec.times     = [];
     if(!rec.regionais || !Array.isArray(rec.regionais)) rec.regionais = [];
     if(!rec.users     || !Array.isArray(rec.users))     rec.users     = [];
-    ['diasConfig','sellerMetas','hubMetas','mValues',
-     'ativacaoManual','ativacaoManualOv'].forEach(k=>{
-       if(!rec[k] || typeof rec[k]!=='object' || Array.isArray(rec[k])) rec[k]={};
-    });
+    ['diasConfig','sellerMetas','hubMetas','mValues','ativacaoManual','ativacaoManualOv']
+      .forEach(k=>{ if(!rec[k]||typeof rec[k]!=='object'||Array.isArray(rec[k])) rec[k]={}; });
 
-    // Normaliza roles de usuário (compatibilidade com versões antigas)
+    // Normaliza roles
     rec.users = rec.users.map(u=>({
       ...u,
-      role: u.role==='admin'?'gerente': u.role==='user'?'supervisor': u.role||'supervisor',
-      nome: u.nome||u.displayName||u.username,
+      role     : u.role==='admin'?'gerente': u.role==='user'?'supervisor': u.role||'supervisor',
+      nome     : u.nome||u.displayName||u.username,
       regionalId: u.regionalId??null,
-      timeId: u.timeId??null,
-      color: u.color||(u.role==='gerente'?'#7c3aed':'#2563eb')
+      timeId   : u.timeId??null,
+      color    : u.color||(u.role==='gerente'?'#7c3aed':'#2563eb')
     }));
     if(!rec.users.find(u=>u.role==='gerente'))
       rec.users.unshift({id:1,username:'gerente',password:'gerente123',
-                          role:'gerente',nome:'Gerente Geral',
-                          regionalId:null,timeId:null,color:'#7c3aed'});
-
-    // Banco novo/vazio — inicializa sem merge
-    if(rec.sellers.length === 0 && Object.keys(rec.vendas).length === 0){
-      migrateToDefaultRegional(rec);
-      DB = rec;
-      try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
-      setCloudUI('ok','Nuvem ✓');
-      syncLog('Banco inicializado do Google Sheets.');
-      return true;
-    }
+                         role:'gerente',nome:'Gerente Geral',
+                         regionalId:null,timeId:null,color:'#7c3aed'});
 
     migrateToDefaultRegional(rec);
 
-    // ── Merge para LEITURA: nuvem prevalece, só conserva vendas locais ainda não salvas ──
-    // Diferente do merge de ESCRITA (_deepMerge), aqui a nuvem é a fonte da verdade.
-    const merged = _pullMerge(rec, DB);
-    DB = merged;
+    // ── Nuvem é a verdade absoluta ─────────────────────────────────────────
+    // Vendas pendentes locais (lançadas e ainda não confirmadas na nuvem)
+    // são re-adicionadas para evitar perda durante o ciclo save→pull.
+    const pendVendas = {};
+    Object.keys(DB.vendas||{}).forEach(mes=>{
+      const cloudIds = new Set((rec.vendas[mes]||[]).map(v=>String(v.id)));
+      const pend = (DB.vendas[mes]||[]).filter(v=>!cloudIds.has(String(v.id)));
+      if(pend.length) pendVendas[mes] = pend;
+    });
+    Object.keys(pendVendas).forEach(mes=>{
+      if(!rec.vendas[mes]) rec.vendas[mes] = [];
+      rec.vendas[mes] = [...rec.vendas[mes], ...pendVendas[mes]]
+        .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+    });
+    rec.nextId = Math.max(rec.nextId||0, DB.nextId||0);
+
+    DB = rec;
     try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
     setCloudUI('ok','Nuvem ✓');
-    syncLog('Sincronizado — '+new Date().toLocaleTimeString('pt-BR'));
+    syncLog('Sincronizado — ' + new Date().toLocaleTimeString('pt-BR'));
     return true;
 
   } catch(err){
     setCloudUI('err','Erro ao carregar');
-    syncLog('Erro: '+err.message);
+    syncLog('Erro: ' + err.message);
     console.error('[cloudPull]', err);
     return false;
   }
-}
-
-// ── _pullMerge: merge para LEITURA — nuvem é fonte da verdade ──────────────
-// Nuvem vence em tudo exceto vendas (union) e sellers novos locais (id > cloud maxId).
-function _pullMerge(cloud, local){
-  // Começa com cópia fiel da nuvem
-  const r = JSON.parse(JSON.stringify(cloud));
-
-  // Vendas: union — mantém vendas locais que ainda não foram salvas na nuvem
-  const lv = local.vendas || {};
-  Object.keys(lv).forEach(k=>{
-    if(!r.vendas[k]) r.vendas[k] = [];
-    const ids = new Set(r.vendas[k].map(v=>String(v.id)));
-    const extras = (lv[k]||[]).filter(v=>!ids.has(String(v.id)));
-    if(extras.length){
-      r.vendas[k] = [...r.vendas[k], ...extras]
-        .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
-    }
-  });
-
-  // Sellers: mantém sellers locais que ainda não existem na nuvem (recém-criados)
-  const cloudSellerIds = new Set(r.sellers.map(s=>String(s.id)));
-  const newLocal = (local.sellers||[]).filter(s=>!cloudSellerIds.has(String(s.id)));
-  if(newLocal.length) r.sellers = [...r.sellers, ...newLocal];
-
-  // nextId: o maior de tudo
-  const maxId = Math.max(0, ...(r.sellers||[]).map(s=>Number(s.id)||0));
-  r.nextId = Math.max(r.nextId||0, local.nextId||0, maxId+1);
-
-  // Tudo mais (metas, config, times, regionais, users): nuvem vence totalmente.
-  // Isso garante que updates de outros usuários sejam SEMPRE vistos.
-  return r;
 }
 
 
@@ -4522,17 +4620,190 @@ function disconnectCloud(){
   toast('Nuvem desconectada','ℹ️');
 }
 
+// ── Troca de abas no modal ────────────────────────────────────────────────
+function cmTab(tab) {
+  ['config','backup','export'].forEach(t => {
+    const btn  = document.getElementById('cm-tab-' + t);
+    const pane = document.getElementById('cm-pane-' + t);
+    const active = t === tab;
+    if(btn)  { btn.style.borderBottomColor = active ? 'var(--blue)' : 'transparent'; btn.style.color = active ? 'var(--blue)' : 'var(--tl)'; }
+    if(pane) pane.style.display = active ? '' : 'none';
+  });
+  if(tab === 'backup') gsLoadBackupList();
+  if(tab === 'export') _fillExpMes();
+}
+
 function openCloudModal(){
   const cfg = getCfg();
   document.getElementById('m-gsurl').value = cfg.gsUrl || '';
-  document.getElementById('cloud-warn').style.display='none';
+  document.getElementById('cloud-warn').style.display = 'none';
   const panel = document.getElementById('cloud-bin-panel');
   const disp  = document.getElementById('cloud-bin-display');
   if(cfg.gsUrl){ panel.style.display=''; disp.textContent=cfg.gsUrl; }
   else { panel.style.display='none'; }
+  cmTab('config');
   document.getElementById('cloud-modal').classList.add('show');
 }
 function closeCloudModal(){ document.getElementById('cloud-modal').classList.remove('show'); }
+
+// ── Preenche o select de meses na aba Exportar ────────────────────────────
+function _fillExpMes(){
+  const sel = document.getElementById('exp-mes');
+  if(!sel) return;
+  const meses = Object.keys(DB.vendas||{}).sort().reverse();
+  sel.innerHTML = '<option value="">Todos os meses</option>' +
+    meses.map(m=>`<option value="${m}">${m}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  BACKUP — funções que se comunicam com o Apps Script
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function gsCreateBackup(){
+  const cfg = getCfg();
+  if(!cfg.gsUrl){ toast('Configure a URL do Apps Script primeiro','⚠️'); return; }
+  const label = (document.getElementById('bk-label')?.value||'').trim()
+              || 'manual_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  const btn = document.querySelector('[onclick="gsCreateBackup()"]');
+  if(btn){ btn.disabled=true; btn.textContent='Salvando…'; }
+  try{
+    const params = new URLSearchParams();
+    params.append('action', 'backup');
+    params.append('data',   JSON.stringify(DB));
+    params.append('label',  label);
+    await fetch(cfg.gsUrl, { method:'POST', mode:'no-cors', keepalive:true, body:params });
+    toast('✅ Backup "' + label + '" criado!');
+    if(document.getElementById('bk-label')) document.getElementById('bk-label').value = '';
+    await gsLoadBackupList();
+  } catch(e){ toast('❌ Erro ao criar backup: ' + e.message,'⚠️'); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='Criar Backup'; } }
+}
+
+async function gsLoadBackupList(){
+  const cfg = getCfg();
+  const el  = document.getElementById('bk-list');
+  if(!el) return;
+  if(!cfg.gsUrl){
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--tl);font-size:12px;">Configure a URL do Apps Script primeiro.</div>';
+    return;
+  }
+  el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--tl);font-size:12px;">🔄 Carregando…</div>';
+  try{
+    const url = cfg.gsUrl + '?action=listBackups&_t=' + Date.now();
+    const res = await fetch(url, { cache:'no-store' });
+    const data = await res.json();
+    const list = data.backups || [];
+    if(!list.length){
+      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--tl);font-size:12px;">Nenhum backup encontrado.<br>Crie o primeiro backup acima.</div>';
+      return;
+    }
+    el.innerHTML = list.map(b => `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:700;color:var(--td);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${b.label}</div>
+          <div style="font-size:10.5px;color:var(--tl);margin-top:2px;">${b.date} · ${b.size}</div>
+        </div>
+        <button onclick="gsRestoreBackup('${b.id}','${b.label.replace(/'/g,"\\'")}')" style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:5px 11px;font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">↺ Restaurar</button>
+        <button onclick="gsDeleteBackup('${b.id}',this)" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-family:var(--font);font-size:11px;color:var(--tl);cursor:pointer;">🗑</button>
+      </div>`).join('');
+  } catch(e){
+    el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--red);font-size:12px;">❌ Erro: ${e.message}</div>`;
+  }
+}
+
+async function gsRestoreBackup(id, label){
+  if(!confirm(`Restaurar o backup "${label}"?\n\nO banco atual será substituído por este backup.\nUm backup automático do estado atual será feito antes.`)) return;
+  const cfg = getCfg();
+  if(!cfg.gsUrl){ toast('Configure a URL do Apps Script primeiro','⚠️'); return; }
+  toast('⏳ Restaurando backup…');
+  try{
+    // 1. Busca os dados do backup
+    const url = cfg.gsUrl + '?action=getBackup&id=' + encodeURIComponent(id) + '&_t=' + Date.now();
+    const res = await fetch(url, { cache:'no-store' });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    if(!data.record) throw new Error('Backup sem dados');
+
+    // 2. Aplica localmente
+    DB = data.record;
+    try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+
+    // 3. Salva na nuvem (usa o mecanismo normal de save que faz pull+merge+push)
+    await cloudPush();
+
+    // 4. Atualiza a tela
+    _refreshCurrentUserFromDB();
+    populateMes(); populateQESellers(); renderAll();
+    toast('✅ Banco restaurado para "' + label + '"!');
+    closeCloudModal();
+  } catch(e){
+    toast('❌ Erro ao restaurar: ' + e.message,'⚠️');
+  }
+}
+
+async function gsDeleteBackup(id, btn){
+  if(!confirm('Excluir este backup permanentemente?')) return;
+  const cfg = getCfg();
+  if(!cfg.gsUrl) return;
+  if(btn){ btn.disabled=true; btn.textContent='…'; }
+  try{
+    const params = new URLSearchParams();
+    params.append('action', 'deleteBackup');
+    params.append('id', id);
+    await fetch(cfg.gsUrl, { method:'POST', mode:'no-cors', keepalive:true, body:params });
+    toast('🗑️ Backup excluído.');
+    await gsLoadBackupList();
+  } catch(e){
+    toast('❌ Erro: ' + e.message,'⚠️');
+    if(btn){ btn.disabled=false; btn.textContent='🗑'; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  EXPORTAÇÃO
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function gsExportJson(){
+  const cfg = getCfg();
+  if(!cfg.gsUrl){ toast('Configure a URL do Apps Script primeiro','⚠️'); return; }
+  toast('⏳ Baixando JSON da nuvem…');
+  try{
+    const url = cfg.gsUrl + '?action=exportJson&_t=' + Date.now();
+    const res = await fetch(url, { cache:'no-store' });
+    const txt = await res.text();
+    // Cria download
+    const blob = new Blob([txt], { type:'application/json' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = 'bi_vendas_nuvem_' + fmtD(today()) + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('✅ JSON da nuvem baixado!');
+  } catch(e){
+    toast('❌ Erro: ' + e.message,'⚠️');
+  }
+}
+
+async function gsExportCsv(){
+  const cfg = getCfg();
+  if(!cfg.gsUrl){ toast('Configure a URL do Apps Script primeiro','⚠️'); return; }
+  const mes = document.getElementById('exp-mes')?.value || '';
+  toast('⏳ Gerando CSV…');
+  try{
+    const url = cfg.gsUrl + '?action=exportCsv' + (mes?'&mes='+encodeURIComponent(mes):'') + '&_t=' + Date.now();
+    const res = await fetch(url, { cache:'no-store' });
+    const txt = await res.text();
+    const blob = new Blob([txt], { type:'text/csv;charset=utf-8;' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = 'bi_vendas_' + (mes||'todos') + '_' + fmtD(today()) + '.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('✅ CSV exportado!');
+  } catch(e){
+    toast('❌ Erro: ' + e.message,'⚠️');
+  }
+}
 function copyGsUrl(){
   const url = getCfg().gsUrl||document.getElementById('m-gsurl')?.value||'';
   if(!url){ toast('Nenhuma URL disponível','⚠️'); return; }
@@ -5798,125 +6069,96 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
 }); // preenche login se "lembrar" estava ativo
 
 (async () => {
-  const setMsg = t => { const el=document.getElementById('loading-msg'); if(el) el.textContent=t; };
-  const hideLoading = () => { const el=document.getElementById('loading-ov'); if(el) el.style.display='none'; };
+  const setMsg     = t => { const e=document.getElementById('loading-msg');     if(e) e.textContent=t; };
+  const hideLoading= ()=> { const e=document.getElementById('loading-ov');      if(e) e.style.display='none'; };
+  const showRetry  = ()=> { const e=document.getElementById('loading-retry');   if(e) e.style.display=''; };
 
-  // Mostra botão de retry após 12s sem resposta
-  const retryTimer = setTimeout(()=>{
-    const btn=document.getElementById('loading-retry');
-    if(btn){ btn.style.display=''; setMsg('Demorando mais que o esperado…'); }
-  }, 12000);
-
-  // Garante URL configurada
-  const cfg = getCfg();
-
-  setMsg('Buscando banco de dados…');
-
-  // ── Puxa SEMPRE da nuvem — localStorage é apenas fallback ──
+  // ── PASSO 1: Sincroniza com a nuvem ANTES de mostrar o login ─────────────
+  setMsg('Conectando ao Google Sheets…');
   let ok = false;
-  for(let tentativa=1; tentativa<=3; tentativa++){
-    setMsg(`Carregando dados… (tentativa ${tentativa}/3)`);
+  for(let t=1; t<=5; t++){
+    setMsg(t===1 ? 'Carregando banco de dados…' : `Tentando novamente… (${t}/5)`);
     ok = await cloudPull();
     if(ok) break;
-    if(tentativa < 3) await new Promise(r=>setTimeout(r, 2000));
+    if(t < 5) await new Promise(r=>setTimeout(r, t * 1500));
   }
 
-  clearTimeout(retryTimer);
-
   if(!ok){
-    // Fallback: usa localStorage se nuvem falhou
-    setMsg('⚠️ Usando dados locais (sem conexão com nuvem)');
-    const local = (()=>{ try{ const s=localStorage.getItem('bi_v5'); return s?JSON.parse(s):null; }catch(e){return null;} })();
-    if(local?.sellers){ DB=local; migrateToDefaultRegional(DB); }
-    await new Promise(r=>setTimeout(r,1500)); // mostra aviso por 1.5s
+    // Fallback local apenas como último recurso
+    setMsg('⚠️ Sem conexão. Usando cache local…');
+    showRetry();
+    try{
+      const s = localStorage.getItem('bi_v5');
+      if(s){ const d=JSON.parse(s); if(d?.sellers){ DB=d; migrateToDefaultRegional(DB); } }
+    }catch(e){}
+    await new Promise(r=>setTimeout(r, 1200));
   }
 
   populateMes();
   populateQESellers();
 
-  // ── Verifica sessão ──
-  const sess = getSession();
+  // ── PASSO 2: Sessão → login ou dashboard ─────────────────────────────────
+  const sess   = getSession();
+  const dbUser = sess ? DB.users?.find(u=>u.id===sess.id) : null;
   hideLoading();
 
-  const dbUser = sess ? DB.users?.find(u=>u.id===sess.id) : null;
   if(sess && dbUser){
-    // Usa o objeto do DB (mais recente) em vez do objeto da sessão (pode estar desatualizado)
-    currentUser = {...dbUser, ...( sess.password ? {password: sess.password} : {} )};
-    setSession(currentUser); // atualiza sessão com dados frescos
+    currentUser = { ...dbUser, ...(sess.password ? {password:sess.password} : {}) };
+    setSession(currentUser);
     document.getElementById('login-ov').classList.add('hidden');
     applySession(); renderDash();
   } else {
     document.getElementById('login-ov').classList.remove('hidden');
-    if(!getCfg().gsUrl){
+    if(!getCfg().gsUrl)
       document.getElementById('login-sync-warn').style.display='block';
-    }
   }
 
-  // ══ MOTOR DE ATUALIZAÇÃO EM TEMPO REAL — Cross-Platform ══
-  // Cobre: iOS Safari, Android Chrome, Firefox Mobile, Edge, Samsung Browser
+  // ── PASSO 3: Motor de atualização em tempo real ───────────────────────────
+  // Cobre todos os dispositivos: iOS Safari, Android Chrome, Firefox, Edge, Samsung Browser
 
-  // Helper: pull + render completo (todas as páginas)
-  async function _autoUpdate(label){
+  async function _pull(){
     if(!currentUser || _syncRunning) return;
-    const ok = await cloudPull();
-    if(ok){
-      _refreshCurrentUserFromDB();
-      populateMes(); populateQESellers(); renderAll(); renderPSVIfActive();
-    }
+    const r = await cloudPull();
+    if(r){ _refreshCurrentUserFromDB(); populateMes(); populateQESellers(); renderAll(); renderPSVIfActive(); }
   }
 
-  // 1. Polling a cada 15s — mais frequente que os 30s originais
-  //    Só dispara quando página visível (não desperdiça bateria em background)
-  setInterval(()=>{ if(!document.hidden) _autoUpdate('poll'); }, 15000);
+  // a) Polling 15s — ativo somente quando a aba está visível
+  setInterval(()=>{ if(!document.hidden) _pull(); }, 15000);
 
-  // 2. visibilitychange — Chrome/Firefox/Edge ao voltar para aba
-  document.addEventListener('visibilitychange', ()=>{
-    if(!document.hidden) _autoUpdate('visibility');
-  });
+  // b) visibilitychange — Chrome, Firefox, Edge, Samsung Browser
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) _pull(); });
 
-  // 3. pageshow — OBRIGATÓRIO para iOS Safari (BFCache)
-  //    iOS congela a página e restaura sem disparar visibilitychange
-  window.addEventListener('pageshow', e=>{
-    if(e.persisted) _autoUpdate('pageshow-bfcache');
-  });
+  // c) pageshow — iOS Safari (BFCache): único evento confiável ao voltar para a aba no iOS
+  window.addEventListener('pageshow', e=>{ if(e.persisted) _pull(); });
 
-  // 4. focus — desktop ao voltar para janela/aba
-  window.addEventListener('focus', ()=>{ _autoUpdate('focus'); });
+  // d) focus — desktop ao voltar para a janela do browser
+  window.addEventListener('focus', ()=>_pull());
 
-  // 5. online — reconectou à internet
-  window.addEventListener('online', async ()=>{
-    toast('🌐 Conexão restaurada — sincronizando…');
-    await _autoUpdate('online');
-    saveDB(); // reenvia dados pendentes
-  });
+  // e) online — reconectou à internet (Wi-Fi voltou, dados móveis ligados)
+  window.addEventListener('online', ()=>{ toast('🌐 Conexão restaurada — sincronizando…'); _pull(); saveDB(); });
 
-  // 6. offline — avisa usuário
-  window.addEventListener('offline', ()=>{
-    setCloudUI('err','Sem conexão');
-    toast('⚠️ Sem internet. Dados salvos localmente.','⚠️');
-  });
+  // f) offline — avisa e mantém dados locais seguros
+  window.addEventListener('offline', ()=>{ setCloudUI('err','Sem conexão'); toast('⚠️ Sem internet. Dados salvos localmente.','⚠️'); });
 
-  // 7. pagehide + beforeunload — salva com sendBeacon ao fechar (mobile)
+  // g) pagehide + beforeunload — sendBeacon: garante POST mesmo ao fechar o app no mobile
   function _beacon(){
-    const cfg=getCfg(); if(!cfg.gsUrl||typeof navigator.sendBeacon!=='function') return;
-    try{ const p=new URLSearchParams(); p.append('data',JSON.stringify(DB)); navigator.sendBeacon(cfg.gsUrl,p); }catch(e){}
+    const cfg=getCfg();
+    if(!cfg.gsUrl || typeof navigator.sendBeacon !== 'function') return;
+    try{ const p=new URLSearchParams(); p.append('data',JSON.stringify(DB)); navigator.sendBeacon(cfg.gsUrl, p); }catch(e){}
   }
-  window.addEventListener('pagehide',    _beacon);
+  window.addEventListener('pagehide',     _beacon);
   window.addEventListener('beforeunload', _beacon);
 
-  // 8. Ctrl+S / Cmd+S — salvar
-  document.addEventListener('keydown', e=>{
-    if((e.ctrlKey||e.metaKey)&&e.key==='s'){ e.preventDefault(); if(currentUser) doSave(document.getElementById('btnSv')); }
-  });
-
-  // 9. localStorage broadcast — sincroniza múltiplas abas do mesmo browser instantaneamente
+  // h) storage — sincroniza múltiplas abas do mesmo browser instantaneamente
   window.addEventListener('storage', e=>{
     if(e.key==='bi_v5' && e.newValue && currentUser){
-      try{
-        const fresh=JSON.parse(e.newValue);
-        if(fresh?.sellers){ DB=fresh; renderAll(); }
-      }catch(ex){}
+      try{ const d=JSON.parse(e.newValue); if(d?.sellers){ DB=d; renderAll(); } }catch(x){}
     }
+  });
+
+  // i) Ctrl+S / Cmd+S → salvar
+  document.addEventListener('keydown', e=>{
+    if((e.ctrlKey||e.metaKey) && e.key==='s'){ e.preventDefault(); if(currentUser) manualSave(); }
   });
 })();
 
@@ -6573,35 +6815,29 @@ function psvSavePlan(){
   }catch(e){ toast('⚠️ Erro ao salvar plano.'); }
 }
 
-// ══ BOTÕES MANUAIS ══
-async function doRefresh(btn){
-  if(btn){ btn.disabled=true; btn.classList.add('sp'); }
-  try{
-    const ok = await cloudPull();
-    if(ok){
-      _refreshCurrentUserFromDB();
-      populateMes(); populateQESellers(); renderAll(); renderPSVIfActive();
-      toast('✅ Dados atualizados!');
-    } else {
-      toast('⚠️ Sem conexão com a nuvem.','⚠️');
-    }
-  } catch(e){ toast('❌ Erro: '+e.message,'⚠️'); }
-  finally{
-    if(btn){ btn.disabled=false; setTimeout(()=>btn.classList.remove('sp'),700); }
+// ── Atalho de teclado: Ctrl+S / Cmd+S → Salvar ──
+document.addEventListener('keydown', function(e){
+  if((e.ctrlKey || e.metaKey) && e.key === 's'){
+    e.preventDefault();
+    if(currentUser) manualSave();
   }
-}
+});
 
-async function doSave(btn){
-  if(btn) btn.disabled=true;
-  try{
-    try{ localStorage.setItem('bi_v5',JSON.stringify(DB)); }catch(e){}
-    flashSaved();
-    clearTimeout(saveDB._t);
-    await _syncEnqueue();
-    toast('💾 Salvo e sincronizado!');
-  } catch(e){ toast('❌ Erro ao salvar: '+e.message,'⚠️'); }
-  finally{ if(btn) btn.disabled=false; }
-}
+// ── Detecta reconexão de rede → atualiza automaticamente ──
+window.addEventListener('online', async function(){
+  if(!currentUser) return;
+  toast('🌐 Conexão restaurada — atualizando…');
+  const refreshed = await cloudPull();
+  if(refreshed){
+    _refreshCurrentUserFromDB();
+    populateMes(); populateQESellers(); renderAll();
+    await _syncEnqueue(); // reenvia dados pendentes
+  }
+});
+window.addEventListener('offline', function(){
+  setCloudUI('err', 'Sem conexão');
+  toast('⚠️ Sem internet. Dados salvos localmente.', '⚠️');
+});
 </script>
 
 <!-- ══ FOOTER ══ -->
