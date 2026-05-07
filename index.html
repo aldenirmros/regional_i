@@ -4439,11 +4439,42 @@ async function _runSync() {
       // ── PASSO 2: Merge profundo local → cloud ───────────────────────────
       const toSend = cloudRec ? _deepMerge(cloudRec, DB) : JSON.parse(JSON.stringify(DB));
 
-      // ── PASSO 3: POST resultado mesclado ────────────────────────────────
+      // ── PASSO 3: POST com confirmação de resposta ────────────────────────
+      // IMPORTANTE: mode:'cors' (não no-cors) → o GAS retorna JSON de confirmação.
+      // URLSearchParams = Content-Type: application/x-www-form-urlencoded
+      // → requisição "simples" CORS → sem preflight → GAS processa e retorna JSON.
       const params = new URLSearchParams();
       params.append('data', JSON.stringify(toSend));
-      // keepalive: true → requisição completa mesmo se usuário fechar a aba (mobile)
-      await fetch(cfg.gsUrl, { method:'POST', mode:'no-cors', keepalive:true, body:params });
+
+      let postOk = false;
+      try {
+        // Tentativa 1: fetch com confirmação (mode: cors)
+        const ctrl = new AbortController();
+        const tid  = setTimeout(()=>ctrl.abort(), 25000);
+        const postRes = await fetch(cfg.gsUrl, {
+          method   : 'POST',
+          body     : params,
+          signal   : ctrl.signal
+        });
+        clearTimeout(tid);
+        if(postRes.ok){
+          const json = await postRes.json().catch(()=>null);
+          if(json && !json.error){ postOk = true; }
+          else if(json && json.error){ throw new Error('GAS: ' + json.error); }
+          else { postOk = true; } // resposta sem JSON mas status 200
+        } else {
+          throw new Error('POST HTTP ' + postRes.status);
+        }
+      } catch(fetchErr) {
+        // Fallback: sendBeacon (fire-and-forget mas não falha por CORS)
+        if(typeof navigator.sendBeacon === 'function'){
+          navigator.sendBeacon(cfg.gsUrl, params);
+          postOk = true; // assume enviado
+          console.warn('[sync] cors falhou, usou sendBeacon:', fetchErr.message);
+        } else {
+          throw fetchErr;
+        }
+      }
 
       // ── PASSO 4: Atualiza localStorage com estado mesclado ──────────────
       if (cloudRec) {
@@ -4452,7 +4483,7 @@ async function _runSync() {
       }
 
       setCloudUI('ok', 'Nuvem ✓');
-      syncLog('Sincronizado com Google Sheets.');
+      syncLog('Sincronizado — ' + new Date().toLocaleTimeString('pt-BR'));
 
       // Se havia outro sync pendente durante este, executa agora
       if (_syncQueue) { _syncRunning = false; await _runSync(); return; }
@@ -4752,7 +4783,7 @@ async function gsCreateBackup(){
     params.append('action', 'backup');
     params.append('data',   JSON.stringify(DB));
     params.append('label',  label);
-    await fetch(cfg.gsUrl, { method:'POST', mode:'no-cors', keepalive:true, body:params });
+    await fetch(cfg.gsUrl, { method:'POST', body:params });
     toast('✅ Backup "' + label + '" criado!');
     if(document.getElementById('bk-label')) document.getElementById('bk-label').value = '';
     await gsLoadBackupList();
@@ -4831,7 +4862,7 @@ async function gsDeleteBackup(id, btn){
     const params = new URLSearchParams();
     params.append('action', 'deleteBackup');
     params.append('id', id);
-    await fetch(cfg.gsUrl, { method:'POST', mode:'no-cors', keepalive:true, body:params });
+    await fetch(cfg.gsUrl, { method:'POST', body:params });
     toast('🗑️ Backup excluído.');
     await gsLoadBackupList();
   } catch(e){
@@ -5051,16 +5082,18 @@ async function bkDoRestore(){
     try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
     await new Promise(r=>setTimeout(r,300));
 
-    // 2. Envia direto para a nuvem (POST direto, sem merge — restauração total)
+    // 2. Envia para o Google Sheets e confirma
     const cfg = getCfg();
     if(cfg.gsUrl){
       step('Enviando para o Google Sheets…');
       const params = new URLSearchParams();
       params.append('data', JSON.stringify(DB));
-      await fetch(cfg.gsUrl, { method:'POST', mode:'no-cors', keepalive:true, body:params });
-      await new Promise(r=>setTimeout(r,1200)); // aguarda GAS processar
+      const postRes = await fetch(cfg.gsUrl, { method:'POST', body:params });
+      if(!postRes.ok) throw new Error('Servidor retornou HTTP ' + postRes.status);
+      const result = await postRes.json().catch(()=>null);
+      if(result && result.error) throw new Error('GAS: ' + result.error);
 
-      // 3. Confirma com um pull
+      // 3. Confirma com pull
       step('Confirmando sincronização…');
       await cloudPull();
     }
