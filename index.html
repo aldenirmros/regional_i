@@ -4374,7 +4374,7 @@ function downloadModeloExcel(){
 const CLOUD_LS   = 'bi_cloud_v2';
 // URL do Google Apps Script gravada diretamente no HTML — mesmo banco em TODOS os dispositivos
 // Substitua pela URL do seu Web App depois de implantar o Apps Script
-const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbyRQG0Gt8WCaRQlgCY-ZK4TH4bMGyMpCRlld23XvK5JTq4HN8RGiFt0X9un_m3ioX4r/exec';
+const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbx9XXlgcUx4J4hYg1T76OPb-JBEm_fLkfJKTtI4_pGfaRlJ8cgM9yvCW1M6ficLjYny/exec';
 
 function getCfg(){
   try{
@@ -4396,7 +4396,7 @@ async function exportHtmlWithGsUrl(){
   try{
     const res  = await fetch(window.location.href);
     let   html = await res.text();
-    html = html.replace(/const HARDCODED_GS_URL = '[^']*';/, `const HARDCODED_GS_URL = 'https://script.google.com/macros/library/d/1CwcrCjMYXg1OapI1HI5lYRafOazmjW8ajk1WP77VP1fhfFrDWP2oQPNW/5';`);
+    html = html.replace(/const HARDCODED_GS_URL = '[^']*';/, `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbx9XXlgcUx4J4hYg1T76OPb-JBEm_fLkfJKTtI4_pGfaRlJ8cgM9yvCW1M6ficLjYny/exec';`);
     const blob = new Blob([html],{type:'text/html'});
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -4405,7 +4405,7 @@ async function exportHtmlWithGsUrl(){
     toast('✅ HTML baixado com URL embutida!');
   } catch(e){
     toast('Para embutir a URL, edite manualmente a linha HARDCODED_GS_URL no HTML.','⚠️');
-    prompt('Substitua a linha HARDCODED_GS_URL no HTML por:', `const HARDCODED_GS_URL = 'https://script.google.com/macros/library/d/1CwcrCjMYXg1OapI1HI5lYRafOazmjW8ajk1WP77VP1fhfFrDWP2oQPNW/5';`);
+    prompt('Substitua a linha HARDCODED_GS_URL no HTML por:', `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbx9XXlgcUx4J4hYg1T76OPb-JBEm_fLkfJKTtI4_pGfaRlJ8cgM9yvCW1M6ficLjYny/exec';`);
   }
 }
 function setCfg(c){ localStorage.setItem(CLOUD_LS, JSON.stringify(c)); }
