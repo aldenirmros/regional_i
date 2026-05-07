@@ -4396,7 +4396,7 @@ async function exportHtmlWithGsUrl(){
   try{
     const res  = await fetch(window.location.href);
     let   html = await res.text();
-    html = html.replace(/const HARDCODED_GS_URL = '[^']*';/, `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbx9XXlgcUx4J4hYg1T76OPb-JBEm_fLkfJKTtI4_pGfaRlJ8cgM9yvCW1M6ficLjYny/exec';`);
+    html = html.replace(/const HARDCODED_GS_URL = '[^']*';/, `const HARDCODED_GS_URL = 'https://script.google.com/macros/library/d/1CwcrCjMYXg1OapI1HI5lYRafOazmjW8ajk1WP77VP1fhfFrDWP2oQPNW/5';`);
     const blob = new Blob([html],{type:'text/html'});
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -4405,7 +4405,7 @@ async function exportHtmlWithGsUrl(){
     toast('✅ HTML baixado com URL embutida!');
   } catch(e){
     toast('Para embutir a URL, edite manualmente a linha HARDCODED_GS_URL no HTML.','⚠️');
-    prompt('Substitua a linha HARDCODED_GS_URL no HTML por:', `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbx9XXlgcUx4J4hYg1T76OPb-JBEm_fLkfJKTtI4_pGfaRlJ8cgM9yvCW1M6ficLjYny/exec';`);
+    prompt('Substitua a linha HARDCODED_GS_URL no HTML por:', `const HARDCODED_GS_URL = 'https://script.google.com/macros/library/d/1CwcrCjMYXg1OapI1HI5lYRafOazmjW8ajk1WP77VP1fhfFrDWP2oQPNW/5';`);
   }
 }
 function setCfg(c){ localStorage.setItem(CLOUD_LS, JSON.stringify(c)); }
