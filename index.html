@@ -3548,15 +3548,28 @@ function clearLancarFilter(){
   renderLancar();
 }
 
-function delVenda(id,ymKey){
-  const venda = (DB.vendas[ymKey]||[]).find(v=>String(v.id)===String(id));
-  if(venda){
-    const scopeIds = new Set(getScopedSellers(true).map(s=>s.id));
-    if(!scopeIds.has(venda.sellerId)){ toast('Sem permissão para excluir este registro','⚠️'); return; }
+function delVenda(id, ymKey) {
+  const venda = (DB.vendas[ymKey] || []).find(v => String(v.id) === String(id));
+  if (venda) {
+    const scopeIds = new Set(getScopedSellers(true).map(s => s.id));
+    if (!scopeIds.has(venda.sellerId)) { 
+      toast('Sem permissão para excluir este registro', '⚠️'); 
+      return; 
+    }
   }
-  DB.vendas[ymKey]=(DB.vendas[ymKey]||[]).filter(v=>String(v.id)!==String(id));
-  saveDB(); renderLancar(); renderDash();
-  toast('Registro excluído','🗑️');
+
+  // Remove localmente
+  DB.vendas[ymKey] = (DB.vendas[ymKey] || []).filter(v => String(v.id) !== String(id));
+  
+  // Salva no LocalStorage e dispara Sincronização com a Nuvem
+  saveDB(); 
+  
+  // Força o envio imediato para o banco de dados (sem esperar o debounce)
+  manualSave(); 
+
+  renderLancar(); 
+  renderDash();
+  toast('Registro excluído do sistema e banco', '🗑️');
 }
 
 function clearMonthHistory(){
@@ -3879,17 +3892,31 @@ function delSeller(id){
     toggleSellerInativo(id,true); return;
   }
 }
-function delSellerPermanent(id){
-  const s=DB.sellers.find(s=>s.id===id);
-  if(!s) return;
-  // Valida escopo
-  const scopeIds = new Set(getScopedSellers(true).map(x=>x.id));
-  if(!scopeIds.has(id)){ toast('Sem permissão para excluir este vendedor','⚠️'); return; }
-  if(!confirm(`⚠️ Excluir PERMANENTEMENTE "${s.name}"?\nO histórico de vendas será mantido, mas o vendedor não poderá ser restaurado.`)) return;
-  DB.sellers=DB.sellers.filter(x=>x.id!==id);
-  if(selectedSeller===id) selectedSeller=null;
-  saveDB(); renderSellers(); renderDash(); populateQESellers();
-  toast(`${s.name} excluído permanentemente`,'🗑️');
+function delSellerPermanent(id) {
+  const s = DB.sellers.find(s => s.id === id);
+  if (!s) return;
+
+  const scopeIds = new Set(getScopedSellers(true).map(x => x.id));
+  if (!scopeIds.has(id)) { 
+    toast('Sem permissão para excluir este vendedor', '⚠️'); 
+    return; 
+  }
+
+  if (!confirm(`⚠️ Excluir PERMANENTEMENTE "${s.name}"?\nEsta ação removerá o vendedor do banco de dados.`)) return;
+
+  // Remove do array de vendedores
+  DB.sellers = DB.sellers.filter(x => x.id !== id);
+  
+  if (selectedSeller === id) selectedSeller = null;
+
+  // Persiste e Sincroniza
+  saveDB();
+  manualSave(); // Envia a deleção para o Google Sheets na hora
+
+  renderSellers(); 
+  renderDash(); 
+  populateQESellers();
+  toast(`${s.name} removido do banco de dados`, '🗑️');
 }
 function onSellersFilterChange(){
   // Atualiza HUBs quando regional muda
@@ -6123,12 +6150,18 @@ function loadRemembered(){
   }catch(e){}
 }
 
-function deleteUser(id){
-  const u=DB.users?.find(x=>x.id===id);
-  if(!u||!confirm(`Remover login "@${u.username}"?`)) return;
-  DB.users=DB.users.filter(x=>x.id!==id);
-  saveDB(); renderUserList();
-  toast(`Login @${u.username} removido`,'🗑️');
+function deleteUser(id) {
+  const u = DB.users?.find(x => x.id === id);
+  if (!u || !confirm(`Remover login "@${u.username}" permanentemente do banco?`)) return;
+
+  // Remove do array de usuários
+  DB.users = DB.users.filter(x => x.id !== id);
+
+  saveDB();
+  manualSave(); // Comunica ao Sheets que o usuário não existe mais
+
+  renderUserList();
+  toast(`Login @${u.username} excluído com sucesso`, '🗑️');
 }
 
 // ══════════════════════════════════════════════════════════
