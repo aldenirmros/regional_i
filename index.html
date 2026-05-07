@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -756,7 +756,113 @@ select.sel:focus{border-color:var(--blue);}
 .chpw-btn{background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:10.5px;font-weight:600;color:var(--tl);cursor:pointer;font-family:var(--font);transition:all .12s;white-space:nowrap;}
 .chpw-btn:hover{border-color:var(--blue);color:var(--blue);}
 
-/* responsive covered above */
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVIDADE COMPLETA — iOS, Android, Tablet, Desktop
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── HUB CARDS: scroll horizontal no mobile ── */
+.hc-row-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px;}
+.hc-row-wrap::-webkit-scrollbar{display:none;}
+
+/* ── PSV top-row: sem min-width em tabelas ── */
+#psv-plan-table{min-width:0!important;}
+.psv-plan-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+/* ── TABLET 768–1200 px ── */
+@media(min-width:769px) and (max-width:1200px){
+  .kpi-row{grid-template-columns:repeat(3,1fr);}
+  .ov-kpi-row{grid-template-columns:repeat(3,1fr);}
+  #psv-top-row{grid-template-columns:1fr 1fr 1fr!important;}
+  .hc-card{min-width:160px;}
+  .dash-layout{grid-template-columns:1fr!important;}
+  .charts-row{grid-template-columns:1fr 1fr!important;}
+}
+
+/* ── MOBILE ≤768 px (completa) ── */
+@media(max-width:768px){
+  /* ── Topbar novos botões ── */
+  #sync-status-bar{padding:3px 7px;font-size:10px;}
+  #sync-status-bar span{display:none;}
+  .btn-refresh span,.btn-save-now span{display:none;}
+  .btn-refresh,.btn-save-now{padding:7px 8px;}
+  .btn-refresh,.btn-save-now,.cloud-pill{min-height:36px;min-width:36px;display:inline-flex;align-items:center;justify-content:center;}
+
+  /* ── Hub cards: scroll horizontal ── */
+  .hc-card{min-width:160px;padding:13px 14px;}
+
+  /* ── PSV top row: 2 colunas ── */
+  #psv-top-row{grid-template-columns:1fr 1fr!important;gap:8px!important;}
+
+  /* ── PSV plan table: scroll horizontal ── */
+  #psv-plan-table{min-width:700px!important;}
+  .psv-plan-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* ── PSV dp grid: 1 coluna ── */
+  #psv-dp-grid{grid-template-columns:1fr!important;}
+
+  /* ── PSV fotos: scroll ── */
+  #psv-photos-row{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* ── Overview KPI: 2 colunas ── */
+  .ov-kpi-row{grid-template-columns:repeat(2,1fr)!important;}
+
+  /* ── Modais: altura máxima scrollable ── */
+  .modal-box{max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+
+  /* ── Tabs em geral: scroll sem barra ── */
+  #cm-tabs{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+  #cm-tabs::-webkit-scrollbar{display:none;}
+  #cm-tabs button{white-space:nowrap;flex-shrink:0;font-size:11px;padding:7px 10px;}
+
+  /* ── Backup modal drop zone menor ── */
+  #bk-drop{padding:16px;}
+
+  /* ── PSV mapa semanal: scroll ── */
+  #psv-mapa-semanal,#dash-mapa-semanal{overflow-x:auto;}
+
+  /* ── Cards de vendedores: compactos ── */
+  .seller-card,.hc-card{margin-bottom:0;}
+
+  /* ── Título páginas ── */
+  .page > h2,.page > .sec-title:first-child{font-size:12px;}
+
+  /* ── Touch targets mínimos (WCAG) ── */
+  .ni,.btn,.btn-g,.btn-green,.tab-btn,.cal-nav{min-height:40px;min-width:40px;}
+  .btn,.btn-g,.btn-green{display:inline-flex;align-items:center;justify-content:center;}
+}
+
+/* ── CELULAR PEQUENO ≤480px ── */
+@media(max-width:480px){
+  #psv-top-row{grid-template-columns:1fr!important;}
+  .ov-kpi-row{grid-template-columns:1fr 1fr!important;}
+  .kpi-row{grid-template-columns:1fr 1fr;gap:7px;}
+  .kc{padding:9px 10px;}
+  .kc-val{font-size:16px;}
+  .hc-card{min-width:140px;padding:10px 12px;}
+  .modal-box{padding:16px 12px 24px;}
+  #psv-plan-table{min-width:580px!important;}
+}
+
+/* ── ULTRA-PEQUENO ≤360px (Galaxy S, iPhone SE) ── */
+@media(max-width:360px){
+  .kpi-row{grid-template-columns:1fr;}
+  .kc-val{font-size:22px;}
+  .topbar{padding:6px 8px;}
+  .topbar-brand h1{font-size:11px;}
+  .cloud-pill span{display:none;}
+  .page{padding:10px 8px 68px;}
+  .btn-refresh,.btn-save-now,.cloud-pill{padding:6px;}
+}
+
+/* ── SAFE AREA iOS (notch, home indicator) ── */
+@supports(padding: env(safe-area-inset-bottom)){
+  .sb{padding-bottom:env(safe-area-inset-bottom);}
+  @media(max-width:768px){
+    body{padding-bottom:calc(64px + env(safe-area-inset-bottom));}
+    .sb{height:calc(60px + env(safe-area-inset-bottom));}
+    .page{padding-bottom:calc(72px + env(safe-area-inset-bottom));}
+  }
+}
 </style>
 </head>
 <body>
@@ -1669,6 +1775,7 @@ select.sel:focus{border-color:var(--blue);}
         </div>
       </div>
       <div style="overflow-x:auto;padding:0 0 12px">
+        <div class="psv-plan-wrap">
         <table id="psv-plan-table" style="width:100%;border-collapse:collapse;min-width:860px">
           <thead><tr style="background:var(--bg)">
             <th class="pth">Indicador</th>
@@ -1681,6 +1788,7 @@ select.sel:focus{border-color:var(--blue);}
           </tr></thead>
           <tbody id="psv-plan-body"></tbody>
         </table>
+        </div><!-- /psv-plan-wrap -->
       </div>
     </div>
 
