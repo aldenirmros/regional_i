@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -726,30 +726,36 @@ select.sel:focus{border-color:var(--blue);}
 .login-remember{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tl);margin-top:-4px;margin-bottom:4px;cursor:pointer;}
 .login-remember input{width:15px;height:15px;accent-color:var(--blue);cursor:pointer;}
 
+/* ── BARRA DE PROGRESSO TOPO (sync) ── */
+#_syncbar{position:fixed;top:0;left:0;right:0;height:3px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .3s;}
+#_syncbar.on{opacity:1;background:linear-gradient(90deg,var(--blue),var(--cyan),var(--blue));background-size:200%;animation:_sbslide 1.2s linear infinite;}
+#_syncbar.err{opacity:1;background:var(--red);}
+@keyframes _sbslide{0%{background-position:0%}100%{background-position:200%}}
+
+/* ── SYNC STATUS PILL ── */
+.sync-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);background:var(--bg);font-size:11px;font-weight:600;flex-shrink:0;white-space:nowrap;transition:all .25s;-webkit-tap-highlight-color:transparent;}
+.sync-pill .sp-dot{width:6px;height:6px;border-radius:50%;background:var(--tl);flex-shrink:0;transition:background .3s;}
+.sync-pill.ok{color:var(--green);border-color:rgba(5,150,105,.3);background:rgba(5,150,105,.07);}
+.sync-pill.ok .sp-dot{background:var(--green);box-shadow:0 0 0 2px rgba(5,150,105,.2);}
+.sync-pill.syncing{color:var(--orange);border-color:rgba(217,119,6,.3);background:rgba(217,119,6,.07);}
+.sync-pill.syncing .sp-dot{background:var(--orange);animation:pulse .8s infinite;}
+.sync-pill.error{color:var(--red);border-color:rgba(220,38,38,.3);background:rgba(220,38,38,.07);}
+.sync-pill.error .sp-dot{background:var(--red);animation:pulse 1.2s infinite;}
+
 /* ── BOTÕES ATUALIZAR / SALVAR ── */
-.btn-refresh{background:transparent;border:1.5px solid var(--border);color:var(--tm);border-radius:var(--rs);padding:6px 12px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s var(--ease);flex-shrink:0;}
-.btn-refresh:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-g);}
-.btn-refresh svg{transition:transform .5s;}
-.btn-refresh.spinning svg{animation:spinOnce .7s linear;}
-@keyframes spinOnce{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-.btn-refresh.loading{opacity:.6;pointer-events:none;}
-.btn-save-now{background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:6px 12px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s var(--ease);flex-shrink:0;}
-.btn-save-now:hover{background:var(--green-l);transform:translateY(-1px);}
-.btn-save-now.saving{opacity:.6;pointer-events:none;}
-.btn-save-now svg{transition:transform .4s;}
-#sync-status-bar{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--bg);flex-shrink:0;white-space:nowrap;transition:all .3s;}
-#sync-status-bar.ok{color:var(--green);border-color:rgba(5,150,105,.3);background:rgba(5,150,105,.07);}
-#sync-status-bar.err{color:var(--red);border-color:rgba(220,38,38,.3);background:rgba(220,38,38,.07);}
-#sync-status-bar.sync{color:var(--orange);border-color:rgba(217,119,6,.3);background:rgba(217,119,6,.07);}
-#sync-status-bar .ss-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-#sync-status-bar.ok .ss-dot{background:var(--green);box-shadow:0 0 0 2px rgba(5,150,105,.25);}
-#sync-status-bar.err .ss-dot{background:var(--red);animation:pulse 1.2s infinite;}
-#sync-status-bar.sync .ss-dot{background:var(--orange);animation:pulse .8s infinite;}
+.btn-rt{background:transparent;border:1.5px solid var(--border);color:var(--tm);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s var(--ease);flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+.btn-rt:hover,.btn-rt:active{border-color:var(--blue);color:var(--blue);background:var(--blue-g);}
+.btn-rt .btn-rt-ico{display:inline-flex;transition:transform .6s;}
+.btn-rt.spinning .btn-rt-ico{animation:_rtSpin .7s linear;}
+@keyframes _rtSpin{to{transform:rotate(360deg)}}
+.btn-sv{background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s var(--ease);flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+.btn-sv:hover,.btn-sv:active{background:var(--green-l);}
+.btn-sv:disabled,.btn-rt:disabled{opacity:.55;pointer-events:none;}
+
 @media(max-width:768px){
-  #sync-status-bar span{display:none;}
-  .btn-refresh span{display:none;}
-  .btn-save-now span{display:none;}
-  .btn-refresh,.btn-save-now{padding:6px 8px;}
+  .sync-pill .sp-lbl{display:none;}
+  .btn-rt .btn-rt-lbl,.btn-sv .btn-sv-lbl{display:none;}
+  .btn-rt,.btn-sv{padding:7px 9px;}
 }
 
 /* change password btn */
@@ -760,6 +766,7 @@ select.sel:focus{border-color:var(--blue);}
 </style>
 </head>
 <body>
+<div id="_syncbar"></div>
 
 <!-- ══ LOGIN ══ -->
 <!-- ══ TELA DE CARREGAMENTO ══ -->
@@ -879,22 +886,24 @@ select.sel:focus{border-color:var(--blue);}
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
       Salvo
     </div>
-    <!-- STATUS DE SYNC visível para todos -->
-    <div id="sync-status-bar" class="sync">
-      <div class="ss-dot"></div>
-      <span id="sync-status-txt">Conectando…</span>
+    <!-- STATUS PILL — visível para todos -->
+    <div class="sync-pill" id="sync-pill">
+      <div class="sp-dot"></div>
+      <span class="sp-lbl" id="sync-pill-txt">Conectando…</span>
     </div>
-    <!-- BOTÃO ATUALIZAR -->
-    <button class="btn-refresh" id="btn-global-refresh" onclick="manualRefresh()" title="Buscar dados mais recentes da nuvem">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="refresh-icon"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      <span>Atualizar</span>
+    <!-- BOTÃO ATUALIZAR — visível para todos -->
+    <button class="btn-rt" id="btn-rt" onclick="doManualRefresh(this)" title="Atualizar dados da nuvem agora">
+      <span class="btn-rt-ico">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </span>
+      <span class="btn-rt-lbl">Atualizar</span>
     </button>
-    <!-- BOTÃO SALVAR -->
-    <button class="btn-save-now" id="btn-global-save" onclick="manualSave()" title="Salvar e sincronizar agora">
+    <!-- BOTÃO SALVAR — visível para todos -->
+    <button class="btn-sv" id="btn-sv" onclick="doManualSave(this)" title="Salvar e sincronizar agora (Ctrl+S)">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      <span>Salvar</span>
+      <span class="btn-sv-lbl">Salvar</span>
     </button>
-    <div class="cloud-pill" id="cloud-pill" onclick="openCloudModal()" title="Configurações de sincronização">
+    <div class="cloud-pill" id="cloud-pill" onclick="openCloudModal()" title="Sincronização na nuvem">
       <div class="cloud-dot off" id="cloud-dot"></div>
       <span id="cloud-txt">Conectando…</span>
     </div>
@@ -4129,61 +4138,19 @@ async function exportHtmlWithGsUrl(){
 function setCfg(c){ localStorage.setItem(CLOUD_LS, JSON.stringify(c)); }
 
 function setCloudUI(state, txt){
+  // ── Original: cloud-dot + cloud-txt (mantido intacto) ──
   const dot = document.getElementById('cloud-dot');
   const label = document.getElementById('cloud-txt');
   if(dot)  { dot.className='cloud-dot '+state; }
   if(label){ label.textContent = txt; }
-  // ── Atualiza a barra de status global ──
-  const bar = document.getElementById('sync-status-bar');
-  const stxt = document.getElementById('sync-status-txt');
-  if(bar){
-    bar.className = 'sync'; // reset
-    const map = {ok:'ok', err:'err', sync:'sync', off:'err'};
-    bar.classList.add(map[state]||'sync');
-  }
-  if(stxt){
-    const labels = {ok:'Sincronizado', err:'Sem conexão', sync:'Salvando…', off:'Sem nuvem'};
-    stxt.textContent = labels[state] || txt;
-  }
-}
 
-// ── Atualizar manualmente (pull da nuvem + re-render) ──
-async function manualRefresh(){
-  const btn = document.getElementById('btn-global-refresh');
-  if(btn){ btn.classList.add('spinning','loading'); }
-  toast('🔄 Buscando dados da nuvem…','🔄');
-  try {
-    const refreshed = await cloudPull();
-    if(refreshed){
-      _refreshCurrentUserFromDB();
-      populateMes(); populateQESellers();
-      renderAll();
-      toast('✅ Dados atualizados com sucesso!');
-    } else {
-      toast('⚠️ Sem conexão com a nuvem. Usando dados locais.','⚠️');
-    }
-  } catch(e){
-    toast('❌ Erro ao atualizar: ' + e.message,'⚠️');
-  } finally {
-    if(btn){ btn.classList.remove('spinning','loading'); }
-  }
-}
-
-// ── Salvar manualmente (force push imediato) ──
-async function manualSave(){
-  const btn = document.getElementById('btn-global-save');
-  if(btn){ btn.classList.add('saving'); btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>Salvando…</span>'; }
-  try {
-    saveDB();
-    // Força sync imediato (sem debounce)
-    clearTimeout(saveDB._t);
-    await _syncEnqueue();
-    toast('💾 Dados salvos e sincronizados!');
-  } catch(e){
-    toast('❌ Erro ao salvar: ' + e.message,'⚠️');
-  } finally {
-    if(btn){ btn.classList.remove('saving'); btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg><span>Salvar</span>'; }
-  }
+  // ── Novo: sync-pill + barra de progresso ──
+  const pill = document.getElementById('sync-pill');
+  const ptxt = document.getElementById('sync-pill-txt');
+  const bar  = document.getElementById('_syncbar');
+  if(pill){ pill.className = 'sync-pill ' + (state==='ok'?'ok': state==='sync'?'syncing':'error'); }
+  if(ptxt){ ptxt.textContent = state==='ok'?'Sincronizado': state==='sync'?'Salvando…': state==='off'?'Sem nuvem':'Sem conexão'; }
+  if(bar) { bar.className = state==='sync'?'on': state==='err'||state==='off'?'err':''; }
 }
 function syncLog(msg){
   const el=document.getElementById('sync-log');
@@ -4269,7 +4236,7 @@ async function _runSync() {
       // ── PASSO 3: POST resultado mesclado ────────────────────────────────
       const params = new URLSearchParams();
       params.append('data', JSON.stringify(toSend));
-      await fetch(cfg.gsUrl, { method:'POST', mode:'no-cors', body:params });
+      await fetch(cfg.gsUrl, { method:'POST', mode:'no-cors', keepalive:true, body:params });
       // no-cors = resposta opaca; GAS executa mas não podemos confirmar.
       // Por isso sempre fazemos o merge antes do POST, não depois.
 
@@ -5859,7 +5826,7 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
     }
   }
 
-  // ── Auto-refresh a cada 30s — atualiza tela com dados de outros usuários ──
+  // ── Auto-refresh a cada 20s quando página visível ──
   setInterval(async ()=>{
     if(document.hidden || !currentUser || _syncRunning) return;
     const refreshed = await cloudPull();
@@ -5867,9 +5834,9 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
       _refreshCurrentUserFromDB();
       populateMes(); populateQESellers(); renderAll(); renderPSVIfActive();
     }
-  }, 30_000);
+  }, 20000);
 
-  // ── Atualiza ao voltar do background ──
+  // ── visibilitychange: Chrome/Firefox/Edge ao voltar para aba ──
   document.addEventListener('visibilitychange', async ()=>{
     if(!document.hidden && currentUser){
       const refreshed = await cloudPull();
@@ -5877,6 +5844,59 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
         _refreshCurrentUserFromDB();
         populateMes(); populateQESellers(); renderAll(); renderPSVIfActive();
       }
+    }
+  });
+
+  // ── pageshow: CRÍTICO para iOS Safari — BFCache restaura página sem disparar visibilitychange ──
+  window.addEventListener('pageshow', async (e)=>{
+    if(!currentUser) return;
+    // e.persisted=true significa que voltou do cache (iOS BFCache)
+    if(e.persisted){
+      const refreshed = await cloudPull();
+      if(refreshed){ _refreshCurrentUserFromDB(); populateMes(); populateQESellers(); renderAll(); }
+    }
+  });
+
+  // ── focus: desktop browsers ao voltar para janela ──
+  window.addEventListener('focus', async ()=>{
+    if(!currentUser || _syncRunning) return;
+    const refreshed = await cloudPull();
+    if(refreshed){ _refreshCurrentUserFromDB(); populateMes(); populateQESellers(); renderAll(); }
+  });
+
+  // ── online: reconectou à internet → re-sync imediato ──
+  window.addEventListener('online', async ()=>{
+    if(!currentUser) return;
+    toast('🌐 Conexão restaurada — sincronizando…');
+    const refreshed = await cloudPull();
+    if(refreshed){ _refreshCurrentUserFromDB(); populateMes(); populateQESellers(); renderAll(); }
+    await cloudPush(); // reenviar dados que ficaram pendentes
+  });
+
+  // ── offline: avisa usuário ──
+  window.addEventListener('offline', ()=>{
+    setCloudUI('err', 'Sem conexão');
+    toast('⚠️ Sem internet. Dados salvos localmente.', '⚠️');
+  });
+
+  // ── pagehide/beforeunload: salva com sendBeacon antes de fechar (mobile) ──
+  function _beaconSave(){
+    const cfg = getCfg();
+    if(!cfg.gsUrl || typeof navigator.sendBeacon !== 'function') return;
+    try{
+      const p = new URLSearchParams();
+      p.append('data', JSON.stringify(DB));
+      navigator.sendBeacon(cfg.gsUrl, p);
+    }catch(e){}
+  }
+  window.addEventListener('pagehide',    _beaconSave);
+  window.addEventListener('beforeunload', _beaconSave);
+
+  // ── Ctrl+S / Cmd+S → salvar ──
+  document.addEventListener('keydown', (e)=>{
+    if((e.ctrlKey||e.metaKey) && e.key==='s'){
+      e.preventDefault();
+      if(currentUser) doManualSave(document.getElementById('btn-sv'));
     }
   });
 })();
@@ -6534,29 +6554,39 @@ function psvSavePlan(){
   }catch(e){ toast('⚠️ Erro ao salvar plano.'); }
 }
 
-// ── Atalho de teclado: Ctrl+S / Cmd+S → Salvar ──
-document.addEventListener('keydown', function(e){
-  if((e.ctrlKey || e.metaKey) && e.key === 's'){
-    e.preventDefault();
-    if(currentUser) manualSave();
-  }
-});
+// ══ ATUALIZAR E SALVAR MANUAL (botões da topbar) ══
 
-// ── Detecta reconexão de rede → atualiza automaticamente ──
-window.addEventListener('online', async function(){
-  if(!currentUser) return;
-  toast('🌐 Conexão restaurada — atualizando…');
-  const refreshed = await cloudPull();
-  if(refreshed){
-    _refreshCurrentUserFromDB();
-    populateMes(); populateQESellers(); renderAll();
-    await _syncEnqueue(); // reenvia dados pendentes
+async function doManualRefresh(btn){
+  if(btn){ btn.classList.add('spinning'); btn.disabled=true; }
+  try{
+    const ok = await cloudPull();
+    if(ok){
+      _refreshCurrentUserFromDB();
+      populateMes(); populateQESellers(); renderAll(); renderPSVIfActive();
+      toast('✅ Dados atualizados!');
+    } else {
+      toast('⚠️ Sem conexão com a nuvem. Verifique sua internet.','⚠️');
+    }
+  } catch(e){
+    toast('❌ Erro: '+e.message,'⚠️');
+  } finally {
+    if(btn){ btn.disabled=false; setTimeout(()=>btn.classList.remove('spinning'),700); }
   }
-});
-window.addEventListener('offline', function(){
-  setCloudUI('err', 'Sem conexão');
-  toast('⚠️ Sem internet. Dados salvos localmente.', '⚠️');
-});
+}
+
+async function doManualSave(btn){
+  if(btn){ btn.disabled=true; }
+  try{
+    saveDB(); // salva local + agenda debounce
+    clearTimeout(saveDB._t); // cancela debounce
+    await _syncEnqueue(); // força sync imediato
+    toast('💾 Salvo e sincronizado com sucesso!');
+  } catch(e){
+    toast('❌ Erro ao salvar: '+e.message,'⚠️');
+  } finally {
+    if(btn) btn.disabled=false;
+  }
+}
 </script>
 
 <!-- ══ FOOTER ══ -->
