@@ -321,7 +321,7 @@ select.sel:focus{border-color:var(--blue);}
   /* ── GRÁFICOS: 1 coluna ── */
   .charts-row{grid-template-columns:1fr!important;gap:12px;}
   /* Reduz altura dos gráficos no mobile */
-  #ch-line,#ch-donut,#ch-bar{max-height:220px;}
+  /* Reduz altura dos gráficos — regra consolidada abaixo */
 
   /* ── FILTRO DASH: vertical ── */
   .dash-filter{
@@ -760,12 +760,14 @@ select.sel:focus{border-color:var(--blue);}
    RESPONSIVIDADE COMPLETA — iOS, Android, Tablet, Desktop
    ═══════════════════════════════════════════════════════════ */
 
+/* Canvas: garante que não ultrapasse o container */
+canvas { display:block; max-width:100%; }
+
 /* ── HUB CARDS: scroll horizontal no mobile ── */
 .hc-row-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px;}
 .hc-row-wrap::-webkit-scrollbar{display:none;}
 
-/* ── PSV top-row: sem min-width em tabelas ── */
-#psv-plan-table{min-width:0!important;}
+/* ── PSV plan table: scroll horizontal — min-width preservado no desktop ── */
 .psv-plan-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 
 /* ── TABLET 768–1200 px ── */
@@ -794,8 +796,11 @@ select.sel:focus{border-color:var(--blue);}
   #psv-top-row{grid-template-columns:1fr 1fr!important;gap:8px!important;}
 
   /* ── PSV plan table: scroll horizontal ── */
-  #psv-plan-table{min-width:700px!important;}
+  #psv-plan-table{min-width:800px!important;}
   .psv-plan-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* ── Gráficos mobile: alturas ajustadas (sem ultrapassar container) ── */
+  #ch-donut,#ch-bar,#ch-line{max-height:220px;}
 
   /* ── PSV dp grid: 1 coluna ── */
   #psv-dp-grid{grid-template-columns:1fr!important;}
