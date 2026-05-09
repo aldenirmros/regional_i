@@ -1203,8 +1203,8 @@ canvas { display:block; max-width:100%; }
           <div class="card-title"><div class="ctd" style="background:var(--green)"></div>Realizado vs Meta</div>
           <button class="chart-maximize-btn" onclick="maximizeChart('donut')" title="Maximizar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
         </div>
-        <div class="dw" style="position:relative;height:180px;padding:14px;">
-          <canvas id="ch-donut"></canvas>
+        <div class="dw" style="height:180px">
+          <canvas id="ch-donut" style="max-height:165px"></canvas>
           <div class="dc2"><div class="dpct" id="donut-p">0%</div><div class="dlbl">da meta</div></div>
         </div>
         <div class="leg">
@@ -2333,6 +2333,7 @@ function loadDB() {
     // Garante campos obrigatórios
     ['diasConfig','sellerMetas','ativacaoManual','hubMetas','mValues'].forEach(k=>{ if(!cached[k]) cached[k]={}; });
     ['regionais','times','users'].forEach(k=>{ if(!cached[k]) cached[k]=[]; });
+    if(!cached._deleted) cached._deleted={sellers:{},times:{},regionais:{},users:{}};
     return cached;
   }
   // Seed inicial — substituído pelo cloudPull após conectar
@@ -2343,113 +2344,33 @@ function loadDB() {
 }
 
 // Migra sellers sem timeId para Regional I / CE06 - ALPHA (cria se não existir)
-// ══════════════════════════════════════════════════════════════
-//  UNIFICAR DUPLICATAS — Regional I e CE06 - Alfa
-//  Chamado automaticamente em toda sincronização com a nuvem.
-// ══════════════════════════════════════════════════════════════
-function unificarDuplicatas(db) {
-  if(!db) return db;
-
-  const RG_ID  = 1001;  // id canônico da Regional I
-  const TM_ID  = 2001;  // id canônico do CE06 - Alfa
-
-  // ── 1. Normaliza nomes e coleta IDs duplicados de Regionais ───────────
-  const rgAliases = {};  // idAntigo → idCanônico
-  const rgSeen    = {};  // nomeNorm → idCanônico
-
-  db.regionais = (db.regionais||[]).reduce((acc, r) => {
-    const nNorm = (r.nome||'').trim().toUpperCase().replace(/\s+/g,' ');
-    const isR1  = /^REGIONAL\s*(I|1)$/i.test(nNorm);
-
-    if (isR1) {
-      if (!rgSeen['R1']) {
-        // Primeiro "Regional I" encontrado → torna-se o canônico
-        rgSeen['R1'] = RG_ID;
-        rgAliases[r.id] = RG_ID;
-        acc.push({ ...r, id: RG_ID, nome: 'Regional I' });
-      } else {
-        // Duplicata → mapeia para o canônico
-        rgAliases[r.id] = RG_ID;
-      }
-    } else {
-      acc.push(r);
-    }
-    return acc;
-  }, []);
-
-  // ── 2. Atualiza regionalId nos times e users ───────────────────────────
-  db.times = (db.times||[]).map(t => ({
-    ...t,
-    regionalId: rgAliases[t.regionalId] ?? t.regionalId
-  }));
-  db.users = (db.users||[]).map(u => ({
-    ...u,
-    regionalId: rgAliases[u.regionalId] ?? u.regionalId
-  }));
-
-  // ── 3. Normaliza nomes e coleta IDs duplicados de Times ───────────────
-  const tmAliases = {};  // idAntigo → idCanônico
-  const tmSeen    = {};  // nomeNorm → idCanônico
-
-  db.times = (db.times||[]).reduce((acc, t) => {
-    const nNorm = (t.nome||'').trim().toUpperCase().replace(/[\s\-]+/g,'');
-    const isCe06 = /CE0?6/i.test(nNorm);
-
-    if (isCe06) {
-      if (!tmSeen['CE06']) {
-        tmSeen['CE06'] = TM_ID;
-        tmAliases[t.id] = TM_ID;
-        acc.push({ ...t, id: TM_ID, nome: 'CE06 - Alfa', regionalId: RG_ID });
-      } else {
-        tmAliases[t.id] = TM_ID;
-      }
-    } else {
-      acc.push(t);
-    }
-    return acc;
-  }, []);
-
-  // ── 4. Atualiza timeId em sellers e users ──────────────────────────────
-  db.sellers = (db.sellers||[]).map(s => ({
-    ...s,
-    timeId: tmAliases[s.timeId] ?? s.timeId
-  }));
-  db.users = (db.users||[]).map(u => ({
-    ...u,
-    timeId: tmAliases[u.timeId] ?? u.timeId
-  }));
-
-  return db;
-}
-
 function migrateToDefaultRegional(d){
-  // Garante Regional I e CE06 - Alfa existem antes de unificar
-  if(!d.regionais.find(r=>r.id===1001||/^REGIONAL\s*(I|1)$/i.test(r.nome||''))){
-    d.regionais.push({id:1001, nome:'Regional I', color:'#2563eb'});
+  // Verifica se já existe a regional padrão
+  let rg = d.regionais.find(r=>r.nome==='Regional I');
+  if(!rg){
+    rg = {id:1001, nome:'Regional I', color:'#2563eb'};
+    d.regionais.push(rg);
   }
-  if(!d.times.find(t=>t.id===2001||/CE0?6/i.test(t.nome||''))){
-    d.times.push({id:2001, nome:'CE06 - Alfa', regionalId:1001, color:'#2563eb'});
+  let tm = d.times.find(t=>t.nome==='CE06 - ALPHA'&&t.regionalId===rg.id);
+  if(!tm){
+    tm = {id:2001, nome:'CE06 - ALPHA', regionalId:rg.id, color:'#2563eb'};
+    d.times.push(tm);
   }
-
-  // Unifica duplicatas (Regional I e CE06 - Alfa)
-  unificarDuplicatas(d);
-
-  // Cria / normaliza usuário Aldenir
-  const aldenir = d.users.find(u=>u.username==='aldenir');
-  if(!aldenir){
-    d.users.push({id:1002,username:'aldenir',password:'@RThur20',role:'regional',
-                  superAdmin:true,nome:'Aldenir',regionalId:1001,timeId:null,color:'#7c3aed'});
+  // Cria Aldenir se não existir
+  const aldenirExistente = d.users.find(u=>u.username==='aldenir');
+  if(!aldenirExistente){
+    d.users.push({id:1002,username:'aldenir',password:'@RThur20',role:'regional',superAdmin:true,nome:'Aldenir',regionalId:rg.id,timeId:null,color:'#7c3aed'});
   } else {
-    aldenir.password   = '@RThur20';
-    aldenir.superAdmin = true;
-    aldenir.role       = 'regional';
-    aldenir.color      = '#7c3aed';
-    aldenir.nome       = aldenir.nome || 'Aldenir';
-    if(!aldenir.regionalId) aldenir.regionalId = 1001;
+    // Sempre força: senha, superAdmin, role e cor roxa (SUPER)
+    aldenirExistente.password   = '@RThur20';
+    aldenirExistente.superAdmin = true;
+    aldenirExistente.role       = 'regional';  // isGerente() retorna true via superAdmin
+    aldenirExistente.color      = '#7c3aed';   // roxo = identidade SUPER
+    aldenirExistente.nome       = aldenirExistente.nome || 'Aldenir';
+    if(!aldenirExistente.regionalId) aldenirExistente.regionalId = rg.id;
   }
-
-  // Garante que sellers sem timeId vão para o CE06 - Alfa
-  d.sellers.forEach(s=>{ if(!s.timeId) s.timeId = 2001; });
+  // Atribui todos os sellers sem timeId ao CE06 - ALPHA
+  d.sellers.forEach(s=>{ if(!s.timeId) s.timeId = tm.id; });
 }
 function flashSaved() {
   const el = document.getElementById('saved-badge');
@@ -3091,20 +3012,9 @@ function renderDash(){
 function buildDonut(real,gap){
   const ctx=document.getElementById('ch-donut').getContext('2d');
   if(chartDonut) chartDonut.destroy();
-  chartDonut=new Chart(ctx,{
-    type:'doughnut',
-    data:{datasets:[{data:[real,Math.max(0,gap)],backgroundColor:['#059669','#e2e8f0'],borderWidth:0,hoverOffset:4}]},
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      cutout:'70%',
-      plugins:{
-        legend:{display:false},
-        tooltip:{callbacks:{label:c=>{const l=['Realizado','Restante'];return ` ${l[c.dataIndex]}: ${c.raw}`;}}}
-      },
-      animation:{animateRotate:true,duration:800}
-    }
-  });
+  chartDonut=new Chart(ctx,{type:'doughnut',data:{datasets:[{data:[real,Math.max(0,gap)],backgroundColor:['#059669','#e2e8f0'],borderWidth:0,hoverOffset:4}]},
+    options:{cutout:'70%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const l=['Realizado','Restante'];return ` ${l[c.dataIndex]}: ${c.raw}`;}}}}
+  ,animation:{animateRotate:true,duration:800}}});
 }
 
 function buildBar(stats, sid, duPass, duTotal){
@@ -3548,28 +3458,15 @@ function clearLancarFilter(){
   renderLancar();
 }
 
-function delVenda(id, ymKey) {
-  const venda = (DB.vendas[ymKey] || []).find(v => String(v.id) === String(id));
-  if (venda) {
-    const scopeIds = new Set(getScopedSellers(true).map(s => s.id));
-    if (!scopeIds.has(venda.sellerId)) { 
-      toast('Sem permissão para excluir este registro', '⚠️'); 
-      return; 
-    }
+function delVenda(id,ymKey){
+  const venda = (DB.vendas[ymKey]||[]).find(v=>String(v.id)===String(id));
+  if(venda){
+    const scopeIds = new Set(getScopedSellers(true).map(s=>s.id));
+    if(!scopeIds.has(venda.sellerId)){ toast('Sem permissão para excluir este registro','⚠️'); return; }
   }
-
-  // Remove localmente
-  DB.vendas[ymKey] = (DB.vendas[ymKey] || []).filter(v => String(v.id) !== String(id));
-  
-  // Salva no LocalStorage e dispara Sincronização com a Nuvem
-  saveDB(); 
-  
-  // Força o envio imediato para o banco de dados (sem esperar o debounce)
-  manualSave(); 
-
-  renderLancar(); 
-  renderDash();
-  toast('Registro excluído do sistema e banco', '🗑️');
+  DB.vendas[ymKey]=(DB.vendas[ymKey]||[]).filter(v=>String(v.id)!==String(id));
+  saveDB(); renderLancar(); renderDash();
+  toast('Registro excluído','🗑️');
 }
 
 function clearMonthHistory(){
@@ -3871,7 +3768,8 @@ function addSeller(){
   // ID único baseado em timestamp — evita colisão em cadastros simultâneos
   const newId = Date.now();
   DB.nextId = newId + 1; // mantém nextId atualizado para compatibilidade
-  DB.sellers.push({id:newId,name,cpf,meta,color,timeId,admDate,photo,_ts:newId});
+  const nowTs = Date.now();
+  DB.sellers.push({id:newId,name,cpf,meta,color,timeId,admDate,photo,_ts:nowTs});
   saveDB();
   document.getElementById('v-nome').value='';
   document.getElementById('v-cpf').value='';
@@ -3892,31 +3790,21 @@ function delSeller(id){
     toggleSellerInativo(id,true); return;
   }
 }
-function delSellerPermanent(id) {
-  const s = DB.sellers.find(s => s.id === id);
-  if (!s) return;
-
-  const scopeIds = new Set(getScopedSellers(true).map(x => x.id));
-  if (!scopeIds.has(id)) { 
-    toast('Sem permissão para excluir este vendedor', '⚠️'); 
-    return; 
-  }
-
-  if (!confirm(`⚠️ Excluir PERMANENTEMENTE "${s.name}"?\nEsta ação removerá o vendedor do banco de dados.`)) return;
-
-  // Remove do array de vendedores
-  DB.sellers = DB.sellers.filter(x => x.id !== id);
-  
-  if (selectedSeller === id) selectedSeller = null;
-
-  // Persiste e Sincroniza
-  saveDB();
-  manualSave(); // Envia a deleção para o Google Sheets na hora
-
-  renderSellers(); 
-  renderDash(); 
-  populateQESellers();
-  toast(`${s.name} removido do banco de dados`, '🗑️');
+function delSellerPermanent(id){
+  const s=DB.sellers.find(s=>s.id===id);
+  if(!s) return;
+  // Valida escopo
+  const scopeIds = new Set(getScopedSellers(true).map(x=>x.id));
+  if(!scopeIds.has(id)){ toast('Sem permissão para excluir este vendedor','⚠️'); return; }
+  if(!confirm(`⚠️ Excluir PERMANENTEMENTE "${s.name}"?\nO histórico de vendas será mantido, mas o vendedor não poderá ser restaurado.`)) return;
+  DB.sellers=DB.sellers.filter(x=>x.id!==id);
+  // Registra deleção para que o merge não restaure da nuvem
+  if(!DB._deleted) DB._deleted={};
+  if(!DB._deleted.sellers) DB._deleted.sellers={};
+  DB._deleted.sellers[String(id)] = Date.now();
+  if(selectedSeller===id) selectedSeller=null;
+  saveDB(); renderSellers(); renderDash(); populateQESellers();
+  toast(`${s.name} excluído permanentemente`,'🗑️');
 }
 function onSellersFilterChange(){
   // Atualiza HUBs quando regional muda
@@ -3992,7 +3880,8 @@ function addTime(){
   if(!DB.times)    DB.times=[];
   if(!DB.hubMetas) DB.hubMetas={};
   const timeId = Date.now();
-  DB.times.push({id:timeId, nome, color, regionalId});
+  const timeTs = Date.now();
+  DB.times.push({id:timeId, nome, color, regionalId, _ts:timeTs});
 
   if(metaHub>0){
     if(!DB.hubMetas[currentYM]) DB.hubMetas[currentYM]={};
@@ -4001,7 +3890,7 @@ function addTime(){
 
   if(!DB.users) DB.users=[];
   DB.users.push({id:Date.now()+1, username:supUser, password:supPass, role:'supervisor',
-    nome:supNome||supUser, timeId, regionalId, color:'#059669'});
+    nome:supNome||supUser, timeId, regionalId, color:'#059669', _ts:Date.now()+1});
 
   saveDB(); renderSellers();
   document.getElementById('time-nome').value='';
@@ -4016,7 +3905,17 @@ function delTime(id){
   if(!t||!confirm(`Remover HUB "${t.nome}"? Vendedores vinculados ficam sem time.`)) return;
   DB.times=(DB.times||[]).filter(x=>x.id!==id);
   DB.sellers.forEach(s=>{ if(s.timeId===id) s.timeId=null; });
+  // Remove supervisor vinculado e registra tombstones
+  const removedUsers = (DB.users||[]).filter(x=>x.role==='supervisor'&&x.timeId===id);
+  removedUsers.forEach(u=>{
+    if(!DB._deleted) DB._deleted={};
+    if(!DB._deleted.users) DB._deleted.users={};
+    DB._deleted.users[String(u.id)] = Date.now();
+  });
   DB.users=(DB.users||[]).filter(x=>!(x.role==='supervisor'&&x.timeId===id));
+  if(!DB._deleted) DB._deleted={};
+  if(!DB._deleted.times) DB._deleted.times={};
+  DB._deleted.times[String(id)] = Date.now();
   saveDB(); renderSellers();
   toast(`HUB "${t.nome}" removido`,'🗑️');
 }
@@ -4050,11 +3949,12 @@ function addRegional(){
   const tmId  = Date.now()+1;
   const admId = Date.now()+2;
   const supId = Date.now()+3;
+  const rgTs  = Date.now();
 
-  DB.regionais.push({id:rgId, nome, color});
-  DB.times.push({id:tmId, nome:timeNome, regionalId:rgId, color});
-  DB.users.push({id:admId, username:admUser, password:admPass, role:'regional',  nome:admNome||admUser, regionalId:rgId, timeId:null, color});
-  DB.users.push({id:supId, username:supUser, password:supPass, role:'supervisor', nome:supNome||supUser, regionalId:rgId, timeId:tmId,  color:'#059669'});
+  DB.regionais.push({id:rgId, nome, color, _ts:rgTs});
+  DB.times.push({id:tmId, nome:timeNome, regionalId:rgId, color, _ts:rgTs+1});
+  DB.users.push({id:admId, username:admUser, password:admPass, role:'regional',  nome:admNome||admUser, regionalId:rgId, timeId:null, color, _ts:rgTs+2});
+  DB.users.push({id:supId, username:supUser, password:supPass, role:'supervisor', nome:supNome||supUser, regionalId:rgId, timeId:tmId,  color:'#059669', _ts:rgTs+3});
 
   saveDB(); renderRegionais(); populateDashFilter();
 
@@ -4072,6 +3972,15 @@ function delRegional(id){
   const tids=(DB.times||[]).filter(t=>t.regionalId===id).map(t=>t.id);
   DB.times=(DB.times||[]).filter(t=>t.regionalId!==id);
   DB.sellers.forEach(s=>{ if(tids.includes(s.timeId)) s.timeId=null; });
+  const removedUsers=(DB.users||[]).filter(u=>u.regionalId===id);
+  // Registra tombstones para todos os removidos
+  if(!DB._deleted) DB._deleted={};
+  if(!DB._deleted.regionais) DB._deleted.regionais={};
+  if(!DB._deleted.times)     DB._deleted.times={};
+  if(!DB._deleted.users)     DB._deleted.users={};
+  DB._deleted.regionais[String(id)] = Date.now();
+  tids.forEach(tid=>{ DB._deleted.times[String(tid)] = Date.now(); });
+  removedUsers.forEach(u=>{ DB._deleted.users[String(u.id)] = Date.now(); });
   DB.users=(DB.users||[]).filter(u=>u.regionalId!==id);
   DB.regionais=(DB.regionais||[]).filter(x=>x.id!==id);
   saveDB(); renderRegionais(); populateDashFilter();
@@ -4492,7 +4401,7 @@ function downloadModeloExcel(){
 const CLOUD_LS   = 'bi_cloud_v2';
 // URL do Google Apps Script gravada diretamente no HTML — mesmo banco em TODOS os dispositivos
 // Substitua pela URL do seu Web App depois de implantar o Apps Script
-const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbz9vPhKTTGJBwrqpo2CkOrvcpZgqKeZeXrEEEAtaprTPqx17vm_-gCsLDdOQsi4ft1B/exec';
+const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbx9XXlgcUx4J4hYg1T76OPb-JBEm_fLkfJKTtI4_pGfaRlJ8cgM9yvCW1M6ficLjYny/exec';
 
 function getCfg(){
   try{
@@ -4514,7 +4423,7 @@ async function exportHtmlWithGsUrl(){
   try{
     const res  = await fetch(window.location.href);
     let   html = await res.text();
-    html = html.replace(/const HARDCODED_GS_URL = '[^']*';/, `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbz9vPhKTTGJBwrqpo2CkOrvcpZgqKeZeXrEEEAtaprTPqx17vm_-gCsLDdOQsi4ft1B/exec';`);
+    html = html.replace(/const HARDCODED_GS_URL = '[^']*';/, `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbx9XXlgcUx4J4hYg1T76OPb-JBEm_fLkfJKTtI4_pGfaRlJ8cgM9yvCW1M6ficLjYny/exec';`);
     const blob = new Blob([html],{type:'text/html'});
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -4523,7 +4432,7 @@ async function exportHtmlWithGsUrl(){
     toast('✅ HTML baixado com URL embutida!');
   } catch(e){
     toast('Para embutir a URL, edite manualmente a linha HARDCODED_GS_URL no HTML.','⚠️');
-    prompt('Substitua a linha HARDCODED_GS_URL no HTML por:', `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbz9vPhKTTGJBwrqpo2CkOrvcpZgqKeZeXrEEEAtaprTPqx17vm_-gCsLDdOQsi4ft1B/exec';`);
+    prompt('Substitua a linha HARDCODED_GS_URL no HTML por:', `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbx9XXlgcUx4J4hYg1T76OPb-JBEm_fLkfJKTtI4_pGfaRlJ8cgM9yvCW1M6ficLjYny/exec';`);
   }
 }
 function setCfg(c){ localStorage.setItem(CLOUD_LS, JSON.stringify(c)); }
@@ -4660,9 +4569,6 @@ async function _runSync() {
                if (!cloudRec[k] || typeof cloudRec[k] !== 'object' || Array.isArray(cloudRec[k]))
                  cloudRec[k] = {};
             });
-            // Normaliza nome para times e regionais (compatível com GAS antigo/novo)
-            cloudRec.times     = cloudRec.times.map(t=>({...t, nome:t.nome||t.name||'', color:t.color||'#2563eb'})).filter(t=>t.nome);
-            cloudRec.regionais = cloudRec.regionais.map(r=>({...r, nome:r.nome||r.name||'', color:r.color||'#2563eb'})).filter(r=>r.nome);
           }
         }
       } catch(e) {
@@ -4796,6 +4702,19 @@ function _deepMerge(cloud, local) {
   r.regionais = mergeArrCloudWins(r.regionais, local.regionais); // nuvem vence
   r.users     = mergeArrCloudWins(r.users,     local.users);     // nuvem vence (admin gerencia usuários)
 
+  // ── Merge tombstones (_deleted): union de todos os registros deletados ──
+  const localDel = local._deleted || {};
+  const cloudDel = r._deleted || {};
+  r._deleted = { sellers:{}, times:{}, regionais:{}, users:{} };
+  ['sellers','times','regionais','users'].forEach(k=>{
+    const merged = Object.assign({}, cloudDel[k]||{}, localDel[k]||{});
+    r._deleted[k] = merged;
+    // Remove itens do array que estão no tombstone
+    if(r[k] && Array.isArray(r[k])){
+      r[k] = r[k].filter(x => !merged[String(x.id)]);
+    }
+  });
+
   // ── nextId: máximo garantido ──
   const maxSellerId = Math.max(0, ...r.sellers.map(s=>Number(s.id)||0));
   r.nextId = Math.max(r.nextId||0, local.nextId||0, maxSellerId + 1);
@@ -4824,6 +4743,13 @@ function _deepMerge(cloud, local) {
   r.ativacaoManualOv  = mergeDict(r.ativacaoManualOv,   local.ativacaoManualOv);
   if (local.psvData && Object.keys(local.psvData).length)
     r.psvData         = mergeDict(r.psvData,            local.psvData);
+
+  // ── Merge _deleted separado (já aplicado acima, mas garante propagação) ──
+  if(!r._deleted) r._deleted={sellers:{},times:{},regionais:{},users:{}};
+  ['sellers','times','regionais','users'].forEach(k=>{
+    if(!r._deleted[k]) r._deleted[k]={};
+    Object.assign(r._deleted[k], (local._deleted||{})[k]||{});
+  });
 
   return r;
 }
@@ -4875,6 +4801,8 @@ async function cloudPull(){
     if(!rec.times     || !Array.isArray(rec.times))     rec.times     = [];
     if(!rec.regionais || !Array.isArray(rec.regionais)) rec.regionais = [];
     if(!rec.users     || !Array.isArray(rec.users))     rec.users     = [];
+    if(!rec._deleted  || typeof rec._deleted!=='object') rec._deleted = {};
+    ['sellers','times','regionais','users'].forEach(k=>{ if(!rec._deleted[k] || typeof rec._deleted[k]!=='object') rec._deleted[k]={}; });
     ['diasConfig','sellerMetas','hubMetas','mValues','ativacaoManual','ativacaoManualOv']
       .forEach(k=>{ if(!rec[k]||typeof rec[k]!=='object'||Array.isArray(rec[k])) rec[k]={}; });
 
@@ -4894,28 +4822,7 @@ async function cloudPull(){
 
     migrateToDefaultRegional(rec);
 
-    // ── Normaliza campos críticos — compatível com GAS antigo e novo ──────────
-    // times e regionais: garante 'nome' independente do campo que o GAS enviou
-    rec.times = (rec.times||[]).map(t=>({
-      ...t,
-      nome : t.nome || t.name || '',
-      color: t.color || '#2563eb'
-    })).filter(t => t.nome); // remove times sem nome
-
-    rec.regionais = (rec.regionais||[]).map(r=>({
-      ...r,
-      nome : r.nome || r.name || '',
-      color: r.color || '#2563eb'
-    })).filter(r => r.nome); // remove regionais sem nome
-
-    // sellers: garante 'name' e campos numéricos
-    rec.sellers = (rec.sellers||[]).map(s=>({
-      ...s,
-      name  : s.name || s.nome || '',
-      meta  : Number(s.meta) || 0,
-      color : s.color || '#2563eb',
-      timeId: s.timeId != null ? s.timeId : null
-    })).filter(s => s.name);
+    // ── Nuvem é a verdade absoluta ─────────────────────────────────────────
     // Vendas pendentes locais (lançadas e ainda não confirmadas na nuvem)
     // são re-adicionadas para evitar perda durante o ciclo save→pull.
     const pendVendas = {};
@@ -4930,6 +4837,18 @@ async function cloudPull(){
         .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
     });
     rec.nextId = Math.max(rec.nextId||0, DB.nextId||0);
+
+    // ── Aplica tombstones locais: remoções feitas offline ──
+    const localDeleted = DB._deleted || {};
+    if(!rec._deleted) rec._deleted = {};
+    ['sellers','times','regionais','users'].forEach(k=>{
+      if(!rec._deleted[k]) rec._deleted[k] = {};
+      const merged = Object.assign({}, rec._deleted[k], localDeleted[k]||{});
+      rec._deleted[k] = merged;
+      if(rec[k] && Array.isArray(rec[k])){
+        rec[k] = rec[k].filter(x => !merged[String(x.id)]);
+      }
+    });
 
     DB = rec;
     try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
@@ -5709,8 +5628,6 @@ function renderOverview(){
         }]
       },
       options:{
-        responsive:true,
-        maintainAspectRatio:false,
         cutout:'70%',
         plugins:{legend:{display:false},tooltip:{enabled:false}},
         animation:{duration:600,easing:'easeInOutQuart'}
@@ -6150,18 +6067,16 @@ function loadRemembered(){
   }catch(e){}
 }
 
-function deleteUser(id) {
-  const u = DB.users?.find(x => x.id === id);
-  if (!u || !confirm(`Remover login "@${u.username}" permanentemente do banco?`)) return;
-
-  // Remove do array de usuários
-  DB.users = DB.users.filter(x => x.id !== id);
-
-  saveDB();
-  manualSave(); // Comunica ao Sheets que o usuário não existe mais
-
-  renderUserList();
-  toast(`Login @${u.username} excluído com sucesso`, '🗑️');
+function deleteUser(id){
+  const u=DB.users?.find(x=>x.id===id);
+  if(!u||!confirm(`Remover login "@${u.username}"?`)) return;
+  DB.users=DB.users.filter(x=>x.id!==id);
+  // Tombstone para impedir restauração pelo merge
+  if(!DB._deleted) DB._deleted={};
+  if(!DB._deleted.users) DB._deleted.users={};
+  DB._deleted.users[String(id)] = Date.now();
+  saveDB(); renderUserList();
+  toast(`Login @${u.username} removido`,'🗑️');
 }
 
 // ══════════════════════════════════════════════════════════
