@@ -5416,7 +5416,7 @@ function downloadModeloExcel(){
 const CLOUD_LS   = 'bi_cloud_v2';
 // URL do Google Apps Script gravada diretamente no HTML — mesmo banco em TODOS os dispositivos
 // Substitua pela URL do seu Web App depois de implantar o Apps Script
-const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbygRNuRJ9AIEU2ABz3WlwE74gGY-IKd0qgMEpU6vTEhnK-S10KW1qio0Fsgtlz_v-PA/exec';
+const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbyS1fDUkt_bupU6GK5zxx5CpErIJANX0FMn2c_l3NxjkfaubXHiPFFMu4ZbKv4bnuh8/exec';
 
 function getCfg(){
   try{
@@ -5438,7 +5438,7 @@ async function exportHtmlWithGsUrl(){
   try{
     const res  = await fetch(window.location.href);
     let   html = await res.text();
-    html = html.replace(/const HARDCODED_GS_URL = '[^']*';/, `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbygRNuRJ9AIEU2ABz3WlwE74gGY-IKd0qgMEpU6vTEhnK-S10KW1qio0Fsgtlz_v-PA/exec';`);
+    html = html.replace(/const HARDCODED_GS_URL = '[^']*';/, `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbyS1fDUkt_bupU6GK5zxx5CpErIJANX0FMn2c_l3NxjkfaubXHiPFFMu4ZbKv4bnuh8/exec';`);
     const blob = new Blob([html],{type:'text/html'});
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -5447,7 +5447,7 @@ async function exportHtmlWithGsUrl(){
     toast('✅ HTML baixado com URL embutida!');
   } catch(e){
     toast('Para embutir a URL, edite manualmente a linha HARDCODED_GS_URL no HTML.','⚠️');
-    prompt('Substitua a linha HARDCODED_GS_URL no HTML por:', `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbygRNuRJ9AIEU2ABz3WlwE74gGY-IKd0qgMEpU6vTEhnK-S10KW1qio0Fsgtlz_v-PA/exec';`);
+    prompt('Substitua a linha HARDCODED_GS_URL no HTML por:', `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbyS1fDUkt_bupU6GK5zxx5CpErIJANX0FMn2c_l3NxjkfaubXHiPFFMu4ZbKv4bnuh8/exec';`);
   }
 }
 function setCfg(c){ localStorage.setItem(CLOUD_LS, JSON.stringify(c)); }
@@ -6057,10 +6057,6 @@ function dbToTables(db) {
     { chave: '_savedAt', val: db._savedAt || 0 }
   ];
 
-  // ── psvData: LEGADO — mantido para retrocompatibilidade de leitura ──
-  // Novas gravações usam as tabelas dedicadas (psv_plano_acao, psv_tpv, psv_detrator_promotor)
-  const psvData = [];  // não serializa mais como blob
-
   // ── psv_plano_acao: {userId, ymKey, indicador, problema, causa, acoes, periodo, resultado} ──
   const psvPlanoAcao = (db.psvPlano || []).map(r => ({...r}));
 
@@ -6074,7 +6070,7 @@ function dbToTables(db) {
     sellers, vendas, users, times, regionais,
     sellerMetas, hubMetas, mValues, diasConfig,
     ativacaoManual, ativacaoManualOv,
-    deletedVendaIds, deleted, config, psvData,
+    deletedVendaIds, deleted, config,
     psv_plano_acao: psvPlanoAcao,
     psv_tpv: psvTpv,
     psv_detrator_promotor: psvDp
@@ -6220,13 +6216,9 @@ function tablesToDB(tables) {
     if (chave === '_savedAt') db._savedAt = Number(val) || 0;
   });
 
-  // ── psvData: LEGADO — leitura para migração; novas gravações usam tabelas dedicadas ──
+  // ── psvData: legado — mantido em memória para não quebrar referências antigas,
+  //    mas não é mais serializado nem usado para salvar dados do PSV ──
   db.psvData = {};
-  (tables.psvData || []).forEach(({ chave, val }) => {
-    if (chave === 'psvData') {
-      try { db.psvData = JSON.parse(val); } catch(e) {}
-    }
-  });
 
   // ── psv_plano_acao ──
   db.psvPlano = (tables.psv_plano_acao || []).map(r => ({...r}));
