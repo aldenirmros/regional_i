@@ -2671,6 +2671,107 @@ const _MONTHS_MAP = {Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',
                      Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
 
 let DB = loadDB();
+
+// ── Cache de senhas (sobrevive ao cloudPull) ─────────────────────────────────
+// O GAS não retorna o campo "password" por segurança. Guardamos as senhas num
+// localStorage separado ("bi_pwc") que nunca é sobrescrito pelo cloudPull.
+// Isso garante que todos os usuários consigam logar em qualquer sessão.
+const _pwcKey = 'bi_pwc';
+
+// Credenciais base (espelham o seed) — fallback absoluto caso cache esteja vazio
+// (necessário quando loadDB() retorna dados do localStorage sem senhas)
+const _SEED_CREDS = {
+  'aldenir':   '@RThur20',
+  'guilherme': '12345',
+  'aline':     '12345',
+  'kesse':     '12345',
+  'anderson':  '12345',
+  'dougllas':  '12345',
+  'pedro':     '12345',    // supervisor
+  'daniel':    '12345',
+  'thiago':    '12345',
+  'gerente':   'gerente123'
+};
+// pedro regional tem senha diferente — mapeado por id
+const _SEED_CREDS_BY_ID = {
+  '1777691830006': '123456'  // pedro regional
+};
+
+function _loadPwCache(){
+  try{ return JSON.parse(localStorage.getItem(_pwcKey)||'{}'); }catch(e){ return {}; }
+}
+function _savePwCache(cache){ try{ localStorage.setItem(_pwcKey, JSON.stringify(cache)); }catch(e){} }
+function _updatePwCache(users){
+  if(!Array.isArray(users) || !users.length) return;
+  const cache = _loadPwCache();
+  let changed = false;
+  users.forEach(u=>{ if(u.id && u.password){ cache[String(u.id)]={p:u.password,un:u.username}; changed=true; } });
+  if(changed) _savePwCache(cache);
+}
+function _getPwFromCache(userId){
+  return (_loadPwCache()[String(userId)]||{}).p;
+}
+// Resolve senha de um usuário: DB > cache > seed_by_id > seed_by_username
+function _resolvePassword(u){
+  if(u.password) return u.password;
+  const fromCache = _getPwFromCache(u.id);
+  if(fromCache) return fromCache;
+  const byId = _SEED_CREDS_BY_ID[String(u.id)];
+  if(byId) return byId;
+  return _SEED_CREDS[u.username?.toLowerCase()] || null;
+}
+
+// Garante que todos os usuários do seed estão em DB.users.
+// Chamado no login para cobrir o caso em que cloudPull retornou lista vazia
+// ou retornou usuários sem o campo "username" (coluna ausente no GAS).
+function _ensureSeedUsersInDB(){
+  if(!DB.users) DB.users = [];
+  // Mapa dos usuários da seed para reconstrução mínima
+  const _SEED_USERS = [
+    {id:1,               username:'gerente',   password:'gerente123', role:'gerente',    nome:'Gerente Geral',    regionalId:null,        timeId:null,           color:'#7c3aed'},
+    {id:1002,            username:'aldenir',   password:'@RThur20',   role:'regional',   nome:'Aldenir',          regionalId:1001,        timeId:null,           color:'#7c3aed', superAdmin:true},
+    {id:1777686429084,   username:'guilherme', password:'12345',      role:'supervisor', nome:'Guilherme Queiroz',regionalId:1001,        timeId:1777686429083,  color:'#059669'},
+    {id:1777691424503,   username:'aline',     password:'12345',      role:'supervisor', nome:'Aline Ysline',     regionalId:1001,        timeId:1777691424502,  color:'#059669'},
+    {id:1777691452228,   username:'kesse',     password:'12345',      role:'supervisor', nome:'Kesse Jhones',     regionalId:1001,        timeId:1777691452227,  color:'#059669'},
+    {id:1777691488522,   username:'anderson',  password:'12345',      role:'supervisor', nome:'Anderson Brito',   regionalId:1001,        timeId:1777691488521,  color:'#059669'},
+    {id:1777691730218,   username:'dougllas',  password:'12345',      role:'regional',   nome:'Dougllas',         regionalId:1777691730216,timeId:null,          color:'#059669'},
+    {id:1777691730219,   username:'dougllas',  password:'12345',      role:'supervisor', nome:'Dougllas Vidal',   regionalId:1777691730216,timeId:1777691730217, color:'#059669'},
+    {id:1777691830006,   username:'pedro',     password:'123456',     role:'regional',   nome:'Pedro Lavor',      regionalId:1777691830004,timeId:null,          color:'#d97706'},
+    {id:1777691830007,   username:'pedro',     password:'12345',      role:'supervisor', nome:'Pedro Lavor',      regionalId:1777691830004,timeId:1777691830005, color:'#059669'},
+    {id:1777692514656,   username:'daniel',    password:'12345',      role:'gerente',    nome:'Daniel Fontes',    regionalId:null,        timeId:null,           color:'#7c3aed'},
+    {id:1777692561373,   username:'thiago',    password:'12345',      role:'gerente',    nome:'Thiago Correia',   regionalId:null,        timeId:null,           color:'#7c3aed'},
+  ];
+  _SEED_USERS.forEach(su=>{
+    // Verifica se o usuário já está em DB.users pelo ID OU tem username válido
+    const existsById = DB.users.some(u=>String(u.id)===String(su.id));
+    const existsByName = DB.users.some(u=>(u.username||'').toLowerCase()===su.username.toLowerCase() && u.role===su.role);
+    if(!existsById && !existsByName){
+      // Adiciona o usuário do seed (apenas se genuinamente ausente)
+      DB.users.push({...su});
+    } else {
+      // Restaura campos críticos que podem ter sumido (username, password)
+      const u = DB.users.find(x=>String(x.id)===String(su.id)) ||
+                DB.users.find(x=>(x.username||'').toLowerCase()===su.username.toLowerCase() && x.role===su.role);
+      if(u){
+        if(!u.username) u.username = su.username;
+        if(!u.password) u.password = su.password;
+      }
+    }
+  });
+}
+// (mesmo que DB.users não tenha senhas, o seed garante o preenchimento)
+{
+  const cache = _loadPwCache();
+  // 1. Preenche a partir das credenciais base do seed
+  Object.entries(_SEED_CREDS).forEach(([un,pw])=>{ 
+    const u = DB.users?.find(x=>x.username===un);
+    if(u && !cache[String(u.id)]) { cache[String(u.id)]={p:pw,un}; }
+  });
+  Object.entries(_SEED_CREDS_BY_ID).forEach(([id,pw])=>{ if(!cache[id]) cache[id]={p:pw}; });
+  // 2. Preenche a partir dos usuários do DB que já têm senha
+  (DB.users||[]).filter(u=>u.id&&u.password).forEach(u=>{ cache[String(u.id)]={p:u.password,un:u.username}; });
+  _savePwCache(cache);
+}
 migrateToDefaultRegional(DB);
 deduplicateDB(DB);
 normalizeVendaDates(DB);
@@ -5498,9 +5599,11 @@ async function resetCache(){
     _syncRunning = false;
     clearTimeout(saveDB._t);
 
-    // 2. Limpa localStorage completamente
+    // 2. Limpa localStorage completamente (preserva o cache de senhas!)
+    const savedPwCache = localStorage.getItem(_pwcKey); // guarda senhas
     try{ localStorage.removeItem('bi_v5'); }catch(e){}
     try{ localStorage.removeItem('bi_scope_filter'); }catch(e){}
+    if(savedPwCache) try{ localStorage.setItem(_pwcKey, savedPwCache); }catch(e){} // restaura
 
     // 3. Reseta DB para esqueleto vazio (sem seed)
     DB = {
@@ -5581,7 +5684,9 @@ function syncLog(msg){
 function saveDB() {
   // ── 1. Marca timestamp da última alteração local ──
   DB._savedAt = Date.now();
-  // ── 2. Salva localmente de forma síncrona (zero latência para o usuário) ──
+  // ── 2. Atualiza cache de senhas (separado do DB principal) ──
+  _updatePwCache(DB.users);
+  // ── 3. Salva localmente de forma síncrona (zero latência para o usuário) ──
   try { localStorage.setItem('bi_v5', JSON.stringify(DB)); } catch(e){}
   flashSaved();
   // ── 3. Agenda sync com nuvem — debounce 350ms para batching de edições rápidas ──
@@ -6338,16 +6443,21 @@ async function cloudPull(mergeLocal = false){
     // Quando chamado em polling de fundo (mergeLocal=true), faz merge em vez de
     // substituir. Isso evita que feriados/metas adicionados localmente (ainda
     // aguardando o debounce de 350ms do saveDB) sejam sobrescritos pela nuvem.
-    // ── FIX CRÍTICO: preserva senhas do DB local ────────────────────────────
-    // O GAS não retorna o campo "password" nas queries (boa prática de segurança),
-    // mas o app precisa das senhas localmente para autenticação.
-    // Copia as senhas do DB local para os usuários correspondentes em rec.
-    if(Array.isArray(DB.users) && DB.users.length){
-      const localPwMap = new Map(DB.users.filter(u=>u.password).map(u=>[String(u.id), u.password]));
+    // ── FIX CRÍTICO: preserva senhas usando o cache persistente + seed base ─
+    {
+      const pwCache = _loadPwCache();
+      // Adiciona/atualiza cache com senhas do DB em memória e do seed base
+      if(Array.isArray(DB.users)) DB.users.filter(u=>u.id&&u.password).forEach(u=>{ pwCache[String(u.id)]={p:u.password,un:u.username}; });
+      Object.entries(_SEED_CREDS).forEach(([un,pw])=>{
+        const u = rec.users.find(x=>x.username===un);
+        if(u && !pwCache[String(u.id)]) pwCache[String(u.id)]={p:pw,un};
+      });
+      Object.entries(_SEED_CREDS_BY_ID).forEach(([id,pw])=>{ if(!pwCache[id]) pwCache[id]={p:pw}; });
       rec.users = rec.users.map(u=>{
-        const pw = localPwMap.get(String(u.id));
+        const pw = u.password || pwCache[String(u.id)]?.p || _SEED_CREDS_BY_ID[String(u.id)] || _SEED_CREDS[u.username?.toLowerCase()];
         return pw ? {...u, password:pw} : u;
       });
+      _savePwCache(pwCache);
     }
 
     if(mergeLocal && DB._savedAt && DB._savedAt > (rec._savedAt || 0)){
@@ -6849,11 +6959,51 @@ function doLogin(){
   const pass  = document.getElementById('li-pass').value;
   const remember = document.getElementById('li-remember')?.checked;
   const err   = document.getElementById('li-err');
-  if(!DB.users) DB.users=[{id:1,username:'gerente',password:'gerente123',role:'gerente',nome:'Gerente Geral',regionalId:null,timeId:null,color:'#7c3aed'}];
-  const user  = DB.users.find(u=>u.username.toLowerCase()===uname && u.password===pass);
-  if(!user){ err.classList.add('show'); document.getElementById('li-pass').value=''; return; }
+
+  // ── Tabela de credenciais canônicas ─────────────────────────────────────────
+  // Autenticação direta: não depende de DB.users nem de cloudPull nem de cache.
+  // Qualquer usuário cadastrado AQUI consegue logar, sempre, em qualquer dispositivo.
+  const CREDS = [
+    {username:'gerente',   password:'gerente123', id:1,               role:'gerente',    nome:'Gerente Geral',     regionalId:null,         timeId:null,            color:'#7c3aed'},
+    {username:'aldenir',   password:'@RThur20',   id:1002,            role:'regional',   nome:'Aldenir',           regionalId:1001,         timeId:null,            color:'#7c3aed', superAdmin:true},
+    {username:'guilherme', password:'12345',       id:1777686429084,   role:'supervisor', nome:'Guilherme Queiroz', regionalId:1001,         timeId:1777686429083,   color:'#059669'},
+    {username:'aline',     password:'12345',       id:1777691424503,   role:'supervisor', nome:'Aline Ysline',      regionalId:1001,         timeId:1777691424502,   color:'#059669'},
+    {username:'kesse',     password:'12345',       id:1777691452228,   role:'supervisor', nome:'Kesse Jhones',      regionalId:1001,         timeId:1777691452227,   color:'#059669'},
+    {username:'anderson',  password:'12345',       id:1777691488522,   role:'supervisor', nome:'Anderson Brito',    regionalId:1001,         timeId:1777691488521,   color:'#059669'},
+    {username:'dougllas',  password:'12345',       id:1777691730218,   role:'regional',   nome:'Dougllas',          regionalId:1777691730216,timeId:null,            color:'#059669'},
+    {username:'dougllas',  password:'12345',       id:1777691730219,   role:'supervisor', nome:'Dougllas Vidal',    regionalId:1777691730216,timeId:1777691730217,   color:'#059669'},
+    {username:'pedro',     password:'123456',      id:1777691830006,   role:'regional',   nome:'Pedro Lavor',       regionalId:1777691830004,timeId:null,            color:'#d97706'},
+    {username:'pedro',     password:'12345',       id:1777691830007,   role:'supervisor', nome:'Pedro Lavor',       regionalId:1777691830004,timeId:1777691830005,   color:'#059669'},
+    {username:'daniel',    password:'12345',       id:1777692514656,   role:'gerente',    nome:'Daniel Fontes',     regionalId:null,         timeId:null,            color:'#7c3aed'},
+    {username:'thiago',    password:'12345',       id:1777692561373,   role:'gerente',    nome:'Thiago Correia',    regionalId:null,         timeId:null,            color:'#7c3aed'},
+  ];
+
+  // 1ª tentativa: busca na tabela de credenciais canônicas
+  let cred = CREDS.find(c=>c.username===uname && c.password===pass);
+
+  // 2ª tentativa: busca em DB.users (cobre usuários criados via admin UI)
+  if(!cred && DB.users){
+    const pwCache = _loadPwCache();
+    const dbU = DB.users.find(u=>{
+      try{
+        if((u.username||'').toLowerCase()!==uname) return false;
+        const pw = u.password || pwCache[String(u.id)]?.p || _SEED_CREDS[uname];
+        return pw===pass;
+      }catch(e){ return false; }
+    });
+    if(dbU) cred = {...dbU, password: dbU.password||pass};
+  }
+
+  if(!cred){ err.classList.add('show'); document.getElementById('li-pass').value=''; return; }
   err.classList.remove('show');
-  // Lembrar login
+
+  // Enriquece cred com dados atualizados do DB (timeId, regionalId, nome etc. podem ter mudado)
+  let user = cred;
+  if(DB.users){
+    const dbUser = DB.users.find(u=>String(u.id)===String(cred.id));
+    if(dbUser) user = {...cred, ...dbUser, password:cred.password};
+  }
+
   if(remember){
     localStorage.setItem('bi_remember',JSON.stringify({u:uname,p:pass}));
   } else {
@@ -6863,23 +7013,18 @@ function doLogin(){
   document.getElementById('login-ov').classList.add('hidden');
   applySession();
   const navEl = document.querySelector('.ni.on') || document.querySelectorAll('.ni')[0];
-  // ── Puxa dados frescos da nuvem após login (garante dados atualizados em qualquer browser) ──
   const loginBtn = document.querySelector('.login-btn');
   if(loginBtn){ loginBtn.textContent='Carregando…'; loginBtn.disabled=true; }
   cloudPull().then(ok=>{
     if(ok){
-      // ── Atualiza currentUser com dados FRESCOS da nuvem ──
-      // Garante que mudanças de timeId/role/regionalId feitas pelo admin reflitam imediatamente
       const freshUser = DB.users?.find(u=>u.id===currentUser.id);
       if(freshUser){
-        currentUser = freshUser;
-        setSession(freshUser);
-        applySession(); // re-aplica escopo com dados atualizados
+        currentUser = {...user, ...freshUser, password:user.password};
+        setSession(currentUser);
+        applySession();
       }
       populateMes(); populateQESellers();
     }
-    // FIX: setTimeout garante que o browser finalize o layout da página
-    // antes de renderDash criar os gráficos Chart.js (evita dimensão 0x0)
     setTimeout(()=>{ goPage('dash', navEl); }, 50);
     if(loginBtn){ loginBtn.textContent='Entrar'; loginBtn.disabled=false; }
   }).catch(()=>{
@@ -8035,7 +8180,7 @@ function saveAldenirUser(){
   if(!password||password.length<4){ showWarn('⚠️ A senha precisa ter no mínimo 4 caracteres.'); return; }
   if(role==='supervisor'&&!timeId){ showWarn('⚠️ Selecione o HUB para o Supervisor.'); return; }
   if(!DB.users) DB.users=[];
-  if(DB.users.find(u=>u.username.toLowerCase()===username)){ showWarn('⚠️ Já existe um usuário com este nome.'); return; }
+  if(DB.users.find(u=>(u.username||'').toLowerCase()===username)){ showWarn('⚠️ Já existe um usuário com este nome.'); return; }
   const colorMap={gerente:'#7c3aed',supervisor:'#059669'};
   DB.users.push({
     id:Date.now(), username, password, role,
@@ -8092,12 +8237,19 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
   populateQESellers();
 
   // ── PASSO 2: Sessão → login ou dashboard ─────────────────────────────────
+  // Garante todos os usuários do seed em DB.users antes de qualquer verificação
+  _ensureSeedUsersInDB();
   const sess   = getSession();
   const dbUser = sess ? DB.users?.find(u=>u.id===sess.id) : null;
   hideLoading();
 
   if(sess && dbUser){
-    currentUser = { ...dbUser, ...(sess.password ? {password:sess.password} : {}) };
+    // Restaura senha do cache persistente se o DB não tiver (cloudPull removeu)
+    const cachedPw = _getPwFromCache(dbUser.id);
+    currentUser = { ...dbUser,
+      password: dbUser.password || sess.password || cachedPw || undefined
+    };
+    if(currentUser.password) _updatePwCache([currentUser]); // garante cache atualizado
     setSession(currentUser);
     document.getElementById('login-ov').classList.add('hidden');
     applySession();
