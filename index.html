@@ -1333,19 +1333,18 @@ canvas { display:block; max-width:100%; }
         <button class="btn-sm btn-sm-g" onclick="resetDiasConfig()">Resetar</button>
         <span id="dias-config-status" style="font-size:10.5px;color:var(--tl)"></span>
         <div class="dias-config-divider"></div>
-        <!-- ── Feriados ── -->
-        <span class="dias-config-title">📅 Feriados do Mês</span>
+        <!-- ── Dias a Descontar ── -->
+        <span class="dias-config-title">📉 Dias a Descontar</span>
         <div class="dias-config-sep"></div>
         <div class="dias-config-field">
-          <label>Data do feriado:</label>
-          <input type="date" id="cfg-feriado-date" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:5px 8px;font-family:var(--mono);font-size:12px;color:var(--td);outline:none;transition:border-color .14s;" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')addFeriado()">
+          <label>Dias úteis a remover:</label>
+          <input type="number" id="cfg-desconto-dias" min="0" max="31" placeholder="0"
+            style="width:70px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:5px 8px;font-family:var(--mono);font-size:13px;color:var(--td);outline:none;transition:border-color .14s;"
+            onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"
+            oninput="saveDescontoDias(this.value)"
+            onkeydown="if(event.key==='Enter')this.blur()">
         </div>
-        <button class="btn-sm" onclick="addFeriado()">＋ Adicionar</button>
-        <button class="btn-sm btn-sm-g" onclick="clearFeriados()">Limpar todos</button>
-        <span id="feriado-count-info" style="font-size:10.5px;color:var(--red);font-weight:700"></span>
-        <div style="width:100%;margin-top:4px">
-          <div class="feriado-list" id="feriado-list"></div>
-        </div>
+        <span id="desconto-dias-info" style="font-size:10.5px;color:var(--tl)">Ex: 2 → subtrai 2 dias úteis do total do mês</span>
       </div>
 
       <!-- Resumo dos dias do mês -->
@@ -1375,7 +1374,7 @@ canvas { display:block; max-width:100%; }
             <div>
               <div class="dc-lbl">Total Úteis no Mês</div>
               <div class="dc-val" id="d-total-v2">—</div>
-              <div class="dc-sub" id="d-feriados-s2">sem feriados</div>
+              <div class="dc-sub" id="d-feriados-s2">sem desconto</div>
             </div>
           </div>
         </div>
@@ -3439,49 +3438,34 @@ function renderDash(){
   const ymKey=currentYM, {y,m}=ymToYM(ymKey), t=today();
   const duAll=getDiasUteis(y,m), coAll=getDiasCorridos(y,m);
 
-  // ── Feriados: exclui dias úteis marcados como feriado ──
+  // ── Desconto de dias: subtrai quantidade numérica dos dias úteis totais ──
   const cfg = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
-  const feriadosSet = new Set((cfg.feriados||[]).filter(f=>typeof f==='string'&&f.length===10));
-  const duAllExcl = duAll.filter(d => !feriadosSet.has(_d2sGlobal(d)));
-  const coAllExcl = coAll.filter(d => !feriadosSet.has(_d2sGlobal(d)));
+  const desconto = Math.max(0, parseInt(cfg.totalFeriados)||0);  // "Dias a descontar"
 
   // Manual overrides
-  const duTotal = cfg.total != null ? cfg.total : duAllExcl.length;
-  const coTotal = cfg.total != null ? cfg.total : coAllExcl.length;
-  const duPass  = cfg.passed != null ? cfg.passed : duAllExcl.filter(d=>d<=t).length;
-  const coPass  = cfg.passed != null ? cfg.passed : coAllExcl.filter(d=>d<=t).length;
+  const duTotal = cfg.total  != null ? cfg.total  : Math.max(0, duAll.length - desconto);
+  const coTotal = cfg.total  != null ? cfg.total  : Math.max(0, coAll.length - desconto);
+  const duPass  = cfg.passed != null ? cfg.passed : Math.max(0, duAll.filter(d=>d<=t).length - (duAll.filter(d=>d<=t).length > 0 ? Math.round(desconto * duAll.filter(d=>d<=t).length / duAll.length) : 0));
+  const coPass  = cfg.passed != null ? cfg.passed : coAll.filter(d=>d<=t).length;
   const duRest  = Math.max(0, duTotal - duPass);
 
   // Populate config inputs with current values
   const cfgTotalEl = document.getElementById('cfg-du-total');
   const cfgPassEl  = document.getElementById('cfg-du-pass');
-  if(cfgTotalEl && !cfgTotalEl.dataset.dirty) cfgTotalEl.placeholder = duAllExcl.length + ' (auto)';
-  if(cfgPassEl  && !cfgPassEl.dataset.dirty)  cfgPassEl.placeholder  = duAllExcl.filter(d=>d<=t).length + ' (auto)';
+  if(cfgTotalEl && !cfgTotalEl.dataset.dirty) cfgTotalEl.placeholder = Math.max(0, duAll.length - desconto) + ' (auto)';
+  if(cfgPassEl  && !cfgPassEl.dataset.dirty)  cfgPassEl.placeholder  = duPass + ' (auto)';
   if(cfg.total  != null && cfgTotalEl) cfgTotalEl.value = cfg.total;
   if(cfg.passed != null && cfgPassEl)  cfgPassEl.value  = cfg.passed;
 
-  // Inicializa o date input do feriado com data do mês atual
-  const ferInp = document.getElementById('cfg-feriado-date');
-  if(ferInp){
-    const firstDay = `${y}-${String(m+1).padStart(2,'0')}-01`;
-    const lastDay  = `${y}-${String(m+1).padStart(2,'0')}-${String(new Date(y,m+1,0).getDate()).padStart(2,'0')}`;
-    ferInp.min = firstDay;
-    ferInp.max = lastDay;
-    // Se o valor atual não pertence ao mês selecionado, limpa e sugere hoje (ou o 1º do mês)
-    const curVal = ferInp.value;
-    const inRange = curVal >= firstDay && curVal <= lastDay;
-    if(!inRange){
-      const todayInMonth = t.getFullYear()===y && t.getMonth()===m;
-      ferInp.value = todayInMonth ? _d2sGlobal(t) : firstDay;
-    }
-  }
+  // Popula o campo de desconto com o valor atual
+  const descontoInp = document.getElementById('cfg-desconto-dias');
+  if(descontoInp && desconto > 0) descontoInp.value = desconto;
+  else if(descontoInp && !descontoInp.value) descontoInp.value = '';
 
   // Status
   const statusEl = document.getElementById('dias-config-status');
-  if(statusEl) statusEl.textContent = (cfg.total!=null||cfg.passed!=null) ? '⚠️ Modo manual ativo' : '';
+  if(statusEl) statusEl.textContent = (cfg.total!=null||cfg.passed!=null) ? '⚠️ Modo manual ativo' : (desconto>0 ? `📉 ${desconto} dia(s) descontado(s)` : '');
 
-  // Renderiza lista de feriados
-  renderFeriadoList();
 
   const metaTotal=getScopedMeta(ymKey);
   const scopedSellers = getScopedSellers();
@@ -3573,7 +3557,6 @@ function renderDash(){
   _setTxt('line-lbl',  sid ? (DB.sellers.find(s=>s.id===sid)?.name||'') : 'Toda equipe');
 
   // Tab 2 — resumo de dias (espelho enriquecido)
-  const _nF = feriadosSet.size;
   const _el = id => document.getElementById(id);
   if(_el('d-uteis2'))    _el('d-uteis2').textContent    = duPass;
   if(_el('d-uteis-v2'))  _el('d-uteis-v2').textContent  = `${duPass} dia(s) passado(s)`;
@@ -3583,7 +3566,7 @@ function renderDash(){
   if(_el('d-fd2'))       _el('d-fd2').textContent       = fazerDia;
   if(_el('d-total2'))    _el('d-total2').textContent    = duTotal;
   if(_el('d-total-v2'))  _el('d-total-v2').textContent  = `${duAll.length} brutos no mês`;
-  if(_el('d-feriados-s2')) _el('d-feriados-s2').textContent = _nF ? `${_nF} feriado(s) descontado(s)` : 'sem feriados';
+  if(_el('d-feriados-s2')) _el('d-feriados-s2').textContent = desconto ? `${desconto} dia(s) descontado(s)` : 'sem desconto';
   if(_el('dias-resumo-mes')) _el('dias-resumo-mes').textContent = `${MESES[m]} ${y}`;
 
   // TABLE — sempre mostra todos os vendedores, mas linha selecionada fica destacada
@@ -5054,115 +5037,27 @@ function resetDiasConfig(){
 // ══════════════════════════════════════════════════════════
 //  FERIADOS — Gestão de dias não úteis do mês
 // ══════════════════════════════════════════════════════════
-function addFeriado(){
-  const inp = document.getElementById('cfg-feriado-date');
-  const date = (inp?.value||'').trim();
-  if(!date){ toast('Selecione uma data','⚠️'); return; }
-
-  // Garante que a data pertence ao mês selecionado
-  const {y,m} = ymToYM(currentYM);
-  const d = new Date(date+'T12:00:00');
-  if(isNaN(d.getTime())){ toast('Data inválida','⚠️'); return; }
-  if(d.getFullYear()!==y || d.getMonth()!==m){
-    toast('Data fora do mês selecionado','⚠️'); return;
-  }
-  // Avisa se for fim de semana
-  const dw = d.getDay();
-  if(dw===0||dw===6){
-    toast('⚠️ Fim de semana — não afeta dias úteis (registrado mesmo assim)','⚠️');
-  }
-
-  if(!DB.diasConfig)                                DB.diasConfig={};
+// ══════════════════════════════════════════════════════════
+//  DESCONTO DE DIAS — substitui o sistema de feriados por data
+// ══════════════════════════════════════════════════════════
+function saveDescontoDias(val){
+  const n = Math.max(0, parseInt(val)||0);
+  if(!DB.diasConfig) DB.diasConfig={};
   const _dk = getUserDiasKey(currentYM);
-  if(!DB.diasConfig[_dk])               DB.diasConfig[_dk]={total:null,passed:null,feriados:[]};
-  if(!Array.isArray(DB.diasConfig[_dk].feriados)) DB.diasConfig[_dk].feriados=[];
-
-  const feriados = DB.diasConfig[_dk].feriados;
-  if(feriados.includes(date)){ toast('Data já cadastrada como feriado','⚠️'); return; }
-
-  feriados.push(date);
-  feriados.sort();
-  // Sincroniza imediatamente — não usa o debounce de 350ms do saveDB()
-  // para evitar que um cloudPull de fundo sobrescreva o feriado antes do envio
+  if(!DB.diasConfig[_dk]) DB.diasConfig[_dk]={total:null,passed:null};
+  DB.diasConfig[_dk].totalFeriados = n > 0 ? n : null;
   DB._savedAt = Date.now();
   try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
   flashSaved();
   clearTimeout(saveDB._t);
   _syncEnqueue();
   renderDash();
-  // Avança o input para o próximo dia útil do mês (UX conveniente)
-  if(inp){
-    const next = new Date(d); next.setDate(next.getDate()+1);
-    const nm = next.getMonth();
-    inp.value = (next.getFullYear()===y && nm===m) ? _d2sGlobal(next) : '';
-  }
-  const fmt = date.split('-').reverse().join('/');
-  toast(`📅 Feriado ${fmt} adicionado`,'📅');
+  const info = document.getElementById('desconto-dias-info');
+  if(info) info.textContent = n > 0
+    ? `✅ ${n} dia(s) útil(eis) será(ão) subtraído(s) do total automático`
+    : 'Ex: 2 → subtrai 2 dias úteis do total do mês';
 }
 
-function removeFeriado(date){
-  const _dk = getUserDiasKey(currentYM);
-  if(!DB.diasConfig?.[_dk]?.feriados) return;
-  DB.diasConfig[_dk].feriados = DB.diasConfig[_dk].feriados.filter(f=>f!==date);
-  DB._savedAt = Date.now();
-  try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
-  flashSaved();
-  clearTimeout(saveDB._t);
-  _syncEnqueue();
-  renderDash();
-  const fmt = date.split('-').reverse().join('/');
-  toast(`🗑️ Feriado ${fmt} removido`,'🗑️');
-}
-
-function clearFeriados(){
-  const _dk = getUserDiasKey(currentYM);
-  if(!DB.diasConfig?.[_dk]) return;
-  DB.diasConfig[_dk].feriados=[];
-  DB._savedAt = Date.now();
-  try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
-  flashSaved();
-  clearTimeout(saveDB._t);
-  _syncEnqueue();
-  renderDash();
-  toast('🔄 Feriados do mês removidos');
-}
-
-function renderFeriadoList(){
-  const el   = document.getElementById('feriado-list');
-  const info = document.getElementById('feriado-count-info');
-  if(!el) return;
-  const cfg      = DB.diasConfig?.[getUserDiasKey(currentYM)] || DB.diasConfig?.[currentYM] || {};
-  // Filtra apenas strings válidas no formato YYYY-MM-DD
-  const feriados = (cfg.feriados||[]).filter(f=>typeof f==='string' && /^\d{4}-\d{2}-\d{2}$/.test(f));
-  const {y,m}    = ymToYM(currentYM);
-  const DSEM_PT  = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-
-  if(!feriados.length){
-    el.innerHTML='<span class="feriado-empty">Nenhum feriado cadastrado para este mês</span>';
-    if(info) info.textContent='';
-    return;
-  }
-
-  // Conta apenas feriados em dias úteis (Seg–Sex)
-  const uteisFeriados = feriados.filter(date=>{
-    const dw = new Date(date+'T12:00:00').getDay();
-    return dw>=1 && dw<=5;
-  });
-
-  el.innerHTML = feriados.map(date=>{
-    const d   = new Date(date+'T12:00:00');
-    if(isNaN(d.getTime())) return ''; // segurança extra
-    const dow    = DSEM_PT[d.getDay()];
-    const fmt    = date.split('-').reverse().join('/');
-    const isUtil = d.getDay()>=1 && d.getDay()<=5;
-    return `<span class="feriado-tag" style="${isUtil?'':'opacity:.55;border-style:dashed'}" title="${isUtil?'Dia útil – desconta da contagem':'Fim de semana – não afeta contagem'}">📅 ${fmt} <span style="font-weight:400;font-size:10px">(${dow})</span><button onclick="removeFeriado('${date}')" title="Remover feriado">✕</button></span>`;
-  }).filter(Boolean).join('');
-
-  if(info){
-    const n = uteisFeriados.length;
-    info.textContent = n ? `−${n} dia(s) útil(eis) descontado(s)` : '';
-  }
-}
 function saveSellerMeta(sid){
   const el=document.getElementById('smeta-'+sid);
   if(!el) return;
@@ -5980,8 +5875,7 @@ function _deepMerge(cloud, local) {
   if (local.psvData && Object.keys(local.psvData).length)
     r.psvData         = mergeDictCloudWins(r.psvData,            local.psvData);
 
-  // ── diasConfig: merge especial — scalar (total/passed) usa cloudIsNewer,
-  //    feriados usa UNION para nunca perder feriados adicionados localmente ──
+  // ── diasConfig: merge — scalars usam cloudIsNewer, totalFeriados usa local wins ──
   {
     const cld = r.diasConfig     || {};
     const loc = local.diasConfig || {};
@@ -5995,15 +5889,11 @@ function _deepMerge(cloud, local) {
         if(locCfg.total  != null) merged[ymKey].total  = locCfg.total;
         if(locCfg.passed != null) merged[ymKey].passed = locCfg.passed;
       } else {
-        // cloud mais recente: usa cloud para scalars, local para novos ymKeys
         if(merged[ymKey].total  == null && locCfg.total  != null) merged[ymKey].total  = locCfg.total;
         if(merged[ymKey].passed == null && locCfg.passed != null) merged[ymKey].passed = locCfg.passed;
       }
-      // feriados: SEMPRE union — nunca perde feriados de nenhum dos lados
-      const cldF = new Set((cldCfg.feriados||[]).filter(f=>/^\d{4}-\d{2}-\d{2}$/.test(f)));
-      const locF = (locCfg.feriados||[]).filter(f=>/^\d{4}-\d{2}-\d{2}$/.test(f));
-      locF.forEach(f => cldF.add(f));
-      merged[ymKey].feriados = [...cldF].sort();
+      // totalFeriados: local sempre vence (é uma entrada do usuário local)
+      if(locCfg.totalFeriados != null) merged[ymKey].totalFeriados = locCfg.totalFeriados;
     });
     r.diasConfig = merged;
   }
@@ -6083,17 +5973,14 @@ function dbToTables(db) {
     });
   });
 
-  // ── diasConfig: achata {ymKey: {total,passed,feriados}} ──
+  // ── diasConfig: achata {ymKey: {total,passed,totalFeriados}} ──
   const diasConfig = [];
   Object.keys(db.diasConfig || {}).forEach(ymKey => {
     const cfg = db.diasConfig[ymKey] || {};
-    if (cfg.total  != null) diasConfig.push({ ymKey, chave: 'total',  val: cfg.total });
-    if (cfg.passed != null) diasConfig.push({ ymKey, chave: 'passed', val: cfg.passed });
-    if (cfg.feriados && cfg.feriados.length) {
-      // Prefixo "J:" + JSON evita que o Google Sheets auto-converta
-      // "2026-05-15" para número de série de data (bug: 46394)
-      diasConfig.push({ ymKey, chave: 'feriados', val: 'J:' + JSON.stringify(cfg.feriados) });
-    }
+    if (cfg.total  != null) diasConfig.push({ ymKey, chave: 'total',        val: cfg.total });
+    if (cfg.passed != null) diasConfig.push({ ymKey, chave: 'passed',       val: cfg.passed });
+    if (cfg.totalFeriados != null && cfg.totalFeriados > 0)
+      diasConfig.push({ ymKey, chave: 'totalFeriados', val: cfg.totalFeriados });
   });
 
   // ── ativacaoManual: achata {ymKey: {sellerId: val}} ──
@@ -6230,29 +6117,16 @@ function tablesToDB(tables) {
     db.mValues[ymKey][timeId][mk] = Number(val);
   });
 
-  // ── diasConfig: reconstrói {ymKey: {total, passed, feriados}} ──
+  // ── diasConfig: reconstrói {ymKey: {total, passed, totalFeriados}} ──
   db.diasConfig = {};
   (tables.diasConfig || []).forEach(({ ymKey, chave, val }) => {
     if (!ymKey || !chave) return;
     if (!db.diasConfig[ymKey]) db.diasConfig[ymKey] = {};
-    if (chave === 'feriados') {
-      const s = String(val || '').trim();
-      if (!s || s === '[]') { db.diasConfig[ymKey].feriados = []; return; }
-      try {
-        // Formato novo: "J:[...]" — imune à conversão de data do Sheets
-        if (s.startsWith('J:')) {
-          const arr = JSON.parse(s.slice(2));
-          db.diasConfig[ymKey].feriados = Array.isArray(arr)
-            ? arr.filter(f => typeof f === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(f))
-            : [];
-          return;
-        }
-        // Formato legado: "YYYY-MM-DD,YYYY-MM-DD,..." (strings multi-data ficam como texto)
-        db.diasConfig[ymKey].feriados = s
-          .split(',')
-          .map(f => f.trim())
-          .filter(f => /^\d{4}-\d{2}-\d{2}$/.test(f));
-      } catch(e) { db.diasConfig[ymKey].feriados = []; }
+    if (chave === 'totalFeriados') {
+      const n = Number(val);
+      db.diasConfig[ymKey].totalFeriados = (!isNaN(n) && n > 0) ? n : null;
+    } else if (chave === 'feriados') {
+      // Retrocompatibilidade: ignora formato antigo de datas (não mais usado)
     } else {
       db.diasConfig[ymKey][chave] = Number(val);
     }
