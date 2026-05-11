@@ -2812,6 +2812,14 @@ function nowYM(){ const t=today(); return ym(t.getFullYear(),t.getMonth()); }
 function ymToYM(k){ return {y:parseInt(k.slice(0,4)), m:parseInt(k.slice(4))-1}; }
 
 // Dias úteis = Seg–Sex
+// Chave do diasConfig: gerente usa a chave global; demais usuários usam chave pessoal
+// Isso permite que cada supervisor/regional preencha seus próprios dias úteis e feriados
+function getUserDiasKey(ymKey){
+  const u = currentUser;
+  if(!u || isGerente(u)) return ymKey; // gerente: chave global (retrocompatível)
+  return `u${u.id}_${ymKey}`;           // outros: chave pessoal
+}
+
 function getDiasUteis(y,m){
   const d=new Date(y,m,1),r=[];
   while(d.getMonth()===m){ const dw=d.getDay(); if(dw>=1&&dw<=5)r.push(new Date(d)); d.setDate(d.getDate()+1); }
@@ -2819,10 +2827,11 @@ function getDiasUteis(y,m){
 }
 // Converte Date → 'YYYY-MM-DD' (helper global usado em vários lugares)
 function _d2sGlobal(d){ const dd=new Date(d); return dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0'); }
-// Dias corridos = Seg–Sex (igual a dias úteis)
+// Dias corridos = TODOS os dias do mês (não só úteis)
+// Necessário para a planilha ter uma linha por dia e para gráficos de progressão
 function getDiasCorridos(y,m){
   const d=new Date(y,m,1),r=[];
-  while(d.getMonth()===m){ const dw=d.getDay(); if(dw>=1&&dw<=5)r.push(new Date(d)); d.setDate(d.getDate()+1); }
+  while(d.getMonth()===m){ r.push(new Date(d)); d.setDate(d.getDate()+1); }
   return r;
 }
 // Dias com sábado = Seg–Sáb (para gráfico de linha)
@@ -3147,15 +3156,13 @@ function _updateLockUI(){
 
 // total realizado por vendedor no mês
 function sellerTotal(ymKey, sid){
-  const vs = getVendas(ymKey).filter(v=>v.sellerId===sid);
+  // type='ativacao' é KPI manual/informativo — NÃO conta como conquista realizada
+  const vs = getVendas(ymKey).filter(v=>v.sellerId===sid && v.type!=='ativacao');
   const s  = DB.sellers.find(x=>x.id===sid);
-  // Se o vendedor foi transferido, conta só vendas a partir da data de início no hub atual
   if(s?.activeFrom){
     const {y,m}=ymToYM(ymKey);
     const af=new Date(s.activeFrom+'T00:00:00');
-    // Mesmo mês da transferência: filtra pela data de início
     if(af.getFullYear()===y && af.getMonth()===m) return vs.filter(v=>v.date>=s.activeFrom).reduce((a,v)=>a+v.qty,0);
-    // Mês anterior à transferência: 0 (vendedor não estava neste hub)
     if(af > new Date(y,m+1,1)) return 0;
   }
   return vs.reduce((a,v)=>a+v.qty,0);
@@ -3332,7 +3339,7 @@ function renderDash(){
   const duAll=getDiasUteis(y,m), coAll=getDiasCorridos(y,m);
 
   // ── Feriados: exclui dias úteis marcados como feriado ──
-  const cfg = DB.diasConfig[ymKey] || {};
+  const cfg = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
   const feriadosSet = new Set((cfg.feriados||[]).filter(f=>typeof f==='string'&&f.length===10));
   const duAllExcl = duAll.filter(d => !feriadosSet.has(_d2sGlobal(d)));
   const coAllExcl = coAll.filter(d => !feriadosSet.has(_d2sGlobal(d)));
@@ -4925,16 +4932,18 @@ function saveDiasConfig(){
   if(total!==null&&(isNaN(total)||total<1||total>31)){ toast('Total de dias inválido (1–31)','⚠️'); return; }
   if(passed!==null&&(isNaN(passed)||passed<0||passed>31)){ toast('Dias decorridos inválido (0–31)','⚠️'); return; }
   if(!DB.diasConfig) DB.diasConfig={};
-  const existing = DB.diasConfig[currentYM] || {};
-  DB.diasConfig[currentYM]={...existing, total, passed};
+  const _dk = getUserDiasKey(currentYM);
+  const existing = DB.diasConfig[_dk] || {};
+  DB.diasConfig[_dk]={...existing, total, passed};
   saveDB(); renderDash();
   toast(total!=null||passed!=null ? '⚙️ Dias ajustados manualmente!' : '🔄 Resetado para automático');
 }
 
 function resetDiasConfig(){
   if(!DB.diasConfig) DB.diasConfig={};
-  const existing = DB.diasConfig[currentYM] || {};
-  DB.diasConfig[currentYM]={...existing, total:null, passed:null};
+  const _dk = getUserDiasKey(currentYM);
+  const existing = DB.diasConfig[_dk] || {};
+  DB.diasConfig[_dk]={...existing, total:null, passed:null};
   document.getElementById('cfg-du-total').value='';
   document.getElementById('cfg-du-pass').value='';
   saveDB(); renderDash();
@@ -4962,11 +4971,12 @@ function addFeriado(){
     toast('⚠️ Fim de semana — não afeta dias úteis (registrado mesmo assim)','⚠️');
   }
 
-  if(!DB.diasConfig)                          DB.diasConfig={};
-  if(!DB.diasConfig[currentYM])               DB.diasConfig[currentYM]={total:null,passed:null,feriados:[]};
-  if(!Array.isArray(DB.diasConfig[currentYM].feriados)) DB.diasConfig[currentYM].feriados=[];
+  if(!DB.diasConfig)                                DB.diasConfig={};
+  const _dk = getUserDiasKey(currentYM);
+  if(!DB.diasConfig[_dk])               DB.diasConfig[_dk]={total:null,passed:null,feriados:[]};
+  if(!Array.isArray(DB.diasConfig[_dk].feriados)) DB.diasConfig[_dk].feriados=[];
 
-  const feriados = DB.diasConfig[currentYM].feriados;
+  const feriados = DB.diasConfig[_dk].feriados;
   if(feriados.includes(date)){ toast('Data já cadastrada como feriado','⚠️'); return; }
 
   feriados.push(date);
@@ -4990,8 +5000,9 @@ function addFeriado(){
 }
 
 function removeFeriado(date){
-  if(!DB.diasConfig?.[currentYM]?.feriados) return;
-  DB.diasConfig[currentYM].feriados = DB.diasConfig[currentYM].feriados.filter(f=>f!==date);
+  const _dk = getUserDiasKey(currentYM);
+  if(!DB.diasConfig?.[_dk]?.feriados) return;
+  DB.diasConfig[_dk].feriados = DB.diasConfig[_dk].feriados.filter(f=>f!==date);
   DB._savedAt = Date.now();
   try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
   flashSaved();
@@ -5003,8 +5014,9 @@ function removeFeriado(date){
 }
 
 function clearFeriados(){
-  if(!DB.diasConfig?.[currentYM]) return;
-  DB.diasConfig[currentYM].feriados=[];
+  const _dk = getUserDiasKey(currentYM);
+  if(!DB.diasConfig?.[_dk]) return;
+  DB.diasConfig[_dk].feriados=[];
   DB._savedAt = Date.now();
   try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
   flashSaved();
@@ -5018,7 +5030,7 @@ function renderFeriadoList(){
   const el   = document.getElementById('feriado-list');
   const info = document.getElementById('feriado-count-info');
   if(!el) return;
-  const cfg      = DB.diasConfig?.[currentYM] || {};
+  const cfg      = DB.diasConfig?.[getUserDiasKey(currentYM)] || DB.diasConfig?.[currentYM] || {};
   // Filtra apenas strings válidas no formato YYYY-MM-DD
   const feriados = (cfg.feriados||[]).filter(f=>typeof f==='string' && /^\d{4}-\d{2}-\d{2}$/.test(f));
   const {y,m}    = ymToYM(currentYM);
@@ -5262,6 +5274,9 @@ function importExcel(e){
               if(isNaN(d.getTime())) continue;
               const ymKey = ym(d.getFullYear(), d.getMonth());
               if(!DB.vendas[ymKey]) DB.vendas[ymKey] = [];
+              // Deduplicação: não importa se já existe venda com mesmo sellerId+date+tipo+qty
+              const already = DB.vendas[ymKey].some(v=>v.sellerId===seller.id&&v.date===dateStr&&v.type===tipo&&v.qty===qty);
+              if(already){ skip++; continue; }
               DB.vendas[ymKey].push({
                 id: Date.now() + Math.random(),
                 sellerId: seller.id,
@@ -5300,6 +5315,9 @@ function importExcel(e){
             const d    = new Date(dateStr + 'T12:00:00');
             const ymKey = ym(d.getFullYear(), d.getMonth());
             if(!DB.vendas[ymKey]) DB.vendas[ymKey] = [];
+            // Deduplicação: evita importar a mesma venda duas vezes
+            const already = DB.vendas[ymKey].some(v=>v.sellerId===seller.id&&v.date===dateStr&&v.type===tipo&&v.qty===qty);
+            if(already){ skip++; return; }
             DB.vendas[ymKey].push({
               id: Date.now()+Math.random(), sellerId:seller.id,
               date:dateStr, qty, type:tipo, ts:new Date().toISOString()
@@ -6320,6 +6338,18 @@ async function cloudPull(mergeLocal = false){
     // Quando chamado em polling de fundo (mergeLocal=true), faz merge em vez de
     // substituir. Isso evita que feriados/metas adicionados localmente (ainda
     // aguardando o debounce de 350ms do saveDB) sejam sobrescritos pela nuvem.
+    // ── FIX CRÍTICO: preserva senhas do DB local ────────────────────────────
+    // O GAS não retorna o campo "password" nas queries (boa prática de segurança),
+    // mas o app precisa das senhas localmente para autenticação.
+    // Copia as senhas do DB local para os usuários correspondentes em rec.
+    if(Array.isArray(DB.users) && DB.users.length){
+      const localPwMap = new Map(DB.users.filter(u=>u.password).map(u=>[String(u.id), u.password]));
+      rec.users = rec.users.map(u=>{
+        const pw = localPwMap.get(String(u.id));
+        return pw ? {...u, password:pw} : u;
+      });
+    }
+
     if(mergeLocal && DB._savedAt && DB._savedAt > (rec._savedAt || 0)){
       // Local tem alterações mais recentes que a nuvem: mescla preservando local
       DB = _deepMerge(rec, DB);
@@ -7375,7 +7405,21 @@ function savePsvTpv(input, mk, ymKey){
   const c = !v?'var(--tl)':v<15000?'#dc2626':v<20000?'#d97706':'#059669';
   input.style.color = c;
   saveDB();
-  toast('TPV salvo ✓','💾');
+  toast('TPV médio real salvo ✓','💾');
+}
+
+function savePsvTpvProj(input, mk, ymKey){
+  formatTpvInput(input);
+  const raw = input.value.replace(/\./g,'').replace(',','.');
+  const v = parseFloat(raw)||0;
+  if(!DB.psvData) DB.psvData={};
+  if(!DB.psvData.tpvProj) DB.psvData.tpvProj={};
+  if(!DB.psvData.tpvProj[ymKey]) DB.psvData.tpvProj[ymKey]={};
+  DB.psvData.tpvProj[ymKey][mk] = v||null;
+  const c = !v?'var(--tl)':v<15000?'#dc2626':v<20000?'#d97706':'#059669';
+  input.style.color = c;
+  saveDB();
+  toast('TPV projetado salvo ✓','💾');
 }
 
 // Detrator / Promotor — salvo em DB.psvData.dp[ymKey]
@@ -8309,11 +8353,14 @@ function _renderPSVKpis(ymKey, y, m, sellers){
     {k:'M2', v:safraM2, c:'#d97706', bg:'rgba(217,119,6,.07)', border:'rgba(217,119,6,.2)'},
   ];
 
-  // TPV médio: lê de DB.psvData.tpv[ymKey][k]
+  // TPV médio real e projetado: lê de DB.psvData.tpv[ymKey]
   if(!DB.psvData) DB.psvData={};
   if(!DB.psvData.tpv) DB.psvData.tpv={};
   if(!DB.psvData.tpv[ymKey]) DB.psvData.tpv[ymKey]={};
-  const tpvD = DB.psvData.tpv[ymKey];
+  if(!DB.psvData.tpvProj) DB.psvData.tpvProj={};
+  if(!DB.psvData.tpvProj[ymKey]) DB.psvData.tpvProj[ymKey]={};
+  const tpvD    = DB.psvData.tpv[ymKey];
+  const tpvProjD= DB.psvData.tpvProj[ymKey];
 
   function tpvColor(v){ if(!v||v<15000) return '#dc2626'; if(v<20000) return '#d97706'; return '#059669'; }
 
@@ -8340,17 +8387,33 @@ function _renderPSVKpis(ymKey, y, m, sellers){
         </div>`).join('')}
     </div>
     <div style="border-top:1px solid var(--border);background:var(--bg)">
-      <div style="padding:3px 8px 2px;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl)">TPV Médio</div>
+      <div style="padding:3px 8px 2px;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl)">TPV médio real</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
         ${safraCols.map(s=>{
           const cur=tpvD[s.k]||''; const c=tpvColor(cur);
-          return `<div style="padding:3px 4px 6px;border-right:1px solid ${s.border};text-align:center">
+          return `<div style="padding:3px 4px 4px;border-right:1px solid ${s.border};text-align:center">
             <div style="font-size:9px;color:var(--tl);font-weight:600;margin-bottom:1px">R$</div>
             <input type="text" inputmode="numeric" id="psv-tpv-${s.k}" value="${cur?fmtBRL(cur):''}" placeholder="0,00"
               style="width:100%;text-align:center;border:1px solid var(--border);border-radius:4px;padding:3px 1px;font-family:var(--mono);font-size:11px;font-weight:800;color:${c};background:var(--white);outline:none;"
               oninput="formatTpvInput(this);this.style.color='var(--tl)'"
               onkeydown="if(event.key==='Enter'){savePsvTpv(this,'${s.k}','${ymKey}');this.blur();event.preventDefault()}"
               onblur="savePsvTpv(this,'${s.k}','${ymKey}')">
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border);background:rgba(124,58,237,.04)">
+      <div style="padding:3px 8px 2px;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#7c3aed">TPV projetado</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
+        ${safraCols.map(s=>{
+          const cur=tpvProjD[s.k]||''; const c=tpvColor(cur);
+          return `<div style="padding:3px 4px 6px;border-right:1px solid ${s.border};text-align:center">
+            <div style="font-size:9px;color:#7c3aed;font-weight:600;margin-bottom:1px">R$</div>
+            <input type="text" inputmode="numeric" id="psv-tpvproj-${s.k}" value="${cur?fmtBRL(cur):''}" placeholder="0,00"
+              style="width:100%;text-align:center;border:1px solid rgba(124,58,237,.3);border-radius:4px;padding:3px 1px;font-family:var(--mono);font-size:11px;font-weight:800;color:${c};background:var(--white);outline:none;"
+              oninput="formatTpvInput(this);this.style.color='var(--tl)'"
+              onkeydown="if(event.key==='Enter'){savePsvTpvProj(this,'${s.k}','${ymKey}');this.blur();event.preventDefault()}"
+              onblur="savePsvTpvProj(this,'${s.k}','${ymKey}')">
           </div>`;
         }).join('')}
       </div>
