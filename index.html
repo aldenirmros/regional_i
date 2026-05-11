@@ -800,6 +800,10 @@ select.sel:focus{border-color:var(--blue);}
 .btn-save-now:hover{background:var(--green-l);}
 .btn-save-now.saving{opacity:.6;pointer-events:none;}
 .btn-save-now svg{transition:transform .4s;}
+/* Reset Cache */
+.btn-reset-cache{background:transparent;border:1.5px solid rgba(220,38,38,.35);color:var(--red);border-radius:var(--rs);padding:0;cursor:pointer;display:none;align-items:center;justify-content:center;transition:all .15s var(--ease);flex-shrink:0;width:30px;height:30px;}
+.btn-reset-cache:hover{background:rgba(220,38,38,.1);border-color:var(--red);}
+.btn-reset-cache.loading{opacity:.5;pointer-events:none;}
 #sync-status-bar{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 7px;border-radius:20px;border:1px solid var(--border);background:var(--bg);flex-shrink:0;white-space:nowrap;transition:all .3s;}
 #sync-status-bar.ok{color:var(--green);border-color:rgba(5,150,105,.3);background:rgba(5,150,105,.07);}
 #sync-status-bar.err{color:var(--red);border-color:rgba(220,38,38,.3);background:rgba(220,38,38,.07);}
@@ -1089,6 +1093,11 @@ canvas { display:block; max-width:100%; }
     <!-- SALVAR -->
     <button class="btn-save-now" id="btn-global-save" onclick="manualSave()" title="Salvar agora">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    </button>
+
+    <!-- RESET CACHE — visível só para gerente/admin -->
+    <button class="btn-reset-cache" id="btn-reset-cache" onclick="resetCache()" title="Reset de Cache — limpa cache local e recarrega da nuvem">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
     </button>
 
     <!-- CLOUD -->
@@ -2687,6 +2696,7 @@ function loadDB() {
     ['regionais','times','users'].forEach(k=>{ if(!cached[k]) cached[k]=[]; });
     if(!cached.deleted||typeof cached.deleted!=='object') cached.deleted={userIds:[],sellerIds:[],timeIds:[],regionalIds:[]};
     ['userIds','sellerIds','timeIds','regionalIds'].forEach(k=>{ if(!Array.isArray(cached.deleted[k])) cached.deleted[k]=[]; });
+    if(!cached._savedAt) cached._savedAt = 0;
     return cached;
   }
   // Seed inicial — substituído pelo cloudPull após conectar
@@ -3280,7 +3290,17 @@ function goPage(name, el){
   if(el) el.classList.add('on');
   const lb={dash:'Dashboard — Visão Geral',lancar:'Lançar Vendas',sellers:'Vendedores / HUBs',regionais:'Gestão de Regionais',db:'Banco de Dados',overview:'Visão Geral por Regional',psv:'PSV — Apresentação de Resultados'};
   const tbSub=document.getElementById('tb-sub'); if(tbSub) tbSub.textContent=lb[name]||'';
-  if(name==='dash')      renderDash();
+  if(name==='dash'){
+    renderDash();
+    // FIX: Chart.js cria gráficos com dimensão 0 quando a página
+    // acaba de se tornar visível. Dois frames de requestAnimationFrame
+    // garantem que o browser finalizou o layout antes do resize.
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      if(typeof chartDonut!=='undefined'&&chartDonut){try{chartDonut.resize();}catch(e){}}
+      if(typeof chartBar  !=='undefined'&&chartBar  ){try{chartBar.resize();  }catch(e){}}
+      if(typeof chartLine !=='undefined'&&chartLine ){try{chartLine.resize(); }catch(e){}}
+    }));
+  }
   if(name==='lancar')    renderLancar();
   if(name==='sellers')   renderSellers();
   if(name==='regionais') renderRegionais();
@@ -4951,7 +4971,14 @@ function addFeriado(){
 
   feriados.push(date);
   feriados.sort();
-  saveDB(); renderDash();
+  // Sincroniza imediatamente — não usa o debounce de 350ms do saveDB()
+  // para evitar que um cloudPull de fundo sobrescreva o feriado antes do envio
+  DB._savedAt = Date.now();
+  try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+  flashSaved();
+  clearTimeout(saveDB._t);
+  _syncEnqueue();
+  renderDash();
   // Avança o input para o próximo dia útil do mês (UX conveniente)
   if(inp){
     const next = new Date(d); next.setDate(next.getDate()+1);
@@ -4965,7 +4992,12 @@ function addFeriado(){
 function removeFeriado(date){
   if(!DB.diasConfig?.[currentYM]?.feriados) return;
   DB.diasConfig[currentYM].feriados = DB.diasConfig[currentYM].feriados.filter(f=>f!==date);
-  saveDB(); renderDash();
+  DB._savedAt = Date.now();
+  try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+  flashSaved();
+  clearTimeout(saveDB._t);
+  _syncEnqueue();
+  renderDash();
   const fmt = date.split('-').reverse().join('/');
   toast(`🗑️ Feriado ${fmt} removido`,'🗑️');
 }
@@ -4973,7 +5005,12 @@ function removeFeriado(date){
 function clearFeriados(){
   if(!DB.diasConfig?.[currentYM]) return;
   DB.diasConfig[currentYM].feriados=[];
-  saveDB(); renderDash();
+  DB._savedAt = Date.now();
+  try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+  flashSaved();
+  clearTimeout(saveDB._t);
+  _syncEnqueue();
+  renderDash();
   toast('🔄 Feriados do mês removidos');
 }
 
@@ -5420,6 +5457,65 @@ function setCloudUI(state, txt){
 }
 
 // ── Atualizar manualmente ──
+// ══════════════════════════════════════════════════════════
+//  RESET DE CACHE — limpa localStorage e força cloudPull
+// ══════════════════════════════════════════════════════════
+async function resetCache(){
+  if(!confirm(
+    '⚠️ Reset de Cache\n\n' +
+    'Isso vai:\n' +
+    '1. Limpar o banco de dados local (cache)\n' +
+    '2. Forçar uma recarga completa da nuvem\n\n' +
+    'Use isso quando os dados estiverem desatualizados\n' +
+    'ou se uma venda deletada continuar voltando.\n\n' +
+    'Continuar?'
+  )) return;
+
+  const btn = document.getElementById('btn-reset-cache');
+  if(btn){ btn.classList.add('loading'); }
+  toast('🔄 Limpando cache…');
+
+  try {
+    // 1. Para qualquer sync em curso
+    _syncRunning = false;
+    clearTimeout(saveDB._t);
+
+    // 2. Limpa localStorage completamente
+    try{ localStorage.removeItem('bi_v5'); }catch(e){}
+    try{ localStorage.removeItem('bi_scope_filter'); }catch(e){}
+
+    // 3. Reseta DB para esqueleto vazio (sem seed)
+    DB = {
+      sellers:[], vendas:{}, times:[], regionais:[], users:[],
+      diasConfig:{}, sellerMetas:{}, hubMetas:{}, mValues:{},
+      ativacaoManual:{}, ativacaoManualOv:{}, psvData:{},
+      deletedVendaIds:{},
+      deleted:{userIds:[],sellerIds:[],timeIds:[],regionalIds:[]},
+      nextId:1, _savedAt:0
+    };
+    // 4. Força cloudPull com nova requisição (sem cache)
+    window._blockPull = null; // libera qualquer bloqueio de pull
+    const ok = await cloudPull();
+
+    if(ok){
+      _refreshCurrentUserFromDB();
+      populateMes();
+      populateQESellers();
+      renderAll();
+      renderPSVIfActive();
+      // Re-aplica filtros de escopo para o usuário atual
+      if(currentUser) applySession();
+      toast('✅ Cache resetado! Dados recarregados da nuvem.');
+    } else {
+      toast('⚠️ Cache limpo, mas sem conexão com a nuvem. Reconecte para recarregar.','⚠️');
+    }
+  } catch(e){
+    toast('❌ Erro no reset: ' + e.message,'⚠️');
+  } finally {
+    if(btn){ btn.classList.remove('loading'); }
+  }
+}
+
 async function manualRefresh(){
   const btn = document.getElementById('btn-global-refresh');
   const ico = document.getElementById('refresh-icon');
@@ -5447,6 +5543,7 @@ async function manualSave(){
   const btn = document.getElementById('btn-global-save');
   if(btn) btn.disabled = true;
   try {
+    DB._savedAt = Date.now();
     try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
     flashSaved();
     clearTimeout(saveDB._t);
@@ -5464,10 +5561,12 @@ function syncLog(msg){
 }
 
 function saveDB() {
-  // ── 1. Salva localmente de forma síncrona (zero latência para o usuário) ──
+  // ── 1. Marca timestamp da última alteração local ──
+  DB._savedAt = Date.now();
+  // ── 2. Salva localmente de forma síncrona (zero latência para o usuário) ──
   try { localStorage.setItem('bi_v5', JSON.stringify(DB)); } catch(e){}
   flashSaved();
-  // ── 2. Agenda sync com nuvem — debounce 350ms para batching de edições rápidas ──
+  // ── 3. Agenda sync com nuvem — debounce 350ms para batching de edições rápidas ──
   clearTimeout(saveDB._t);
   saveDB._t = setTimeout(_syncEnqueue, 350);
 }
@@ -5629,9 +5728,16 @@ async function _runSync() {
 //   vendas   → union por id (todos os lançamentos de todos os usuários)
 //   sellers  → union por id, _ts mais recente vence
 //   times / regionais / users → union por id, _ts mais recente vence
-//   dicts aninhados (metas, diasConfig…) → union de chaves, local vence
+//   dicts aninhados (metas, diasConfig…) → local vence; se cloud for mais
+//     recente (_savedAt), cloud vence para evitar sobrescrever dados mais novos
 function _deepMerge(cloud, local) {
   const r = JSON.parse(JSON.stringify(cloud)); // cópia do cloud como base
+
+  // ── Timestamp de conflito: se cloud foi salvo DEPOIS do local, cloud vence ──
+  // Evita que dispositivo com cache antigo sobrescreva dados mais recentes
+  const cloudSavedAt = cloud._savedAt || 0;
+  const localSavedAt = local._savedAt || 0;
+  const cloudIsNewer = cloudSavedAt > localSavedAt;
 
   // ── vendas: union por id em todos os meses ──
   const lv = local.vendas || {};
@@ -5720,7 +5826,9 @@ function _deepMerge(cloud, local) {
   const maxSellerId = Math.max(0, ...r.sellers.map(s=>Number(s.id)||0));
   r.nextId = Math.max(r.nextId||0, local.nextId||0, maxSellerId + 1);
 
-  // ── dicts aninhados: union de chaves, local vence ──
+  // ── dicts aninhados: estratégia baseada em timestamp ──
+  // Se cloud é mais recente, cloud vence para evitar sobrescrever dados mais novos.
+  // Se local é mais recente (ou igual), local vence (mantém alterações não enviadas).
   function mergeDict(cld, loc) {
     if (!loc) return cld;
     const out = JSON.parse(JSON.stringify(cld||{}));
@@ -5735,15 +5843,50 @@ function _deepMerge(cloud, local) {
     });
     return out;
   }
+  // mergeDictCloudWins: cloud vence quando cloud é mais recente
+  function mergeDictCloudWins(cld, loc) {
+    if(cloudIsNewer) return mergeDict(loc, cld); // inverte: cloud sobrescreve local
+    return mergeDict(cld, loc);
+  }
 
-  r.hubMetas          = mergeDict(r.hubMetas,          local.hubMetas);
-  r.sellerMetas       = mergeDict(r.sellerMetas,        local.sellerMetas);
-  r.mValues           = mergeDict(r.mValues,            local.mValues);
-  r.diasConfig        = mergeDict(r.diasConfig,         local.diasConfig);
-  r.ativacaoManual    = mergeDict(r.ativacaoManual,     local.ativacaoManual);
-  r.ativacaoManualOv  = mergeDict(r.ativacaoManualOv,   local.ativacaoManualOv);
+  r.hubMetas          = mergeDictCloudWins(r.hubMetas,          local.hubMetas);
+  r.sellerMetas       = mergeDictCloudWins(r.sellerMetas,        local.sellerMetas);
+  r.mValues           = mergeDictCloudWins(r.mValues,            local.mValues);
+  r.ativacaoManual    = mergeDictCloudWins(r.ativacaoManual,     local.ativacaoManual);
+  r.ativacaoManualOv  = mergeDictCloudWins(r.ativacaoManualOv,   local.ativacaoManualOv);
   if (local.psvData && Object.keys(local.psvData).length)
-    r.psvData         = mergeDict(r.psvData,            local.psvData);
+    r.psvData         = mergeDictCloudWins(r.psvData,            local.psvData);
+
+  // ── diasConfig: merge especial — scalar (total/passed) usa cloudIsNewer,
+  //    feriados usa UNION para nunca perder feriados adicionados localmente ──
+  {
+    const cld = r.diasConfig     || {};
+    const loc = local.diasConfig || {};
+    const merged = JSON.parse(JSON.stringify(cld));
+    Object.keys(loc).forEach(ymKey => {
+      if (!merged[ymKey]) merged[ymKey] = {};
+      const cldCfg = cld[ymKey] || {};
+      const locCfg = loc[ymKey] || {};
+      // total / passed: local vence (ou cloud se cloudIsNewer)
+      if(!cloudIsNewer){
+        if(locCfg.total  != null) merged[ymKey].total  = locCfg.total;
+        if(locCfg.passed != null) merged[ymKey].passed = locCfg.passed;
+      } else {
+        // cloud mais recente: usa cloud para scalars, local para novos ymKeys
+        if(merged[ymKey].total  == null && locCfg.total  != null) merged[ymKey].total  = locCfg.total;
+        if(merged[ymKey].passed == null && locCfg.passed != null) merged[ymKey].passed = locCfg.passed;
+      }
+      // feriados: SEMPRE union — nunca perde feriados de nenhum dos lados
+      const cldF = new Set((cldCfg.feriados||[]).filter(f=>/^\d{4}-\d{2}-\d{2}$/.test(f)));
+      const locF = (locCfg.feriados||[]).filter(f=>/^\d{4}-\d{2}-\d{2}$/.test(f));
+      locF.forEach(f => cldF.add(f));
+      merged[ymKey].feriados = [...cldF].sort();
+    });
+    r.diasConfig = merged;
+  }
+
+  // ── Preserva _savedAt: usa o mais recente entre cloud e local ──
+  r._savedAt = Math.max(cloudSavedAt, localSavedAt);
 
   return r;
 }
@@ -5823,8 +5966,11 @@ function dbToTables(db) {
     const cfg = db.diasConfig[ymKey] || {};
     if (cfg.total  != null) diasConfig.push({ ymKey, chave: 'total',  val: cfg.total });
     if (cfg.passed != null) diasConfig.push({ ymKey, chave: 'passed', val: cfg.passed });
-    if (cfg.feriados && cfg.feriados.length)
-      diasConfig.push({ ymKey, chave: 'feriados', val: cfg.feriados.join(',') });
+    if (cfg.feriados && cfg.feriados.length) {
+      // Prefixo "J:" + JSON evita que o Google Sheets auto-converta
+      // "2026-05-15" para número de série de data (bug: 46394)
+      diasConfig.push({ ymKey, chave: 'feriados', val: 'J:' + JSON.stringify(cfg.feriados) });
+    }
   });
 
   // ── ativacaoManual: achata {ymKey: {sellerId: val}} ──
@@ -5858,8 +6004,11 @@ function dbToTables(db) {
   (d.regionalIds || []).forEach(id => deleted.push({ tipo: 'regional', id: String(id) }));
   (d.userIds     || []).forEach(id => deleted.push({ tipo: 'user',     id: String(id) }));
 
-  // ── config (nextId) ──
-  const config = [{ chave: 'nextId', val: db.nextId || 0 }];
+  // ── config (nextId + _savedAt para controle de versão) ──
+  const config = [
+    { chave: 'nextId',   val: db.nextId  || 0 },
+    { chave: '_savedAt', val: db._savedAt || 0 }
+  ];
 
   // ── psvData: JSON em célula única (estrutura complexa) ──
   const psvData = db.psvData && Object.keys(db.psvData).length
@@ -5964,9 +6113,23 @@ function tablesToDB(tables) {
     if (!ymKey || !chave) return;
     if (!db.diasConfig[ymKey]) db.diasConfig[ymKey] = {};
     if (chave === 'feriados') {
-      db.diasConfig[ymKey].feriados = val
-        ? String(val).split(',').map(s=>s.trim()).filter(s=>/^\d{4}-\d{2}-\d{2}$/.test(s))
-        : [];
+      const s = String(val || '').trim();
+      if (!s || s === '[]') { db.diasConfig[ymKey].feriados = []; return; }
+      try {
+        // Formato novo: "J:[...]" — imune à conversão de data do Sheets
+        if (s.startsWith('J:')) {
+          const arr = JSON.parse(s.slice(2));
+          db.diasConfig[ymKey].feriados = Array.isArray(arr)
+            ? arr.filter(f => typeof f === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(f))
+            : [];
+          return;
+        }
+        // Formato legado: "YYYY-MM-DD,YYYY-MM-DD,..." (strings multi-data ficam como texto)
+        db.diasConfig[ymKey].feriados = s
+          .split(',')
+          .map(f => f.trim())
+          .filter(f => /^\d{4}-\d{2}-\d{2}$/.test(f));
+      } catch(e) { db.diasConfig[ymKey].feriados = []; }
     } else {
       db.diasConfig[ymKey][chave] = Number(val);
     }
@@ -6006,9 +6169,10 @@ function tablesToDB(tables) {
   });
 
   // ── config ──
-  db.nextId = 0;
+  db.nextId = 0; db._savedAt = 0;
   (tables.config || []).forEach(({ chave, val }) => {
-    if (chave === 'nextId') db.nextId = Number(val) || 0;
+    if (chave === 'nextId')   db.nextId   = Number(val) || 0;
+    if (chave === '_savedAt') db._savedAt = Number(val) || 0;
   });
 
   // ── psvData ──
@@ -6024,7 +6188,7 @@ function tablesToDB(tables) {
 
 // ── cloudPull: busca SEMPRE o banco mais recente do Google Sheets ─────────
 // Regra: nuvem é a fonte da verdade. Só conserva vendas locais pendentes.
-async function cloudPull(){
+async function cloudPull(mergeLocal = false){
   if(window._blockPull && Date.now()-window._blockPull < 300000) return false;
   const cfg = getCfg();
   if(!cfg.gsUrl) return false;
@@ -6151,7 +6315,17 @@ async function cloudPull(){
     // Garante entidades canônicas APÓS tombstone (nunca ficam ausentes)
     migrateToDefaultRegional(rec);
     deduplicateDB(rec);
-    DB = rec;
+
+    // ── CRÍTICO: preserva alterações locais não sincronizadas ──
+    // Quando chamado em polling de fundo (mergeLocal=true), faz merge em vez de
+    // substituir. Isso evita que feriados/metas adicionados localmente (ainda
+    // aguardando o debounce de 350ms do saveDB) sejam sobrescritos pela nuvem.
+    if(mergeLocal && DB._savedAt && DB._savedAt > (rec._savedAt || 0)){
+      // Local tem alterações mais recentes que a nuvem: mescla preservando local
+      DB = _deepMerge(rec, DB);
+    } else {
+      DB = rec;
+    }
     try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
     setCloudUI('ok','Nuvem ✓');
     syncLog('Sincronizado — ' + new Date().toLocaleTimeString('pt-BR'));
@@ -6674,10 +6848,12 @@ function doLogin(){
       }
       populateMes(); populateQESellers();
     }
-    goPage('dash', navEl);
+    // FIX: setTimeout garante que o browser finalize o layout da página
+    // antes de renderDash criar os gráficos Chart.js (evita dimensão 0x0)
+    setTimeout(()=>{ goPage('dash', navEl); }, 50);
     if(loginBtn){ loginBtn.textContent='Entrar'; loginBtn.disabled=false; }
   }).catch(()=>{
-    goPage('dash', navEl);
+    setTimeout(()=>{ goPage('dash', navEl); }, 50);
     if(loginBtn){ loginBtn.textContent='Entrar'; loginBtn.disabled=false; }
   });
 }
@@ -6747,6 +6923,10 @@ function applySession(){
   // Botão "Usuários" para Aldenir e Gerente
   const btnVer = document.getElementById('btn-ver-usuarios');
   if(btnVer) btnVer.style.display = (isGerente(u)) ? 'inline-flex' : 'none';
+
+  // Botão "Reset de Cache" para gerente e admin
+  const btnReset = document.getElementById('btn-reset-cache');
+  if(btnReset) btnReset.style.display = (isGerente(u)||isSuperUser) ? 'inline-flex' : 'none';
 
   // ── Escopo inicial ──
   if(isSuperUser){
@@ -7876,7 +8056,14 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
     currentUser = { ...dbUser, ...(sess.password ? {password:sess.password} : {}) };
     setSession(currentUser);
     document.getElementById('login-ov').classList.add('hidden');
-    applySession(); renderDash();
+    applySession();
+    // ── FIX: usa setTimeout para garantir que o browser finalize o layout
+    // antes de criar os gráficos Chart.js. Sem isso, os canvas têm dimensão
+    // 0×0 no primeiro render (síncrono) e nada aparece na tela inicial.
+    setTimeout(() => {
+      const navEl = document.querySelectorAll('.ni')[0];
+      goPage('dash', navEl);
+    }, 0);
   } else {
     document.getElementById('login-ov').classList.remove('hidden');
     if(!getCfg().gsUrl)
@@ -7888,7 +8075,9 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
 
   async function _pull(){
     if(!currentUser || _syncRunning) return;
-    const r = await cloudPull();
+    // mergeLocal=true: preserva alterações locais (ex: feriado recém-adicionado)
+    // que ainda não foram sincronizadas com a nuvem (debounce de 350ms pendente)
+    const r = await cloudPull(true);
     if(r){ _refreshCurrentUserFromDB(); populateMes(); populateQESellers(); renderAll(); renderPSVIfActive(); }
   }
 
@@ -8570,18 +8759,49 @@ function saveHubEdit(){
 }
 
 // ══ PLANO DE AÇÃO — SAVE / LOAD ══
-function _planKey(){ return 'psv_plan_'+(currentUser?.id||'default'); }
+// CORREÇÃO: salva em DB.psvData (sincronizado com a nuvem) em vez de
+// apenas no localStorage (que era local ao dispositivo e nunca ia ao Sheets).
+function _planKey(){ return 'plan_'+(currentUser?.id||'default'); }
+
 function psvLoadPlan(){
   try{
-    const raw=localStorage.getItem(_planKey());
-    if(raw){ const d=JSON.parse(raw); if(Array.isArray(d)&&d.length) _psvPlan=d; }
+    // 1ª prioridade: DB.psvData (nuvem) — fonte de verdade
+    if(!DB.psvData) DB.psvData = {};
+    const fromDB = DB.psvData[_planKey()];
+    if(Array.isArray(fromDB) && fromDB.length){
+      _psvPlan = fromDB;
+      return;
+    }
+    // Fallback: localStorage (compatibilidade com versões anteriores)
+    const lsKey = 'psv_plan_'+(currentUser?.id||'default');
+    const raw = localStorage.getItem(lsKey);
+    if(raw){
+      const d = JSON.parse(raw);
+      if(Array.isArray(d) && d.length){
+        _psvPlan = d;
+        // Migra automaticamente do localStorage para o DB na primeira carga
+        DB.psvData[_planKey()] = _psvPlan;
+        saveDB();
+        localStorage.removeItem(lsKey); // remove chave legada após migrar
+      }
+    }
   }catch(e){}
 }
+
 function psvSavePlan(){
   try{
-    localStorage.setItem(_planKey(), JSON.stringify(_psvPlan));
-    const badge=document.getElementById('plan-saved-badge');
-    if(badge){ badge.style.opacity='1'; clearTimeout(badge._t); badge._t=setTimeout(()=>badge.style.opacity='0',2200); }
+    // Salva em DB.psvData → saveDB() → sync com Google Sheets
+    if(!DB.psvData) DB.psvData = {};
+    DB.psvData[_planKey()] = JSON.parse(JSON.stringify(_psvPlan));
+    saveDB(); // persiste local + agenda push para nuvem
+
+    // Mostra badge "Salvo"
+    const badge = document.getElementById('plan-saved-badge');
+    if(badge){
+      badge.style.opacity = '1';
+      clearTimeout(badge._t);
+      badge._t = setTimeout(()=>{ badge.style.opacity='0'; }, 2200);
+    }
   }catch(e){ toast('⚠️ Erro ao salvar plano.'); }
 }
 
