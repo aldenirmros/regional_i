@@ -2797,6 +2797,10 @@ function loadDB() {
     if(!cached.deleted||typeof cached.deleted!=='object') cached.deleted={userIds:[],sellerIds:[],timeIds:[],regionalIds:[]};
     ['userIds','sellerIds','timeIds','regionalIds'].forEach(k=>{ if(!Array.isArray(cached.deleted[k])) cached.deleted[k]=[]; });
     if(!cached._savedAt) cached._savedAt = 0;
+    // Garante tabelas PSV dedicadas
+    if(!Array.isArray(cached.psvPlano))  cached.psvPlano  = [];
+    if(!Array.isArray(cached.psvTpv))    cached.psvTpv    = [];
+    if(!Array.isArray(cached.psvDp))     cached.psvDp     = [];
     return cached;
   }
   // Seed inicial — substituído pelo cloudPull após conectar
@@ -5505,6 +5509,7 @@ async function resetCache(){
       sellers:[], vendas:{}, times:[], regionais:[], users:[],
       diasConfig:{}, sellerMetas:{}, hubMetas:{}, mValues:{},
       ativacaoManual:{}, ativacaoManualOv:{}, psvData:{},
+      psvPlano:[], psvTpv:[], psvDp:[],
       deletedVendaIds:{},
       deleted:{userIds:[],sellerIds:[],timeIds:[],regionalIds:[]},
       nextId:1, _savedAt:0
@@ -5901,6 +5906,38 @@ function _deepMerge(cloud, local) {
   // ── Preserva _savedAt: usa o mais recente entre cloud e local ──
   r._savedAt = Math.max(cloudSavedAt, localSavedAt);
 
+  // ── psvPlano: union por (userId + ymKey + indicador), local vence em empate ──
+  {
+    const map = new Map();
+    // Cloud primeiro (base)
+    (r.psvPlano||[]).forEach(row => {
+      const k = `${row.userId}|${row.ymKey||''}|${row.indicador||''}`;
+      map.set(k, row);
+    });
+    // Local sobrescreve (local vence em empate)
+    (local.psvPlano||[]).forEach(row => {
+      const k = `${row.userId}|${row.ymKey||''}|${row.indicador||''}`;
+      map.set(k, row);
+    });
+    r.psvPlano = [...map.values()];
+  }
+
+  // ── psvTpv: union por (ymKey + hubId + mk), local vence ──
+  {
+    const map = new Map();
+    (r.psvTpv||[]).forEach(row => { map.set(`${row.ymKey}|${row.hubId}|${row.mk}`, row); });
+    (local.psvTpv||[]).forEach(row => { map.set(`${row.ymKey}|${row.hubId}|${row.mk}`, row); });
+    r.psvTpv = [...map.values()];
+  }
+
+  // ── psvDp: union por (ymKey + hubId + tipo + safra), local vence ──
+  {
+    const map = new Map();
+    (r.psvDp||[]).forEach(row => { map.set(`${row.ymKey}|${row.hubId}|${row.tipo}|${row.safra}`, row); });
+    (local.psvDp||[]).forEach(row => { map.set(`${row.ymKey}|${row.hubId}|${row.tipo}|${row.safra}`, row); });
+    r.psvDp = [...map.values()];
+  }
+
   return r;
 }
 
@@ -6020,16 +6057,27 @@ function dbToTables(db) {
     { chave: '_savedAt', val: db._savedAt || 0 }
   ];
 
-  // ── psvData: JSON em célula única (estrutura complexa) ──
-  const psvData = db.psvData && Object.keys(db.psvData).length
-    ? [{ chave: 'psvData', val: JSON.stringify(db.psvData) }]
-    : [];
+  // ── psvData: LEGADO — mantido para retrocompatibilidade de leitura ──
+  // Novas gravações usam as tabelas dedicadas (psv_plano_acao, psv_tpv, psv_detrator_promotor)
+  const psvData = [];  // não serializa mais como blob
+
+  // ── psv_plano_acao: {userId, ymKey, indicador, problema, causa, acoes, periodo, resultado} ──
+  const psvPlanoAcao = (db.psvPlano || []).map(r => ({...r}));
+
+  // ── psv_tpv: {ymKey, hubId, mk, valor_real, valor_proj} ──
+  const psvTpv = (db.psvTpv || []).map(r => ({...r}));
+
+  // ── psv_detrator_promotor: {ymKey, hubId, tipo, safra, vendedorId, nome_manual, valor} ──
+  const psvDp = (db.psvDp || []).map(r => ({...r}));
 
   return {
     sellers, vendas, users, times, regionais,
     sellerMetas, hubMetas, mValues, diasConfig,
     ativacaoManual, ativacaoManualOv,
-    deletedVendaIds, deleted, config, psvData
+    deletedVendaIds, deleted, config, psvData,
+    psv_plano_acao: psvPlanoAcao,
+    psv_tpv: psvTpv,
+    psv_detrator_promotor: psvDp
   };
 }
 
@@ -6172,13 +6220,30 @@ function tablesToDB(tables) {
     if (chave === '_savedAt') db._savedAt = Number(val) || 0;
   });
 
-  // ── psvData ──
+  // ── psvData: LEGADO — leitura para migração; novas gravações usam tabelas dedicadas ──
   db.psvData = {};
   (tables.psvData || []).forEach(({ chave, val }) => {
     if (chave === 'psvData') {
       try { db.psvData = JSON.parse(val); } catch(e) {}
     }
   });
+
+  // ── psv_plano_acao ──
+  db.psvPlano = (tables.psv_plano_acao || []).map(r => ({...r}));
+
+  // ── psv_tpv ──
+  db.psvTpv = (tables.psv_tpv || []).map(r => ({
+    ...r,
+    valor_real: r.valor_real != null ? Number(r.valor_real)||0 : null,
+    valor_proj: r.valor_proj != null ? Number(r.valor_proj)||0 : null,
+  }));
+
+  // ── psv_detrator_promotor ──
+  db.psvDp = (tables.psv_detrator_promotor || []).map(r => ({
+    ...r,
+    valor:      r.valor != null ? Number(r.valor)||null : null,
+    vendedorId: r.vendedorId ? (Number(r.vendedorId)||r.vendedorId) : null,
+  }));
 
   return db;
 }
@@ -6226,6 +6291,10 @@ async function cloudPull(mergeLocal = false){
     ['userIds','sellerIds','timeIds','regionalIds'].forEach(k=>{
       if(!Array.isArray(rec.deleted[k])) rec.deleted[k]=[];
     });
+    // Garante arrays das tabelas PSV
+    if(!Array.isArray(rec.psvPlano)) rec.psvPlano = [];
+    if(!Array.isArray(rec.psvTpv))   rec.psvTpv   = [];
+    if(!Array.isArray(rec.psvDp))    rec.psvDp    = [];
 
     // Normaliza roles
     rec.users = rec.users.map(u=>({
@@ -7413,17 +7482,45 @@ function formatTpvInput(input){
   input.value = (cents/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
+// ── TPV — DB.psvTpv (tabela: ymKey, hubId, mk, valor_real, valor_proj) ──────
+function _getHubIdForPsv(){
+  const u = currentUser;
+  const psvTmId = parseInt(document.getElementById('psv-df-time')?.value)||null;
+  if(psvTmId) return psvTmId;
+  if(u?.timeId) return u.timeId;
+  // Gerente sem filtro: usa o primeiro HUB do escopo
+  const sellers = getScopedSellers();
+  return sellers.find(s=>s.timeId)?.timeId || 0;
+}
+
+function _getTpvRow(ymKey, hubId, mk){
+  if(!DB.psvTpv) DB.psvTpv = [];
+  return DB.psvTpv.find(r=>r.ymKey===ymKey && String(r.hubId)===String(hubId) && r.mk===mk);
+}
+
+function _upsertTpvRow(ymKey, hubId, mk, field, value){
+  if(!DB.psvTpv) DB.psvTpv = [];
+  let row = DB.psvTpv.find(r=>r.ymKey===ymKey && String(r.hubId)===String(hubId) && r.mk===mk);
+  if(!row){
+    row = {ymKey, hubId: String(hubId), mk, valor_real:null, valor_proj:null};
+    DB.psvTpv.push(row);
+  }
+  row[field] = value || null;
+}
+
 function savePsvTpv(input, mk, ymKey){
   formatTpvInput(input);
   const raw = input.value.replace(/\./g,'').replace(',','.');
   const v = parseFloat(raw)||0;
-  if(!DB.psvData) DB.psvData={};
-  if(!DB.psvData.tpv) DB.psvData.tpv={};
-  if(!DB.psvData.tpv[ymKey]) DB.psvData.tpv[ymKey]={};
-  DB.psvData.tpv[ymKey][mk] = v||null;
+  const hubId = _getHubIdForPsv();
+  _upsertTpvRow(ymKey, hubId, mk, 'valor_real', v||null);
   const c = !v?'var(--tl)':v<15000?'#dc2626':v<20000?'#d97706':'#059669';
   input.style.color = c;
-  saveDB();
+  DB._savedAt = Date.now();
+  try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+  flashSaved();
+  clearTimeout(saveDB._t);
+  _syncEnqueue();
   toast('TPV médio real salvo ✓','💾');
 }
 
@@ -7431,13 +7528,15 @@ function savePsvTpvProj(input, mk, ymKey){
   formatTpvInput(input);
   const raw = input.value.replace(/\./g,'').replace(',','.');
   const v = parseFloat(raw)||0;
-  if(!DB.psvData) DB.psvData={};
-  if(!DB.psvData.tpvProj) DB.psvData.tpvProj={};
-  if(!DB.psvData.tpvProj[ymKey]) DB.psvData.tpvProj[ymKey]={};
-  DB.psvData.tpvProj[ymKey][mk] = v||null;
+  const hubId = _getHubIdForPsv();
+  _upsertTpvRow(ymKey, hubId, mk, 'valor_proj', v||null);
   const c = !v?'var(--tl)':v<15000?'#dc2626':v<20000?'#d97706':'#059669';
   input.style.color = c;
-  saveDB();
+  DB._savedAt = Date.now();
+  try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+  flashSaved();
+  clearTimeout(saveDB._t);
+  _syncEnqueue();
   toast('TPV projetado salvo ✓','💾');
 }
 
@@ -7467,23 +7566,30 @@ function dpSetPhoto(e, type, mk){
 
 // Salva tudo do DP no DB ao clicar em "Salvar"
 function saveDpAll(){
-  const ymKey=currentYM;
-  if(!DB.psvData) DB.psvData={};
-  if(!DB.psvData.dp) DB.psvData.dp={};
-  if(!DB.psvData.dp[ymKey]) DB.psvData.dp[ymKey]={};
+  const ymKey  = currentYM;
+  const hubId  = String(_getHubIdForPsv());
+  if(!DB.psvDp) DB.psvDp = [];
+  // Remove linhas antigas deste ymKey+hubId
+  DB.psvDp = DB.psvDp.filter(r => !(r.ymKey===ymKey && String(r.hubId)===hubId));
   ['M0','M1','M2'].forEach(mk=>{
-    ['prom','det'].forEach(type=>{
-      const k=`${type}_${mk}`;
-      const name     = document.getElementById(`dp-name-${type}-${mk}`)?.value||'';
-      const val      = document.getElementById(`dp-val-${type}-${mk}`)?.value||'';
-      const sellerId = document.getElementById(`dp-sel-${type}-${mk}`)?.value||'';
-      // Salva também a foto no DB (para sincronizar com Google Sheets)
-      const photo    = _dpPhotos[k]||'';
-      DB.psvData.dp[ymKey][k] = {name, val, sellerId, photo};
+    ['prom','det'].forEach(tipo=>{
+      const nome_manual = document.getElementById(`dp-name-${tipo}-${mk}`)?.value||'';
+      const valor       = document.getElementById(`dp-val-${tipo}-${mk}`)?.value||'';
+      const vendedorId  = document.getElementById(`dp-sel-${tipo}-${mk}`)?.value||'';
+      const photo       = _dpPhotos[`${tipo}_${mk}`]||'';
+      DB.psvDp.push({
+        ymKey, hubId, tipo, safra: mk,
+        vendedorId: vendedorId||null,
+        nome_manual, valor: valor||null,
+        photo // foto armazenada na tabela para sync
+      });
     });
   });
-  saveDB();
-  // Feedback visual no botão
+  DB._savedAt = Date.now();
+  try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+  flashSaved();
+  clearTimeout(saveDB._t);
+  _syncEnqueue();
   const btn=document.getElementById('dp-save-btn');
   if(btn){ const old=btn.innerHTML; btn.innerHTML='✅ Salvo!'; setTimeout(()=>btn.innerHTML=old,1800); }
   toast('Detrator & Promotor salvo ✓','💾');
@@ -7531,27 +7637,31 @@ function dpSelectSeller(type, mk, val){
 }
 
 function _restoreDpFields(){
-  const ymKey=currentYM;
-  const dpDb = (DB.psvData?.dp||{})[ymKey]||{};
+  const ymKey = currentYM;
+  const hubId = String(_getHubIdForPsv());
+  // Lê da nova tabela; fallback para psvData legado
+  const newRows = (DB.psvDp||[]).filter(r=>r.ymKey===ymKey && String(r.hubId)===hubId);
+  const dpDb_legacy = (DB.psvData?.dp||{})[ymKey]||{};
+
   ['M0','M1','M2'].forEach(mk=>{
-    ['prom','det'].forEach(type=>{
-      const k=`${type}_${mk}`;
-      const d = dpDb[k]||{};
-      const ni   = document.getElementById(`dp-name-${type}-${mk}`);
-      const vi   = document.getElementById(`dp-val-${type}-${mk}`);
-      const sel  = document.getElementById(`dp-sel-${type}-${mk}`);
-      const slot = document.getElementById(`dp-photo-${type}-${mk}`);
-      const color= type==='prom'?'#059669':'#dc2626';
+    ['prom','det'].forEach(tipo=>{
+      const k = `${tipo}_${mk}`;
+      // Tenta nova tabela primeiro
+      const row = newRows.find(r=>r.tipo===tipo && r.safra===mk);
+      const d   = row
+        ? { name: row.nome_manual, val: row.valor, sellerId: row.vendedorId, photo: row.photo }
+        : (dpDb_legacy[k]||{});
+
+      const ni   = document.getElementById(`dp-name-${tipo}-${mk}`);
+      const vi   = document.getElementById(`dp-val-${tipo}-${mk}`);
+      const sel  = document.getElementById(`dp-sel-${tipo}-${mk}`);
+      const slot = document.getElementById(`dp-photo-${tipo}-${mk}`);
+      const color= tipo==='prom'?'#059669':'#dc2626';
 
       if(ni) ni.value = d.name||'';
-      if(vi){
-        vi.value = d.val||'';
-        if(d.val) vi.style.color = color;
-      }
-      // Restaura vendedor selecionado
+      if(vi){ vi.value = d.val||''; if(d.val) vi.style.color = color; }
       if(sel && d.sellerId) sel.value = d.sellerId;
 
-      // Restaura foto: prioriza foto salva no DB, depois localStorage
       const photo = d.photo || _dpPhotos[k] || null;
       if(photo && slot){
         slot.innerHTML=`<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
@@ -8320,11 +8430,19 @@ function _renderPSVFilter(){
 
 function _renderPSVKpis(ymKey, y, m, sellers){
   const row = document.getElementById('psv-top-row'); if(!row) return;
-  const t = today(), dias = getDiasCorridos(y,m);
-  const duPass = dias.filter(d=>d<=t).length, duTotal=dias.length;
+  const t = today();
+
+  // ── Dias úteis: mesmo cálculo do dashboard (getDiasUteis + desconto) ──
+  const duAll  = getDiasUteis(y, m);
+  const cfg    = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
+  const desconto = Math.max(0, parseInt(cfg.totalFeriados)||0);
+  const duTotal  = cfg.total  != null ? cfg.total  : Math.max(0, duAll.length - desconto);
+  const duPass   = cfg.passed != null ? cfg.passed : Math.max(0, duAll.filter(d=>d<=t).length - Math.round(desconto * duAll.filter(d=>d<=t).length / (duAll.length||1)));
+  const duRest   = Math.max(0, duTotal - duPass);
+
   const real  = sellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
 
-  // Meta total — igual ao dashboard: soma das metas dos HUBs filtrados
+  // Meta — mesma lógica do dashboard
   const psvRgId  = parseInt(document.getElementById('psv-df-regional')?.value)||null;
   const psvTmId  = parseInt(document.getElementById('psv-df-time')?.value)||null;
   const u = currentUser;
@@ -8340,20 +8458,19 @@ function _renderPSVKpis(ymKey, y, m, sellers){
     const tids=(DB.times||[]).filter(t=>t.regionalId===u.regionalId).map(t=>t.id);
     meta = tids.reduce((a,id)=>a+getHubMeta(ymKey,id),0);
   } else {
-    // Gerente sem filtro → soma todos os HUBs do escopo
     const scopeTids = [...new Set(sellers.map(s=>s.timeId).filter(Boolean))];
     meta = scopeTids.reduce((a,id)=>a+getHubMeta(ymKey,id),0);
-    // Fallback: se nenhum HUB tem meta definida, usa soma individual
     if(!meta) meta = sellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
   }
-  const gap   = Math.max(0, meta-real);
-  const proj  = duPass>0 ? Math.round(real/duPass*duTotal) : 0;
-  const atv   = (DB.ativacaoManual||{})[ymKey] != null
+
+  // Projeção: mesmo cálculo do dashboard
+  const gap  = Math.max(0, meta - real);
+  const proj = duPass > 0 ? Math.round(real / duPass * duTotal) : 0;
+  const atv  = (DB.ativacaoManual||{})[ymKey] != null
     ? (DB.ativacaoManual||{})[ymKey]
     : sellers.reduce((a,s)=>a+totalAtivacao(ymKey,s.id),0);
-  const pct   = meta>0 ? Math.round(real/meta*100) : 0;
+  const pct  = meta > 0 ? Math.round(real / meta * 100) : 0;
 
-  // M0/M1/M2/Full
   const mc={m0:0,m1:0,m2:0,full:0};
   sellers.forEach(s=>{ mc[sellerMaturity(s)]++; });
 
@@ -8365,10 +8482,8 @@ function _renderPSVKpis(ymKey, y, m, sellers){
     {lbl:'Ativado',   val:atv,     color:'#d97706'},
     {lbl:'% Meta',    val:pct+'%', color:pct>=100?'#059669':pct>=80?'#d97706':'#dc2626'},
   ];
-  // SAFRA: M0/M1/M2 espelhados da soma dos HUBs cadastrados na guia Visão Geral por Regional
-  const tidsNoScope = [...new Set(sellers.map(s=>s.timeId).filter(Boolean))];
 
-  // Soma diretamente dos valores individuais dos HUBs (espelho da Visão Geral)
+  const tidsNoScope = [...new Set(sellers.map(s=>s.timeId).filter(Boolean))];
   let safraM0 = tidsNoScope.reduce((a,tid)=>a+((DB.mValues||{})[ymKey]?.[tid]?.M0||0),0);
   let safraM1 = tidsNoScope.reduce((a,tid)=>a+((DB.mValues||{})[ymKey]?.[tid]?.M1||0),0);
   let safraM2 = tidsNoScope.reduce((a,tid)=>a+((DB.mValues||{})[ymKey]?.[tid]?.M2||0),0);
@@ -8379,15 +8494,15 @@ function _renderPSVKpis(ymKey, y, m, sellers){
     {k:'M2', v:safraM2, c:'#d97706', bg:'rgba(217,119,6,.07)', border:'rgba(217,119,6,.2)'},
   ];
 
-  // TPV médio real e projetado: lê de DB.psvData.tpv[ymKey]
-  if(!DB.psvData) DB.psvData={};
-  if(!DB.psvData.tpv) DB.psvData.tpv={};
-  if(!DB.psvData.tpv[ymKey]) DB.psvData.tpv[ymKey]={};
-  if(!DB.psvData.tpvProj) DB.psvData.tpvProj={};
-  if(!DB.psvData.tpvProj[ymKey]) DB.psvData.tpvProj[ymKey]={};
-  const tpvD    = DB.psvData.tpv[ymKey];
-  const tpvProjD= DB.psvData.tpvProj[ymKey];
-
+  // TPV: lê da nova tabela DB.psvTpv por hubId
+  const hubId = String(_getHubIdForPsv());
+  function getTpvVal(mk, field){
+    const row = (DB.psvTpv||[]).find(r=>r.ymKey===ymKey && String(r.hubId)===hubId && r.mk===mk);
+    // Fallback legado para psvData
+    if(!row && DB.psvData?.tpv?.[ymKey]?.[mk]) return DB.psvData.tpv[ymKey][mk];
+    if(!row && field==='valor_proj' && DB.psvData?.tpvProj?.[ymKey]?.[mk]) return DB.psvData.tpvProj[ymKey][mk];
+    return row?.[field] || null;
+  }
   function tpvColor(v){ if(!v||v<15000) return '#dc2626'; if(v<20000) return '#d97706'; return '#059669'; }
 
   // ── Células KPI (6 células) ──
@@ -8416,7 +8531,7 @@ function _renderPSVKpis(ymKey, y, m, sellers){
       <div style="padding:3px 8px 2px;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl)">TPV médio real</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
         ${safraCols.map(s=>{
-          const cur=tpvD[s.k]||''; const c=tpvColor(cur);
+          const cur=getTpvVal(s.k,'valor_real'); const c=tpvColor(cur);
           return `<div style="padding:3px 4px 4px;border-right:1px solid ${s.border};text-align:center">
             <div style="font-size:9px;color:var(--tl);font-weight:600;margin-bottom:1px">R$</div>
             <input type="text" inputmode="numeric" id="psv-tpv-${s.k}" value="${cur?fmtBRL(cur):''}" placeholder="0,00"
@@ -8432,7 +8547,7 @@ function _renderPSVKpis(ymKey, y, m, sellers){
       <div style="padding:3px 8px 2px;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#7c3aed">TPV projetado</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
         ${safraCols.map(s=>{
-          const cur=tpvProjD[s.k]||''; const c=tpvColor(cur);
+          const cur=getTpvVal(s.k,'valor_proj'); const c=tpvColor(cur);
           return `<div style="padding:3px 4px 6px;border-right:1px solid ${s.border};text-align:center">
             <div style="font-size:9px;color:#7c3aed;font-weight:600;margin-bottom:1px">R$</div>
             <input type="text" inputmode="numeric" id="psv-tpvproj-${s.k}" value="${cur?fmtBRL(cur):''}" placeholder="0,00"
@@ -8491,7 +8606,14 @@ function _renderHCGrid(sellers){
 }
 
 function _renderPSVCharts(ymKey,y,m,sellers){
-  const t=today(), dias=getDiasCorridos(y,m);
+  const t=today();
+  // Dias úteis: espelho do dashboard
+  const duAll  = getDiasUteis(y,m);
+  const cfg    = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
+  const desconto = Math.max(0, parseInt(cfg.totalFeriados)||0);
+  const duTotal  = cfg.total  != null ? cfg.total  : Math.max(0, duAll.length - desconto);
+  const duPass   = cfg.passed != null ? cfg.passed : Math.max(0, duAll.filter(d=>d<=t).length - Math.round(desconto * duAll.filter(d=>d<=t).length / (duAll.length||1)));
+
   const real=sellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
 
   // Meta — mesma lógica do dashboard: metas dos HUBs filtrados
@@ -8597,8 +8719,12 @@ function psvUploadPhoto(e,sid){
 
 function _renderPSVSellerChart(ymKey,sellers){
   const t=today(), {y,m}=ymToYM(ymKey);
-  const dias=getDiasCorridos(y,m);
-  const duPass=dias.filter(d=>d<=t).length, duTotal=dias.length;
+  // Dias úteis: espelho do dashboard
+  const duAll  = getDiasUteis(y,m);
+  const cfg    = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
+  const desconto = Math.max(0, parseInt(cfg.totalFeriados)||0);
+  const duTotal  = cfg.total  != null ? cfg.total  : Math.max(0, duAll.length - desconto);
+  const duPass   = cfg.passed != null ? cfg.passed : Math.max(0, duAll.filter(d=>d<=t).length - Math.round(desconto * duAll.filter(d=>d<=t).length / (duAll.length||1)));
   const vendas = sellers.map(s=>sellerTotal(ymKey,s.id));
   const compr  = sellers.map(s=>duTotal>0 ? +(getSellerMeta(ymKey,s.id)*duPass/duTotal).toFixed(0) : getSellerMeta(ymKey,s.id));
   const proj   = sellers.map(s=>duPass>0 ? Math.round(sellerTotal(ymKey,s.id)/duPass*duTotal) : 0);
@@ -8850,28 +8976,63 @@ function saveHubEdit(){
 // ══ PLANO DE AÇÃO — SAVE / LOAD ══
 // CORREÇÃO: salva em DB.psvData (sincronizado com a nuvem) em vez de
 // apenas no localStorage (que era local ao dispositivo e nunca ia ao Sheets).
+// ── _planKey: legado (compatibilidade com psvData) ──
 function _planKey(){ return 'plan_'+(currentUser?.id||'default'); }
+
+// ── Plano de Ação — DB.psvPlano (tabela no Sheets) ──────────────────────────
+// Filtrado por userId + ymKey: cada usuário vê apenas o seu plano, por mês
+
+function _writePlanToTable(){
+  if(!DB.psvPlano) DB.psvPlano = [];
+  const uid = String(currentUser?.id||'default');
+  const ym  = currentYM;
+  DB.psvPlano = DB.psvPlano.filter(r => !(String(r.userId)===uid && r.ymKey===ym));
+  _psvPlan.forEach((row, i) => {
+    DB.psvPlano.push({
+      userId   : uid,
+      ymKey    : ym,
+      indicador: row.indicador || `Item ${i+1}`,
+      problema : row.problema  || '',
+      causa    : row.causa     || '',
+      acoes    : row.acoes     || '',
+      periodo  : row.periodo   || '',
+      resultado: row.resultado || '',
+    });
+  });
+}
 
 function psvLoadPlan(){
   try{
-    // 1ª prioridade: DB.psvData (nuvem) — fonte de verdade
-    if(!DB.psvData) DB.psvData = {};
-    const fromDB = DB.psvData[_planKey()];
-    if(Array.isArray(fromDB) && fromDB.length){
-      _psvPlan = fromDB;
+    if(!DB.psvPlano) DB.psvPlano = [];
+    const uid  = String(currentUser?.id||'default');
+    const ym   = currentYM;
+    const rows = DB.psvPlano.filter(r => String(r.userId)===uid && r.ymKey===ym);
+    if(rows.length){
+      _psvPlan = rows.map(r=>({
+        indicador: r.indicador||'', problema: r.problema||'',
+        causa: r.causa||'', acoes: r.acoes||'',
+        periodo: r.periodo||'', resultado: r.resultado||'',
+      }));
       return;
     }
-    // Fallback: localStorage (compatibilidade com versões anteriores)
+    // Fallback legado: psvData blob → migra automaticamente
+    if(DB.psvData){
+      const fromDB = DB.psvData[_planKey()];
+      if(Array.isArray(fromDB) && fromDB.length){
+        _psvPlan = fromDB;
+        _writePlanToTable();
+        return;
+      }
+    }
+    // Fallback: localStorage legado → migra automaticamente
     const lsKey = 'psv_plan_'+(currentUser?.id||'default');
     const raw = localStorage.getItem(lsKey);
     if(raw){
       const d = JSON.parse(raw);
       if(Array.isArray(d) && d.length){
         _psvPlan = d;
-        // Migra automaticamente do localStorage para o DB na primeira carga
-        DB.psvData[_planKey()] = _psvPlan;
-        saveDB();
-        localStorage.removeItem(lsKey); // remove chave legada após migrar
+        _writePlanToTable();
+        localStorage.removeItem(lsKey);
       }
     }
   }catch(e){}
@@ -8879,12 +9040,12 @@ function psvLoadPlan(){
 
 function psvSavePlan(){
   try{
-    // Salva em DB.psvData → saveDB() → sync com Google Sheets
-    if(!DB.psvData) DB.psvData = {};
-    DB.psvData[_planKey()] = JSON.parse(JSON.stringify(_psvPlan));
-    saveDB(); // persiste local + agenda push para nuvem
-
-    // Mostra badge "Salvo"
+    _writePlanToTable();
+    DB._savedAt = Date.now();
+    try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+    flashSaved();
+    clearTimeout(saveDB._t);
+    _syncEnqueue();
     const badge = document.getElementById('plan-saved-badge');
     if(badge){
       badge.style.opacity = '1';
@@ -8920,9 +9081,9 @@ window.addEventListener('offline', function(){
 </script>
 
 <!-- ══ FOOTER ══ -->
-<footer id="app-footer" style="position:fixed;bottom:0;left:var(--sw);right:0;z-index:80;background:#d1d5db;border-top:2px solid #9ca3af;padding:4px 22px;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 -2px 8px rgba(0,0,0,.08);">
-  <span style="font-family:var(--font);font-size:8px;font-weight:500;color:#111827;letter-spacing:.3px;">Idealizado por</span>
-  <span style="font-family:var(--font);font-size:8px;font-weight:800;color:#111827;letter-spacing:.4px;">Aldenir Medeiros</span>
+<footer id="app-footer" style="position:fixed;bottom:0;left:var(--sw);right:0;z-index:80;background:#d1d5db;border-top:2px solid #9ca3af;padding:8px 22px;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 -2px 8px rgba(0,0,0,.08);">
+  <span style="font-family:var(--font);font-size:12px;font-weight:500;color:#111827;letter-spacing:.3px;">Idealizado por</span>
+  <span style="font-family:var(--font);font-size:12px;font-weight:800;color:#111827;letter-spacing:.4px;">Aldenir Medeiros</span>
 </footer>
 <style>
 @media(max-width:768px){
