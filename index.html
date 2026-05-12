@@ -751,7 +751,15 @@ select.sel:focus{border-color:var(--blue);}
 .ov-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
 .ov-title-row h2{font-size:16px;font-weight:800;}
 .ov-table-wrap{background:var(--white);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden;}
-.ov-kpi-row{display:grid;grid-template-columns:repeat(4,1fr) 1.7fr;gap:14px;margin-bottom:20px;}
+.ov-kpi-row{display:grid;grid-template-columns:repeat(4,1fr) 1.7fr 1.7fr;gap:14px;margin-bottom:20px;}
+/* ── TPV Médio card inputs ── */
+.tpv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0 8px;width:100%;}
+.tpv-col-head{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--purple);text-align:center;padding-bottom:4px;border-bottom:1px solid rgba(124,58,237,.2);margin-bottom:6px;}
+.tpv-row-lbl{font-size:9.5px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.5px;padding:3px 0 2px;grid-column:1/-1;}
+.tpv-inp{width:100%;background:rgba(124,58,237,.06);border:1.5px solid rgba(124,58,237,.22);border-radius:7px;padding:4px 5px;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--purple);outline:none;text-align:center;transition:border-color .14s,background .14s;}
+.tpv-inp:focus{border-color:var(--purple);background:rgba(124,58,237,.12);}
+.tpv-inp.tpv-proj{background:rgba(37,99,235,.05);border-color:rgba(37,99,235,.2);color:var(--blue);}
+.tpv-inp.tpv-proj:focus{border-color:var(--blue);background:rgba(37,99,235,.10);}
 
 /* ── USER MANAGEMENT ── */
 .um-grid{display:grid;grid-template-columns:300px 1fr;gap:16px;}
@@ -842,6 +850,7 @@ canvas { display:block; max-width:100%; }
   .kpi-row{grid-template-columns:repeat(3,1fr);}
   .ov-kpi-row{grid-template-columns:repeat(3,1fr);}
   #psv-top-row{grid-template-columns:1fr 1fr 1fr!important;}
+
   .hc-card{min-width:160px;}
   .dash-layout{grid-template-columns:1fr!important;}
   .charts-row{grid-template-columns:1fr 1fr!important;}
@@ -1979,6 +1988,43 @@ canvas { display:block; max-width:100%; }
               <span id="ov-pct-atv" style="font-size:13px;font-weight:800;font-family:var(--mono);color:var(--teal)">—</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ── CARD TPV MÉDIO ── -->
+      <div class="kc" style="border-top:3px solid var(--purple);padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+        <div class="kc-lbl" style="width:100%;text-align:left">💰 TPV Médio</div>
+        <!-- Cabeçalho das colunas M1, M2, M3 -->
+        <div class="tpv-grid">
+          <div class="tpv-col-head">M0</div>
+          <div class="tpv-col-head">M1</div>
+          <div class="tpv-col-head">M2</div>
+        </div>
+        <!-- Linha: TPV Médio Real -->
+        <div class="tpv-grid" style="gap:4px 8px">
+          <div class="tpv-row-lbl">Real</div>
+          <input class="tpv-inp" id="tpv-real-M1" type="text" inputmode="numeric" placeholder="R$ 0,00"
+            onblur="saveTpvMedio(this,'tpv_real_M1')"
+            onkeydown="if(event.key==='Enter'){this.blur();}">
+          <input class="tpv-inp" id="tpv-real-M2" type="text" inputmode="numeric" placeholder="R$ 0,00"
+            onblur="saveTpvMedio(this,'tpv_real_M2')"
+            onkeydown="if(event.key==='Enter'){this.blur();}">
+          <input class="tpv-inp" id="tpv-real-M3" type="text" inputmode="numeric" placeholder="R$ 0,00"
+            onblur="saveTpvMedio(this,'tpv_real_M3')"
+            onkeydown="if(event.key==='Enter'){this.blur();}">
+        </div>
+        <!-- Linha: TPV Médio Projetado -->
+        <div class="tpv-grid" style="gap:4px 8px">
+          <div class="tpv-row-lbl">Projetado</div>
+          <input class="tpv-inp tpv-proj" id="tpv-proj-M1" type="text" inputmode="numeric" placeholder="R$ 0,00"
+            onblur="saveTpvMedio(this,'tpv_proj_M1')"
+            onkeydown="if(event.key==='Enter'){this.blur();}">
+          <input class="tpv-inp tpv-proj" id="tpv-proj-M2" type="text" inputmode="numeric" placeholder="R$ 0,00"
+            onblur="saveTpvMedio(this,'tpv_proj_M2')"
+            onkeydown="if(event.key==='Enter'){this.blur();}">
+          <input class="tpv-inp tpv-proj" id="tpv-proj-M3" type="text" inputmode="numeric" placeholder="R$ 0,00"
+            onblur="saveTpvMedio(this,'tpv_proj_M3')"
+            onkeydown="if(event.key==='Enter'){this.blur();}">
         </div>
       </div>
     </div>
@@ -7157,6 +7203,8 @@ function renderOverview(){
   const u       = currentUser;
 
   document.getElementById('ov-period').textContent=`${MESES[m]} ${y}`;
+  // Carrega valores do card TPV Médio
+  loadTpvMedioCard();
 
   // ── Barra de filtro: só gerente/aldenir vê o select ──
   const filterBar   = document.getElementById('ov-filter-bar');
@@ -7519,6 +7567,67 @@ function saveMPctInline(input, timeId, key, ymKey){
   input.className = 'm-inline-inp ' + (n==null?'m-empty':n<60?'m-red':n<100?'m-yellow':'m-green');
   saveDB();
   if(document.getElementById('page-psv')?.classList.contains('active')) renderPSV();
+}
+
+// ══ TPV MÉDIO — card na ov-kpi-row ══
+// Formata valor como R$ 0.000,00 enquanto o usuário digita
+function _maskBRL(v) {
+  let s = v.replace(/\D/g, '');
+  if (!s) return '';
+  const n = parseInt(s, 10);
+  return 'R$ ' + (n / 100).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+// Dispara a cada keyup para aplicar máscara em tempo real
+function tpvMedioMask(el) {
+  const raw = el.value.replace(/\D/g,'');
+  el.value = raw ? _maskBRL(raw) : '';
+}
+
+// Converte "R$ 1.234,56" → 1234.56
+function _parseBRL(s) {
+  if (!s) return null;
+  const cleaned = s.replace(/[R$\s.]/g,'').replace(',','.');
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? null : n;
+}
+
+// Salva no DB.mValues usando a chave "tpv_stats" + subchave (ex: "tpv_real_M1")
+function saveTpvMedio(input, key) {
+  // Aplica máscara ao sair (onblur)
+  const raw = input.value.replace(/\D/g,'');
+  input.value = raw ? _maskBRL(raw) : '';
+
+  const ymKey = String(currentYM);
+  const val   = _parseBRL(input.value);
+  const grpId = 'tpv_stats';
+
+  if (!DB.mValues) DB.mValues = {};
+  if (!DB.mValues[ymKey]) DB.mValues[ymKey] = {};
+  if (!DB.mValues[ymKey][grpId]) DB.mValues[ymKey][grpId] = {};
+
+  if (val === null) delete DB.mValues[ymKey][grpId][key];
+  else              DB.mValues[ymKey][grpId][key] = val;
+
+  saveDB();
+}
+
+// Carrega os valores do TPV Médio nos inputs do card
+function loadTpvMedioCard() {
+  const ymKey = String(currentYM);
+  const data  = (DB.mValues || {})[ymKey]?.['tpv_stats'] || {};
+  const fields = ['tpv_real_M1','tpv_real_M2','tpv_real_M3',
+                  'tpv_proj_M1','tpv_proj_M2','tpv_proj_M3'];
+  const ids    = ['tpv-real-M1','tpv-real-M2','tpv-real-M3',
+                  'tpv-proj-M1','tpv-proj-M2','tpv-proj-M3'];
+  fields.forEach((f, i) => {
+    const el = document.getElementById(ids[i]);
+    if (!el) return;
+    const v = data[f];
+    el.value = (v != null) ? _maskBRL(String(Math.round(v * 100))) : '';
+    // Aplica máscara de keyup dinamicamente
+    el.oninput = () => tpvMedioMask(el);
+  });
 }
 
 function _renderDPGrid(){
