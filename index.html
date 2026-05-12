@@ -1992,9 +1992,13 @@ canvas { display:block; max-width:100%; }
           <thead><tr>
             <th>Regional</th><th> HUB</th><th>Vendedores</th><th>Realizado</th><th>Meta</th>
             <th style="min-width:110px">% Meta</th><th>GAP</th><th>Ativações</th><th>% Ativação</th>
+            <th style="min-width:80px;text-align:center">CNPJ</th>
             <th style="min-width:70px;text-align:center">M0</th>
+            <th style="min-width:80px;text-align:center">ParcM0</th>
             <th style="min-width:70px;text-align:center">M1</th>
+            <th style="min-width:80px;text-align:center">ParcM1</th>
             <th style="min-width:70px;text-align:center">M2</th>
+            <th style="min-width:80px;text-align:center">ParcM2</th>
           </tr></thead>
           <tbody id="ov-tb"></tbody>
         </table>
@@ -7332,7 +7336,7 @@ function renderOverview(){
       <td><div class="pw"><div class="pt"><div class="pf ${rgPct>=1?'pg':rgPct>=0.6?'py':'pr'}" style="width:${Math.min(100,rgPct*100).toFixed(1)}%"></div></div>
           <span class="pp" style="color:${pcColor}">${(rgPct*100).toFixed(1)}%</span></div></td>
       <td><span class="gb ${rgGap===0?'gz':'gn'}">${rgGap===0?'✓':'-'+rgGap}</span></td>
-      <td colspan="5" style="color:var(--tl);font-size:11px">${rgTimes.length} HUB(s)</td>
+      <td colspan="9" style="color:var(--tl);font-size:11px">${rgTimes.length} HUB(s)</td>
     </tr>`;
 
     // Linhas dos times
@@ -7343,22 +7347,31 @@ function renderOverview(){
       const canEditM = currentUser?.role==='regional' || isGerente();
       // M0/M1/M2 — input inline, salva com Enter ou ao sair do campo
       const mData = (DB.mValues||{})[ymKey]?.[tm.id] || {};
+
+      // ── CNPJ (%) ──
+      const cnpjV = mData['CNPJ'];
+      const cnpjCls = cnpjV==null?'m-empty':cnpjV<60?'m-red':cnpjV<100?'m-yellow':'m-green';
+      const cnpjCell = canEditM
+        ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${cnpjCls}" style="width:52px" value="${cnpjV!=null?cnpjV:''}" placeholder="—" title="CNPJ" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,${tm.id},'CNPJ','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,${tm.id},'CNPJ','${ymKey}')"><span style="font-size:11px;color:var(--tl);font-weight:600">%</span></div></td>`
+        : `<td class="m-cell"><span class="m-val ${cnpjCls}">${cnpjV!=null?cnpjV+'%':'—'}</span></td>`;
+
+      // ── M0/M1/M2 + Parcelado M0/M1/M2 ──
       const mCells = ['M0','M1','M2'].map(mk=>{
+        // Score cell
         const v = mData[mk];
         let cls='m-empty';
         if(v!=null){ cls = v<26?'m-red': v<=29?'m-yellow': 'm-green'; }
-        if(canEditM){
-          return `<td class="m-cell"><input
-            type="number" min="0"
-            class="m-inline-inp ${cls}"
-            value="${v!=null?v:''}"
-            placeholder="—"
-            title="${mk}"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();saveMInline(this,${tm.id},'${mk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();"
-            onblur="saveMInline(this,${tm.id},'${mk}','${ymKey}')"
-          ></td>`;
-        }
-        return `<td class="m-cell"><span class="m-val ${cls}">${v!=null?v:'—'}</span></td>`;
+        const scoreCell = canEditM
+          ? `<td class="m-cell"><input type="number" min="0" class="m-inline-inp ${cls}" value="${v!=null?v:''}" placeholder="—" title="${mk}" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMInline(this,${tm.id},'${mk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMInline(this,${tm.id},'${mk}','${ymKey}')"></td>`
+          : `<td class="m-cell"><span class="m-val ${cls}">${v!=null?v:'—'}</span></td>`;
+        // Parcelado (%) cell
+        const pk = 'P'+mk;
+        const pv = mData[pk];
+        const pcls = pv==null?'m-empty':pv<60?'m-red':pv<100?'m-yellow':'m-green';
+        const pctCell = canEditM
+          ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${pcls}" style="width:52px" value="${pv!=null?pv:''}" placeholder="—" title="Parcelado ${mk}" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,${tm.id},'${pk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,${tm.id},'${pk}','${ymKey}')"><span style="font-size:11px;color:var(--tl);font-weight:600">%</span></div></td>`
+          : `<td class="m-cell"><span class="m-val ${pcls}">${pv!=null?pv+'%':'—'}</span></td>`;
+        return scoreCell + pctCell;
       }).join('');
       tb+=`<tr>
         <td></td>
@@ -7379,24 +7392,40 @@ function renderOverview(){
         <td><span class="gb ${st.gap===0?'gz':'gn'}">${st.gap===0?'✓':'-'+st.gap}</span></td>
         <td class="mono fw7" style="color:var(--teal)">${st.atv}</td>
         <td class="mono fw7" style="color:var(--teal)">${(st.atvP*100).toFixed(1)}%</td>
+        ${cnpjCell}
         ${mCells}
       </tr>`;
     });
   });
 
-  if(!rgCount) tb=`<tr><td colspan="12" style="text-align:center;padding:28px;color:var(--tl)">Nenhuma regional / time no escopo</td></tr>`;
+  if(!rgCount) tb=`<tr><td colspan="16" style="text-align:center;padding:28px;color:var(--tl)">Nenhuma regional / time no escopo</td></tr>`;
 
   // Linha de total geral — M0/M1/M2 editáveis manualmente (chave especial: timeId=0)
   const totMv = (DB.mValues||{})[ymKey]?.['total']||{};
   const canEditM = currentUser?.role==='regional' || isGerente();
+
+  // CNPJ total
+  const totCnpjV = totMv['CNPJ'];
+  const totCnpjCls = totCnpjV==null?'m-empty':totCnpjV<60?'m-red':totCnpjV<100?'m-yellow':'m-green';
+  const totCnpjCell = canEditM
+    ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${totCnpjCls}" style="width:52px" value="${totCnpjV!=null?totCnpjV:''}" placeholder="—" title="CNPJ Total" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,'total','CNPJ','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,'total','CNPJ','${ymKey}')"><span style="font-size:11px;color:var(--tl);font-weight:600">%</span></div></td>`
+    : `<td class="m-cell"><span class="m-val ${totCnpjCls}">${totCnpjV!=null?totCnpjV+'%':'—'}</span></td>`;
+
   const totMCells = ['M0','M1','M2'].map(mk=>{
+    // Score cell
     const v = totMv[mk];
     let cls = v==null?'m-empty':v<26?'m-red':v<=29?'m-yellow':'m-green';
-    if(canEditM) return `<td class="m-cell"><input type="number" min="0" class="m-inline-inp ${cls}" value="${v!=null?v:''}" placeholder="—" title="${mk} Total"
-      onkeydown="if(event.key==='Enter'){event.preventDefault();saveMInline(this,'total','${mk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();"
-      onblur="saveMInline(this,'total','${mk}','${ymKey}')"
-    ></td>`;
-    return `<td class="m-cell"><span class="m-val ${cls}">${v!=null?v:'—'}</span></td>`;
+    const scoreCell = canEditM
+      ? `<td class="m-cell"><input type="number" min="0" class="m-inline-inp ${cls}" value="${v!=null?v:''}" placeholder="—" title="${mk} Total" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMInline(this,'total','${mk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMInline(this,'total','${mk}','${ymKey}')"></td>`
+      : `<td class="m-cell"><span class="m-val ${cls}">${v!=null?v:'—'}</span></td>`;
+    // Parcelado (%) total cell
+    const pk = 'P'+mk;
+    const pv = totMv[pk];
+    const pcls = pv==null?'m-empty':pv<60?'m-red':pv<100?'m-yellow':'m-green';
+    const pctCell = canEditM
+      ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${pcls}" style="width:52px" value="${pv!=null?pv:''}" placeholder="—" title="Parcelado ${mk} Total" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,'total','${pk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,'total','${pk}','${ymKey}')"><span style="font-size:11px;color:var(--tl);font-weight:600">%</span></div></td>`
+      : `<td class="m-cell"><span class="m-val ${pcls}">${pv!=null?pv+'%':'—'}</span></td>`;
+    return scoreCell + pctCell;
   }).join('');
 
   tb+=`<tr class="tr-tot">
@@ -7408,6 +7437,7 @@ function renderOverview(){
     <td><span class="gb ${tGap===0?'gz':'gn'}">${tGap===0?'✓':'-'+tGap}</span></td>
     <td class="mono" style="color:var(--teal)">${tAtv}</td>
     <td class="mono" style="color:var(--teal)">${(tAtvP*100).toFixed(1)}%</td>
+    ${totCnpjCell}
     ${totMCells}
   </tr>`;
 
@@ -7472,6 +7502,21 @@ function saveMInline(input, timeId, key, ymKey){
   if(n===null) delete DB.mValues[ymKey][timeId][key];
   else DB.mValues[ymKey][timeId][key] = n;
   input.className = 'm-inline-inp ' + (n==null?'m-empty':n<26?'m-red':n<=29?'m-yellow':'m-green');
+  saveDB();
+  if(document.getElementById('page-psv')?.classList.contains('active')) renderPSV();
+}
+
+// Salva campos de porcentagem (CNPJ, Parcelado M0/M1/M2)
+// Usa parseFloat e lógica de cores baseada em % (≥100 verde, ≥60 amarelo, <60 vermelho)
+function saveMPctInline(input, timeId, key, ymKey){
+  const v = input.value.trim();
+  const n = v==='' ? null : parseFloat(v);
+  if(!DB.mValues) DB.mValues={};
+  if(!DB.mValues[ymKey]) DB.mValues[ymKey]={};
+  if(!DB.mValues[ymKey][timeId]) DB.mValues[ymKey][timeId]={};
+  if(n===null) delete DB.mValues[ymKey][timeId][key];
+  else DB.mValues[ymKey][timeId][key] = n;
+  input.className = 'm-inline-inp ' + (n==null?'m-empty':n<60?'m-red':n<100?'m-yellow':'m-green');
   saveDB();
   if(document.getElementById('page-psv')?.classList.contains('active')) renderPSV();
 }
