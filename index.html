@@ -469,7 +469,7 @@ select.sel:focus{border-color:var(--blue);}
 .dt tbody tr.seller-row:hover td{background:#eff6ff;}
 .dt tbody tr.seller-row.selected td{background:#eff6ff;border-left:3px solid var(--blue);}
 .dt tbody tr.seller-row.selected td:first-child{padding-left:11px;}
-.dt .tr-tot td{background:#f0f9ff;font-weight:700;color:var(--blue);border-top:2px solid var(--border);}
+.dt .tr-tot td{background:linear-gradient(90deg,rgba(37,99,235,.12),rgba(37,99,235,.07));font-weight:800;color:var(--blue);border-top:3px solid var(--blue);border-bottom:2px solid rgba(37,99,235,.3);font-size:13px;}
 .sc{display:inline-flex;align-items:center;gap:6px;font-weight:600;}
 .sd{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 .pw{display:flex;align-items:center;gap:7px;}
@@ -751,6 +751,21 @@ select.sel:focus{border-color:var(--blue);}
 .ov-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
 .ov-title-row h2{font-size:16px;font-weight:800;}
 .ov-table-wrap{background:var(--white);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden;}
+/* ── OVERVIEW TABLE — COMPACT ── */
+.ov-tbl{table-layout:fixed;width:100%;font-size:10.5px;}
+.ov-tbl th{padding:5px 3px;font-size:8.5px;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ov-tbl td{padding:5px 3px;font-size:10.5px;}
+.ov-tbl .sc{gap:3px;}
+.ov-tbl .sd{width:6px;height:6px;flex-shrink:0;}
+.ov-tbl .pw{gap:3px;}
+.ov-tbl .pt{min-width:18px;height:4px;}
+.ov-tbl .pp{font-size:9.5px;min-width:24px;}
+.ov-tbl .gb{font-size:9.5px;padding:1px 4px;}
+.ov-tbl .m-inline-inp{width:34px!important;font-size:9px;padding:2px 2px;border-radius:4px;}
+.ov-tbl .m-val{font-size:9px;min-width:22px;padding:0 3px;height:18px;}
+.ov-tbl .m-cell>div{gap:1px;}
+.ov-tbl .mono{font-size:10px;}
+.ov-tbl .tr-tot td{font-size:11px!important;}
 .ov-kpi-row{display:grid;grid-template-columns:repeat(4,1fr) 1.7fr 1.7fr;gap:14px;margin-bottom:20px;}
 /* ── TPV Médio card inputs ── */
 .tpv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0 8px;width:100%;}
@@ -1920,15 +1935,15 @@ canvas { display:block; max-width:100%; }
     </div>
     <!-- KPIs resumo -->
     <div class="ov-kpi-row" id="ov-kpi-row">
-      <div class="kc kc-g"><div class="kc-bar"></div>
-        <div class="kc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg></div>
-        <div class="kc-lbl">Total Realizado</div><div class="kc-val" id="ov-real">—</div>
-        <div class="kc-sub" id="ov-real-s">equipe</div>
-      </div>
       <div class="kc kc-b"><div class="kc-bar"></div>
         <div class="kc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
         <div class="kc-lbl">Meta Total</div><div class="kc-val" id="ov-meta">—</div>
         <div class="kc-sub" id="ov-meta-s">equipe</div>
+      </div>
+      <div class="kc kc-g"><div class="kc-bar"></div>
+        <div class="kc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg></div>
+        <div class="kc-lbl">Total Realizado</div><div class="kc-val" id="ov-real">—</div>
+        <div class="kc-sub" id="ov-real-s">equipe</div>
       </div>
       <div class="kc kc-t"><div class="kc-bar"></div>
         <div class="kc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
@@ -2034,17 +2049,25 @@ canvas { display:block; max-width:100%; }
         <div class="card-title"><div class="ctd" style="background:var(--blue)"></div>Resultado por Time — <span id="ov-period" style="color:var(--tl);font-weight:400">—</span></div>
       </div>
       <div style="overflow-x:auto">
-        <table class="dt">
+        <table class="dt ov-tbl">
           <thead><tr>
-            <th>Regional</th><th> HUB</th><th>Vendedores</th><th>Realizado</th><th>Meta</th>
-            <th style="min-width:110px">% Meta</th><th>GAP</th><th>Ativações</th><th>% Ativ</th>
-            <th style="min-width:80px;text-align:center">CNPJ</th>
-            <th style="min-width:80px;text-align:center">M0</th>
-            <th style="min-width:80px;text-align:center">ParM0</th>
-            <th style="min-width:80px;text-align:center">M1</th>
-            <th style="min-width:80px;text-align:center">ParM1</th>
-            <th style="min-width:80px;text-align:center">M2</th>
-            <th style="min-width:80px;text-align:center">ParM2</th>
+            <th style="width:2%"></th>
+            <th style="width:14%">HUB</th>
+            <th style="width:4%;text-align:center">Vend.</th>
+            <th style="width:5%;text-align:center">Real.</th>
+            <th style="width:5%;text-align:center">Meta</th>
+            <th style="width:6.5%">% Meta</th>
+            <th style="width:4%;text-align:center">GAP</th>
+            <th style="width:5%;text-align:center">Ativ.</th>
+            <th style="width:4%;text-align:center">%Atv</th>
+            <th style="width:4.5%;text-align:center">Proj.</th>
+            <th style="width:5.5%;text-align:center">CNPJ</th>
+            <th style="width:5.5%;text-align:center">M0</th>
+            <th style="width:5.5%;text-align:center">PM0</th>
+            <th style="width:5.5%;text-align:center">M1</th>
+            <th style="width:5.5%;text-align:center">PM1</th>
+            <th style="width:5.5%;text-align:center">M2</th>
+            <th style="width:5.5%;text-align:center">PM2</th>
           </tr></thead>
           <tbody id="ov-tb"></tbody>
         </table>
@@ -7304,6 +7327,7 @@ function renderOverview(){
   const tGap  = Math.max(0,tMeta-tReal);
   const tPct  = tMeta>0?tReal/tMeta:0;
   const tAtvP = tReal>0?tAtv/tReal:0;
+  const tProj = duPass>0 ? Math.round(tReal/duPass*duTotal) : 0;
 
   document.getElementById('ov-real').textContent=tReal;
   document.getElementById('ov-real-s').textContent=`${(tPct*100).toFixed(1)}% da meta`;
@@ -7372,19 +7396,19 @@ function renderOverview(){
     const rgGap     = Math.max(0,rgMeta-rgReal);
     const pcColor   = rgPct>=1?'var(--green)':rgPct>=0.6?'var(--orange)':'var(--red)';
     tb+=`<tr style="background:${rg.color}12;border-left:3px solid ${rg.color}">
-      <td colspan="2" style="font-weight:800;font-size:13px;color:${rg.color};padding-left:14px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div style="width:9px;height:9px;border-radius:50%;background:${rg.color}"></div>
-          ${rg.nome}
+      <td colspan="2" style="font-weight:800;font-size:11px;color:${rg.color};padding-left:8px">
+        <div style="display:flex;align-items:center;gap:5px">
+          <div style="width:7px;height:7px;border-radius:50%;background:${rg.color};flex-shrink:0"></div>
+          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rg.nome}</span>
         </div>
       </td>
-      <td class="mono fw7">${rgSellers.length}</td>
-      <td class="mono fw7" style="color:var(--green)">${rgReal}</td>
-      <td class="mono">${rgMeta}</td>
+      <td class="mono fw7" style="text-align:center">${rgSellers.length}</td>
+      <td class="mono fw7 fg-g" style="text-align:center">${rgReal}</td>
+      <td class="mono" style="text-align:center">${rgMeta}</td>
       <td><div class="pw"><div class="pt"><div class="pf ${rgPct>=1?'pg':rgPct>=0.6?'py':'pr'}" style="width:${Math.min(100,rgPct*100).toFixed(1)}%"></div></div>
           <span class="pp" style="color:${pcColor}">${(rgPct*100).toFixed(1)}%</span></div></td>
-      <td><span class="gb ${rgGap===0?'gz':'gn'}">${rgGap===0?'✓':'-'+rgGap}</span></td>
-      <td colspan="9" style="color:var(--tl);font-size:11px">${rgTimes.length} HUB(s)</td>
+      <td style="text-align:center"><span class="gb ${rgGap===0?'gz':'gn'}">${rgGap===0?'✓':'-'+rgGap}</span></td>
+      <td colspan="10" style="color:var(--tl);font-size:9.5px">${rgTimes.length} HUB(s)</td>
     </tr>`;
 
     // Linhas dos times
@@ -7400,24 +7424,31 @@ function renderOverview(){
       const cnpjV = mData['CNPJ'];
       const cnpjCls = cnpjV==null?'m-empty':cnpjV<60?'m-red':cnpjV<100?'m-yellow':'m-green';
       const cnpjCell = canEditM
-        ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${cnpjCls}" style="width:52px" value="${cnpjV!=null?cnpjV:''}" placeholder="—" title="CNPJ" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,${tm.id},'CNPJ','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,${tm.id},'CNPJ','${ymKey}')"><span style="font-size:11px;color:var(--tl);font-weight:600">%</span></div></td>`
+        ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${cnpjCls}" style="width:34px" value="${cnpjV!=null?cnpjV:''}" placeholder="—" title="CNPJ" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,${tm.id},'CNPJ','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,${tm.id},'CNPJ','${ymKey}')"><span style="font-size:9px;color:var(--tl);font-weight:600">%</span></div></td>`
         : `<td class="m-cell"><span class="m-val ${cnpjCls}">${cnpjV!=null?cnpjV+'%':'—'}</span></td>`;
 
-      // ── M0/M1/M2 + Parcelado M0/M1/M2 ──
+      // ── Ativação manual por HUB ──
+      const atvV = mData['atv'];
+      const atvCell = canEditM
+        ? `<td class="mono fw7" style="color:var(--teal)"><input type="number" min="0" class="m-inline-inp" style="width:34px;color:var(--teal);border-color:rgba(13,148,136,.3);background:rgba(13,148,136,.06)" value="${atvV!=null?atvV:''}" placeholder="—" title="Ativações" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMInline(this,${tm.id},'atv','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMInline(this,${tm.id},'atv','${ymKey}')"></td>`
+        : `<td class="mono fw7" style="color:var(--teal)">${atvV!=null?atvV:st.atv}</td>`;
+      // % Ativ based on manual or auto
+      const atvDisplay = atvV!=null ? atvV : st.atv;
+      const atvPDisplay = st.real>0 ? (atvDisplay/st.real*100).toFixed(1)+'%' : '—';
       const mCells = ['M0','M1','M2'].map(mk=>{
-        // Score cell
+        // Score cell — now treated as percentage
         const v = mData[mk];
         let cls='m-empty';
-        if(v!=null){ cls = v<26?'m-red': v<=29?'m-yellow': 'm-green'; }
+        if(v!=null){ cls = v<60?'m-red': v<100?'m-yellow': 'm-green'; }
         const scoreCell = canEditM
-          ? `<td class="m-cell"><input type="number" min="0" class="m-inline-inp ${cls}" value="${v!=null?v:''}" placeholder="—" title="${mk}" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMInline(this,${tm.id},'${mk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMInline(this,${tm.id},'${mk}','${ymKey}')"></td>`
-          : `<td class="m-cell"><span class="m-val ${cls}">${v!=null?v:'—'}</span></td>`;
+          ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${cls}" style="width:34px" value="${v!=null?v:''}" placeholder="—" title="${mk}" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,${tm.id},'${mk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,${tm.id},'${mk}','${ymKey}')"><span style="font-size:9px;color:var(--tl);font-weight:600">%</span></div></td>`
+          : `<td class="m-cell"><span class="m-val ${cls}">${v!=null?v+'%':'—'}</span></td>`;
         // Parcelado (%) cell
         const pk = 'P'+mk;
         const pv = mData[pk];
         const pcls = pv==null?'m-empty':pv<60?'m-red':pv<100?'m-yellow':'m-green';
         const pctCell = canEditM
-          ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${pcls}" style="width:52px" value="${pv!=null?pv:''}" placeholder="—" title="Parcelado ${mk}" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,${tm.id},'${pk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,${tm.id},'${pk}','${ymKey}')"><span style="font-size:11px;color:var(--tl);font-weight:600">%</span></div></td>`
+          ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${pcls}" style="width:34px" value="${pv!=null?pv:''}" placeholder="—" title="Parcelado ${mk}" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,${tm.id},'${pk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,${tm.id},'${pk}','${ymKey}')"><span style="font-size:9px;color:var(--tl);font-weight:600">%</span></div></td>`
           : `<td class="m-cell"><span class="m-val ${pcls}">${pv!=null?pv+'%':'—'}</span></td>`;
         return scoreCell + pctCell;
       }).join('');
@@ -7425,28 +7456,29 @@ function renderOverview(){
         <td></td>
         <td>
           <div class="sc">
-            <div class="sd" style="background:${tm.color||rg.color}"></div>
-            <div>
-              <div style="font-weight:700">${tm.nome}</div>
-              ${sup?`<div style="font-size:10px;color:var(--tl)">Sup: ${sup.nome||sup.username}</div>`:''}
+            <div class="sd" style="background:${tm.color||rg.color};flex-shrink:0"></div>
+            <div style="min-width:0;overflow:hidden">
+              <div style="font-weight:700;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tm.nome}</div>
+              ${sup?`<div style="font-size:9px;color:var(--tl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sup.nome||sup.username}</div>`:''}
             </div>
           </div>
         </td>
-        <td class="mono fw7">${st.sellers}</td>
-        <td class="mono fw7 fg-g">${st.real}</td>
-        <td class="mono">${st.meta}</td>
+        <td class="mono fw7" style="text-align:center">${st.sellers}</td>
+        <td class="mono fw7 fg-g" style="text-align:center">${st.real}</td>
+        <td class="mono" style="text-align:center">${st.meta}</td>
         <td><div class="pw"><div class="pt"><div class="pf ${st.pct>=1?'pg':st.pct>=0.6?'py':'pr'}" style="width:${Math.min(100,st.pct*100).toFixed(1)}%"></div></div>
             <span class="pp" style="color:${pc}">${(st.pct*100).toFixed(1)}%</span></div></td>
-        <td><span class="gb ${st.gap===0?'gz':'gn'}">${st.gap===0?'✓':'-'+st.gap}</span></td>
-        <td class="mono fw7" style="color:var(--teal)">${st.atv}</td>
-        <td class="mono fw7" style="color:var(--teal)">${(st.atvP*100).toFixed(1)}%</td>
+        <td style="text-align:center"><span class="gb ${st.gap===0?'gz':'gn'}">${st.gap===0?'✓':'-'+st.gap}</span></td>
+        ${atvCell}
+        <td class="mono fw7" style="color:var(--teal);text-align:center">${atvPDisplay}</td>
+        <td class="mono" style="color:var(--purple);font-weight:700;text-align:center">${Math.round(st.proj)}</td>
         ${cnpjCell}
         ${mCells}
       </tr>`;
     });
   });
 
-  if(!rgCount) tb=`<tr><td colspan="16" style="text-align:center;padding:28px;color:var(--tl)">Nenhuma regional / time no escopo</td></tr>`;
+  if(!rgCount) tb=`<tr><td colspan="17" style="text-align:center;padding:28px;color:var(--tl)">Nenhuma regional / time no escopo</td></tr>`;
 
   // Linha de total geral — M0/M1/M2 editáveis manualmente (chave especial: timeId=0)
   const totMv = (DB.mValues||{})[ymKey]?.['total']||{};
@@ -7456,35 +7488,36 @@ function renderOverview(){
   const totCnpjV = totMv['CNPJ'];
   const totCnpjCls = totCnpjV==null?'m-empty':totCnpjV<60?'m-red':totCnpjV<100?'m-yellow':'m-green';
   const totCnpjCell = canEditM
-    ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${totCnpjCls}" style="width:52px" value="${totCnpjV!=null?totCnpjV:''}" placeholder="—" title="CNPJ Total" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,'total','CNPJ','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,'total','CNPJ','${ymKey}')"><span style="font-size:11px;color:var(--tl);font-weight:600">%</span></div></td>`
+    ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${totCnpjCls}" style="width:34px" value="${totCnpjV!=null?totCnpjV:''}" placeholder="—" title="CNPJ Total" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,'total','CNPJ','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,'total','CNPJ','${ymKey}')"><span style="font-size:9px;color:var(--tl);font-weight:600">%</span></div></td>`
     : `<td class="m-cell"><span class="m-val ${totCnpjCls}">${totCnpjV!=null?totCnpjV+'%':'—'}</span></td>`;
 
   const totMCells = ['M0','M1','M2'].map(mk=>{
-    // Score cell
+    // Score cell — percentage
     const v = totMv[mk];
-    let cls = v==null?'m-empty':v<26?'m-red':v<=29?'m-yellow':'m-green';
+    let cls = v==null?'m-empty':v<60?'m-red':v<100?'m-yellow':'m-green';
     const scoreCell = canEditM
-      ? `<td class="m-cell"><input type="number" min="0" class="m-inline-inp ${cls}" value="${v!=null?v:''}" placeholder="—" title="${mk} Total" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMInline(this,'total','${mk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMInline(this,'total','${mk}','${ymKey}')"></td>`
-      : `<td class="m-cell"><span class="m-val ${cls}">${v!=null?v:'—'}</span></td>`;
+      ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${cls}" style="width:34px" value="${v!=null?v:''}" placeholder="—" title="${mk} Total" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,'total','${mk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,'total','${mk}','${ymKey}')"><span style="font-size:9px;color:var(--tl);font-weight:600">%</span></div></td>`
+      : `<td class="m-cell"><span class="m-val ${cls}">${v!=null?v+'%':'—'}</span></td>`;
     // Parcelado (%) total cell
     const pk = 'P'+mk;
     const pv = totMv[pk];
     const pcls = pv==null?'m-empty':pv<60?'m-red':pv<100?'m-yellow':'m-green';
     const pctCell = canEditM
-      ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${pcls}" style="width:52px" value="${pv!=null?pv:''}" placeholder="—" title="Parcelado ${mk} Total" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,'total','${pk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,'total','${pk}','${ymKey}')"><span style="font-size:11px;color:var(--tl);font-weight:600">%</span></div></td>`
+      ? `<td class="m-cell"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${pcls}" style="width:34px" value="${pv!=null?pv:''}" placeholder="—" title="Parcelado ${mk} Total" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,'total','${pk}','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,'total','${pk}','${ymKey}')"><span style="font-size:9px;color:var(--tl);font-weight:600">%</span></div></td>`
       : `<td class="m-cell"><span class="m-val ${pcls}">${pv!=null?pv+'%':'—'}</span></td>`;
     return scoreCell + pctCell;
   }).join('');
 
   tb+=`<tr class="tr-tot">
     <td colspan="3">TOTAL GERAL</td>
-    <td class="mono">${tReal}</td>
-    <td class="mono">${tMeta}</td>
+    <td class="mono" style="text-align:center">${tReal}</td>
+    <td class="mono" style="text-align:center">${tMeta}</td>
     <td><div class="pw"><div class="pt"><div class="pf pb" style="width:${Math.min(100,tPct*100).toFixed(1)}%"></div></div>
         <span class="pp fg-b">${(tPct*100).toFixed(1)}%</span></div></td>
-    <td><span class="gb ${tGap===0?'gz':'gn'}">${tGap===0?'✓':'-'+tGap}</span></td>
-    <td class="mono" style="color:var(--teal)">${tAtv}</td>
-    <td class="mono" style="color:var(--teal)">${(tAtvP*100).toFixed(1)}%</td>
+    <td style="text-align:center"><span class="gb ${tGap===0?'gz':'gn'}">${tGap===0?'✓':'-'+tGap}</span></td>
+    <td class="mono" style="color:var(--teal);text-align:center">${tAtv}</td>
+    <td class="mono" style="color:var(--teal);text-align:center">${(tAtvP*100).toFixed(1)}%</td>
+    <td class="mono" style="color:var(--purple);font-weight:800;text-align:center">${tProj}</td>
     ${totCnpjCell}
     ${totMCells}
   </tr>`;
@@ -7597,6 +7630,7 @@ function saveTpvMedio(input, key) {
   // Aplica máscara ao sair (onblur)
   const raw = input.value.replace(/\D/g,'');
   input.value = raw ? _maskBRL(raw) : '';
+  _applyTpvColor(input, input.value);
 
   const ymKey = String(currentYM);
   const val   = _parseBRL(input.value);
@@ -7610,6 +7644,26 @@ function saveTpvMedio(input, key) {
   else              DB.mValues[ymKey][grpId][key] = val;
 
   saveDB();
+}
+
+// Retorna a cor do TPV Médio conforme o valor
+function _tpvColor(v) {
+  if (v == null) return '';
+  if (v < 8000)  return 'rgba(220,38,38,.12)';
+  if (v < 18000) return 'rgba(217,119,6,.12)';
+  return 'rgba(5,150,105,.12)';
+}
+function _tpvBorderColor(v) {
+  if (v == null) return '';
+  if (v < 8000)  return 'rgba(220,38,38,.4)';
+  if (v < 18000) return 'rgba(217,119,6,.4)';
+  return 'rgba(5,150,105,.4)';
+}
+function _tpvTextColor(v) {
+  if (v == null) return 'var(--purple)';
+  if (v < 8000)  return 'var(--red)';
+  if (v < 18000) return 'var(--orange)';
+  return 'var(--green)';
 }
 
 // Carrega os valores do TPV Médio nos inputs do card
@@ -7626,8 +7680,17 @@ function loadTpvMedioCard() {
     const v = data[f];
     el.value = (v != null) ? _maskBRL(String(Math.round(v * 100))) : '';
     // Aplica máscara de keyup dinamicamente
-    el.oninput = () => tpvMedioMask(el);
+    el.oninput = () => { tpvMedioMask(el); _applyTpvColor(el, el.value); };
+    // Aplica cor
+    _applyTpvColor(el, el.value);
   });
+}
+
+function _applyTpvColor(el, rawVal) {
+  const v = _parseBRL(rawVal);
+  el.style.background = v != null ? _tpvColor(v) : '';
+  el.style.borderColor = v != null ? _tpvBorderColor(v) : '';
+  el.style.color = _tpvTextColor(v);
 }
 
 function _renderDPGrid(){
