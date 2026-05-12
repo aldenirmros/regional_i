@@ -3868,7 +3868,7 @@ function renderLancar(){
   document.getElementById('hist-period').textContent=`${MESES[m]} ${y}`;
 
   const u = currentUser;
-  const allVs=[...getVendas(ymKey)].sort((a,b)=>b.ts.localeCompare(a.ts));
+  const allVs=[...getVendas(ymKey)].sort((a,b)=>(b.ts||b.date||'').localeCompare(a.ts||a.date||''));
 
   // ── Monta lista base de vendedores visíveis por patente ──
   // GERENTE (inclui aldenir/superAdmin): usa lancarHubFilter/lancarRegionalFilter DIRETAMENTE
@@ -3936,7 +3936,7 @@ function renderLancar(){
       allVs.filter(v=>v.sellerId===s.id && v.date<lastOut.date)
            .forEach(v=>vsHistorico.push({...v, _transferDate:lastOut.date, _seller:s}));
     });
-    vsHistorico.sort((a,b)=>b.ts.localeCompare(a.ts));
+    vsHistorico.sort((a,b)=>(b.ts||b.date||'').localeCompare(a.ts||a.date||''));
   }
 
   // ── Contagem ──
