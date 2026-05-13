@@ -2813,7 +2813,13 @@ const _SEED_CREDS = {
   'pedro':     '12345',    // supervisor
   'daniel':    '12345',
   'thiago':    '12345',
-  'gerente':   'gerente123'
+  'gerente':   'gerente123',
+  'amaury':    '12345',
+  'michella':  '12345',
+  'diogo':     '12345',
+  'maykon':    '12345',
+  'cleyton':   '12345',
+  'alex':      '12345'
 };
 // pedro regional tem senha diferente — mapeado por id
 const _SEED_CREDS_BY_ID = {
@@ -4680,8 +4686,12 @@ function addTime(){
   }
 
   if(!DB.users) DB.users=[];
-  DB.users.push({id:Date.now()+1, username:supUser, password:supPass, role:'supervisor',
-    nome:supNome||supUser, timeId, regionalId, color:'#059669'});
+  const newSupTime={id:Date.now()+1, username:supUser, password:supPass, role:'supervisor',
+    nome:supNome||supUser, timeId, regionalId, color:'#059669'};
+  DB.users.push(newSupTime);
+  // ── Garante que a senha fica no cache local E no seed em memória ──
+  _updatePwCache([newSupTime]);
+  _SEED_CREDS[supUser]=supPass;
 
   saveDB(); renderSellers();
   document.getElementById('time-nome').value='';
@@ -4739,8 +4749,14 @@ function addRegional(){
 
   DB.regionais.push({id:rgId, nome, color});
   DB.times.push({id:tmId, nome:timeNome, regionalId:rgId, color});
-  DB.users.push({id:admId, username:admUser, password:admPass, role:'regional',  nome:admNome||admUser, regionalId:rgId, timeId:null, color});
-  DB.users.push({id:supId, username:supUser, password:supPass, role:'supervisor', nome:supNome||supUser, regionalId:rgId, timeId:tmId,  color:'#059669'});
+  const newAdmUser={id:admId, username:admUser, password:admPass, role:'regional',  nome:admNome||admUser, regionalId:rgId, timeId:null, color};
+  const newSupUser2={id:supId, username:supUser, password:supPass, role:'supervisor', nome:supNome||supUser, regionalId:rgId, timeId:tmId,  color:'#059669'};
+  DB.users.push(newAdmUser);
+  DB.users.push(newSupUser2);
+  // ── Garante que as senhas ficam no cache local E no seed em memória ──
+  _updatePwCache([newAdmUser, newSupUser2]);
+  _SEED_CREDS[admUser]=admPass;
+  _SEED_CREDS[supUser]=supPass;
 
   saveDB(); renderRegionais(); populateDashFilter();
 
@@ -5131,8 +5147,12 @@ function dbSaveHub(){
     DB.hubMetas[currentYM][timeId]=metaHub;
   }
   if(!DB.users) DB.users=[];
-  DB.users.push({id:Date.now()+1,username:supUser,password:supPass,role:'supervisor',
-    nome:supNome||supUser,timeId,regionalId,color:'#059669',_ts:Date.now()+2});
+  const newSupUser={id:Date.now()+1,username:supUser,password:supPass,role:'supervisor',
+    nome:supNome||supUser,timeId,regionalId,color:'#059669',_ts:Date.now()+2};
+  DB.users.push(newSupUser);
+  // ── Garante que a senha fica no cache local E no seed em memória ──
+  _updatePwCache([newSupUser]);
+  _SEED_CREDS[supUser]=supPass;
   saveDB();
   ['dba-h-nome','dba-h-sup-user','dba-h-sup-pass','dba-h-sup-nome'].forEach(i=>{const e=document.getElementById(i);if(e)e.value='';});
   document.getElementById('add-hub')?.classList.remove('open');
@@ -5156,7 +5176,11 @@ function dbSaveUser(){
   const color=document.getElementById('dba-u-cor')?.value||'#2563eb';
   const newId=Date.now();
   if(!DB.users) DB.users=[];
-  DB.users.push({id:newId,username,password,role,nome,timeId,regionalId,color,_ts:newId});
+  const newUser={id:newId,username,password,role,nome,timeId,regionalId,color,_ts:newId};
+  DB.users.push(newUser);
+  // ── Garante que a senha fica no cache local E no seed em memória ──
+  _updatePwCache([newUser]);
+  _SEED_CREDS[username]=password;
   saveDB();
   ['dba-u-nome','dba-u-user','dba-u-pass'].forEach(i=>{const e=document.getElementById(i);if(e)e.value='';});
   document.getElementById('add-user')?.classList.remove('open');
@@ -7187,6 +7211,13 @@ function doLogin(){
     {username:'pedro',     password:'12345',       id:1777691830007,   role:'supervisor', nome:'Pedro Lavor',       regionalId:1777691830004,timeId:1777691830005,   color:'#059669'},
     {username:'daniel',    password:'12345',       id:1777692514656,   role:'gerente',    nome:'Daniel Fontes',     regionalId:null,         timeId:null,            color:'#7c3aed'},
     {username:'thiago',    password:'12345',       id:1777692561373,   role:'gerente',    nome:'Thiago Correia',    regionalId:null,         timeId:null,            color:'#7c3aed'},
+    // ── Usuários adicionados via admin (garantia de login offline) ──
+    {username:'amaury',    password:'12345',       id:1777800000001,   role:'supervisor', nome:'Amaury',            regionalId:1001,         timeId:null,            color:'#059669'},
+    {username:'michella',  password:'12345',       id:1777800000002,   role:'supervisor', nome:'Michella',          regionalId:1001,         timeId:null,            color:'#059669'},
+    {username:'diogo',     password:'12345',       id:1777800000003,   role:'supervisor', nome:'Diogo',             regionalId:1001,         timeId:null,            color:'#059669'},
+    {username:'maykon',    password:'12345',       id:1777800000004,   role:'supervisor', nome:'Maykon',            regionalId:1001,         timeId:null,            color:'#059669'},
+    {username:'cleyton',   password:'12345',       id:1777800000005,   role:'supervisor', nome:'Cleyton',           regionalId:1001,         timeId:null,            color:'#059669'},
+    {username:'alex',      password:'12345',       id:1777800000006,   role:'supervisor', nome:'Alex',              regionalId:1001,         timeId:null,            color:'#059669'},
   ];
 
   // 1ª tentativa: busca na tabela de credenciais canônicas
@@ -7205,6 +7236,14 @@ function doLogin(){
     if(dbU) cred = {...dbU, password: dbU.password||pass};
   }
 
+  // 3ª tentativa: usuário em DB.users sem senha local → valida pela tabela CREDS (username+senha)
+  if(!cred && DB.users){
+    const dbU2 = DB.users.find(u=>(u.username||'').toLowerCase()===uname);
+    if(dbU2){
+      const seedCred2 = CREDS.find(c=>c.username===uname && c.password===pass);
+      if(seedCred2){ cred = {...seedCred2, ...dbU2, password:pass}; }
+    }
+  }
   if(!cred){ err.classList.add('show'); document.getElementById('li-pass').value=''; return; }
   err.classList.remove('show');
 
@@ -8157,17 +8196,22 @@ function doChangePassword(){
   if(!oldPw||!newPw||!confPw){ showWarn('⚠️ Preencha todos os campos.'); return; }
   const user = DB.users?.find(u=>u.id===currentUser.id);
   if(!user){ showWarn('⚠️ Usuário não encontrado.'); return; }
-  if(user.password!==oldPw){ showWarn('⚠️ Senha atual incorreta.'); return; }
+  // Valida senha antiga: tenta DB, cache e seed (usuários criados via admin podem não ter senha no DB)
+  const resolvedOld = _resolvePassword(user) || currentUser.password;
+  if(resolvedOld!==oldPw){ showWarn('⚠️ Senha atual incorreta.'); return; }
   if(newPw.length<4){ showWarn('⚠️ A nova senha precisa ter no mínimo 4 caracteres.'); return; }
   if(newPw!==confPw){ showWarn('⚠️ A confirmação não confere com a nova senha.'); return; }
 
   user.password=newPw;
-  // Atualiza sessão e localStorage de lembrar
+  // Atualiza sessão, cache e seed em memória
   currentUser={...currentUser,password:newPw};
   setSession(currentUser);
+  _updatePwCache([user]);
+  _SEED_CREDS[user.username]=newPw;
   const rem=localStorage.getItem('bi_remember');
   if(rem){ try{ const r=JSON.parse(rem); if(r.u===user.username) localStorage.setItem('bi_remember',JSON.stringify({u:user.username,p:newPw})); }catch(e){} }
   saveDB();
+  cloudSyncVendas();
   closeChangePwModal();
   toast('✅ Senha alterada com sucesso!');
 }
@@ -8617,19 +8661,24 @@ function saveAldenirUser(){
   if(!DB.users) DB.users=[];
   if(DB.users.find(u=>(u.username||'').toLowerCase()===username)){ showWarn('⚠️ Já existe um usuário com este nome.'); return; }
   const colorMap={gerente:'#7c3aed',supervisor:'#059669'};
-  DB.users.push({
+  const newAuUser={
     id:Date.now(), username, password, role,
     nome:nome||username,
     photo: _newUserPhoto||null,
     regionalId: role==='supervisor'?regionalId:null,
     timeId:     role==='supervisor'?timeId:null,
     color: colorMap[role]||'#2563eb'
-  });
+  };
+  DB.users.push(newAuUser);
   _newUserPhoto=null;
+  // ── Garante que a senha fica no cache local E no seed em memória ──
+  _updatePwCache([newAuUser]);
+  _SEED_CREDS[username]=password;
   saveDB();
   closeAldenirUserModal();
   renderUserList();
   toast(`✅ Usuário @${username} criado como ${role==='gerente'?'Gerente':'Supervisor'}!`);
+  cloudSyncVendas();
 }
 
 populateMes();
