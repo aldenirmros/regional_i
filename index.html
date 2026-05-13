@@ -7174,14 +7174,18 @@ function setSession(u){ sessionStorage.setItem('bi_sess',JSON.stringify(u)); cur
 // Preserva a senha da sessão que não é armazenada no DB por segurança
 function _refreshCurrentUserFromDB(){
   if(!currentUser) return;
-  const fresh = DB.users?.find(u=>u.id===currentUser.id);
+  // Busca por ID primeiro; se não achar (usuários admin cujo ID pode diferir), usa username
+  const fresh = DB.users?.find(u=>u.id===currentUser.id)
+             || DB.users?.find(u=>(u.username||'').toLowerCase()===(currentUser.username||'').toLowerCase());
   if(!fresh) return;
+  // Mantém a senha salva em sessão (Sheets não devolve campo password)
+  const savedPass = currentUser.password;
   // Detecta se o escopo mudou (timeId ou regionalId alterados pelo admin)
   const scopeChanged = fresh.timeId !== currentUser.timeId
                     || fresh.regionalId !== currentUser.regionalId
                     || fresh.role !== currentUser.role;
-  currentUser = fresh;
-  setSession(fresh);
+  currentUser = {...fresh, password: savedPass||fresh.password};
+  setSession(currentUser);
   if(scopeChanged){
     applySession(); // re-aplica o escopo correto
     console.log('[auth] escopo do usuário atualizado da nuvem:', fresh.username);
@@ -7196,8 +7200,9 @@ function doLogin(){
   const err   = document.getElementById('li-err');
 
   // ── Tabela de credenciais canônicas ─────────────────────────────────────────
-  // Autenticação direta: não depende de DB.users nem de cloudPull nem de cache.
-  // Qualquer usuário cadastrado AQUI consegue logar, sempre, em qualquer dispositivo.
+  // Contém APENAS username + password para autenticação offline garantida.
+  // timeId / regionalId / nome / id NUNCA sobrescrevem o que vier do DB.users
+  // (Sheets é a fonte de verdade para dados estruturais).
   const CREDS = [
     {username:'gerente',   password:'gerente123', id:1,               role:'gerente',    nome:'Gerente Geral',     regionalId:null,         timeId:null,            color:'#7c3aed'},
     {username:'aldenir',   password:'@RThur20',   id:1002,            role:'regional',   nome:'Aldenir',           regionalId:1001,         timeId:null,            color:'#7c3aed', superAdmin:true},
@@ -7211,19 +7216,36 @@ function doLogin(){
     {username:'pedro',     password:'12345',       id:1777691830007,   role:'supervisor', nome:'Pedro Lavor',       regionalId:1777691830004,timeId:1777691830005,   color:'#059669'},
     {username:'daniel',    password:'12345',       id:1777692514656,   role:'gerente',    nome:'Daniel Fontes',     regionalId:null,         timeId:null,            color:'#7c3aed'},
     {username:'thiago',    password:'12345',       id:1777692561373,   role:'gerente',    nome:'Thiago Correia',    regionalId:null,         timeId:null,            color:'#7c3aed'},
-    // ── Usuários adicionados via admin (garantia de login offline) ──
-    {username:'amaury',    password:'12345',       id:1777800000001,   role:'supervisor', nome:'Amaury',            regionalId:1001,         timeId:null,            color:'#059669'},
-    {username:'michella',  password:'12345',       id:1777800000002,   role:'supervisor', nome:'Michella',          regionalId:1001,         timeId:null,            color:'#059669'},
-    {username:'diogo',     password:'12345',       id:1777800000003,   role:'supervisor', nome:'Diogo',             regionalId:1001,         timeId:null,            color:'#059669'},
-    {username:'maykon',    password:'12345',       id:1777800000004,   role:'supervisor', nome:'Maykon',            regionalId:1001,         timeId:null,            color:'#059669'},
-    {username:'cleyton',   password:'12345',       id:1777800000005,   role:'supervisor', nome:'Cleyton',           regionalId:1001,         timeId:null,            color:'#059669'},
-    {username:'alex',      password:'12345',       id:1777800000006,   role:'supervisor', nome:'Alex',              regionalId:1001,         timeId:null,            color:'#059669'},
+    // ── Usuários criados via admin — apenas credenciais; dados reais vêm do Sheets ──
+    {username:'amaury',    password:'12345'},
+    {username:'michella',  password:'12345'},
+    {username:'diogo',     password:'12345'},
+    {username:'maykon',    password:'12345'},
+    {username:'cleyton',   password:'12345'},
+    {username:'alex',      password:'12345'},
   ];
 
-  // 1ª tentativa: busca na tabela de credenciais canônicas
-  let cred = CREDS.find(c=>c.username===uname && c.password===pass);
+  // ── Função auxiliar: mescla cred (seed) com DB.users priorizando Sheets ──
+  // DB.users é sempre a fonte de verdade para id, timeId, regionalId, nome, role, color.
+  // A tabela CREDS só fornece a senha quando o Sheets não a retorna.
+  function _mergeWithDB(seedCred){
+    if(!DB.users) return seedCred;
+    // Busca por ID exato (usuários seed com ID canônico)
+    let dbU = seedCred.id ? DB.users.find(u=>String(u.id)===String(seedCred.id)) : null;
+    // Se não achou por ID (usuários admin sem ID fixo), busca por username
+    if(!dbU) dbU = DB.users.find(u=>(u.username||'').toLowerCase()===seedCred.username);
+    if(!dbU) return seedCred;
+    // DB.users vence em tudo exceto senha (que o Sheets omite por segurança)
+    return {...seedCred, ...dbU, password: seedCred.password};
+  }
 
-  // 2ª tentativa: busca em DB.users (cobre usuários criados via admin UI)
+  let cred = null;
+
+  // 1ª tentativa: tabela de credenciais canônicas (funciona offline)
+  const seedMatch = CREDS.find(c=>c.username===uname && c.password===pass);
+  if(seedMatch) cred = _mergeWithDB(seedMatch);
+
+  // 2ª tentativa: DB.users com senha presente (criados via admin com Sheets online)
   if(!cred && DB.users){
     const pwCache = _loadPwCache();
     const dbU = DB.users.find(u=>{
@@ -7236,21 +7258,15 @@ function doLogin(){
     if(dbU) cred = {...dbU, password: dbU.password||pass};
   }
 
-  // 3ª tentativa: usuário em DB.users sem senha local → valida pela tabela CREDS (username+senha)
-  if(!cred && DB.users){
-    const dbU2 = DB.users.find(u=>(u.username||'').toLowerCase()===uname);
-    if(dbU2){
-      const seedCred2 = CREDS.find(c=>c.username===uname && c.password===pass);
-      if(seedCred2){ cred = {...seedCred2, ...dbU2, password:pass}; }
-    }
-  }
   if(!cred){ err.classList.add('show'); document.getElementById('li-pass').value=''; return; }
   err.classList.remove('show');
 
-  // Enriquece cred com dados atualizados do DB (timeId, regionalId, nome etc. podem ter mudado)
+  // Enriquece cred final com DB.users (garante dados mais recentes do Sheets)
+  // Usa username como chave secundária — cobre casos em que o ID do seed difere do ID real
   let user = cred;
   if(DB.users){
-    const dbUser = DB.users.find(u=>String(u.id)===String(cred.id));
+    const dbUser = DB.users.find(u=>String(u.id)===String(cred.id))
+                || DB.users.find(u=>(u.username||'').toLowerCase()===uname);
     if(dbUser) user = {...cred, ...dbUser, password:cred.password};
   }
 
@@ -7267,7 +7283,8 @@ function doLogin(){
   if(loginBtn){ loginBtn.textContent='Carregando…'; loginBtn.disabled=true; }
   cloudPull().then(ok=>{
     if(ok){
-      const freshUser = DB.users?.find(u=>u.id===currentUser.id);
+      const freshUser = DB.users?.find(u=>u.id===currentUser.id)
+                     || DB.users?.find(u=>(u.username||'').toLowerCase()===currentUser.username?.toLowerCase());
       if(freshUser){
         currentUser = {...user, ...freshUser, password:user.password};
         setSession(currentUser);
