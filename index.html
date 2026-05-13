@@ -3664,7 +3664,23 @@ function renderDash(){
 
   // ── Ativação ──
   if(!DB.ativacaoManual) DB.ativacaoManual = {};
-  const atvManual = DB.ativacaoManual[ymKey] ?? null;
+  // Lê por usuário: {ymKey: {userId: val}}
+  const _atvUserId = String(currentUser?.id || 'default');
+  const _atvYmObj  = DB.ativacaoManual[ymKey];
+  // Suporte retrocompatível: se for número direto (formato legado), migra
+  let atvManual = null;
+  if(_atvYmObj !== undefined && _atvYmObj !== null){
+    if(typeof _atvYmObj === 'object'){
+      const v = _atvYmObj[_atvUserId];
+      atvManual = (v !== undefined && v !== null) ? v : null;
+    } else {
+      // legado: era número direto → migra para novo formato
+      const legacyVal = _atvYmObj;
+      DB.ativacaoManual[ymKey] = {};
+      DB.ativacaoManual[ymKey][_atvUserId] = legacyVal;
+      atvManual = legacyVal;
+    }
+  }
   const _atvAuto  = sid ? totalAtivacao(ymKey,sid) : scopedSellers.reduce((a,s)=>a+totalAtivacao(ymKey,s.id),0);
   const atvFilt   = atvManual !== null ? atvManual : _atvAuto;
   const atvPct    = realFilt > 0 ? atvFilt / realFilt : 0;
@@ -3672,11 +3688,11 @@ function renderDash(){
   const atvInput = document.getElementById('k-atv-input');
   if(atvInput && document.activeElement !== atvInput){
     atvInput.value = atvManual !== null ? atvManual : '';
-    atvInput.placeholder = _atvAuto;
+    atvInput.placeholder = _atvAuto > 0 ? _atvAuto : '0';
   }
   document.getElementById('k-atv-fill').style.width = Math.min(100, atvPct*100).toFixed(1)+'%';
   document.getElementById('k-atv-pct').textContent  = (atvPct*100).toFixed(1)+'%';
-  document.getElementById('k-atv-s').textContent    = `${atvFilt} de ${realFilt} vendas`;
+  document.getElementById('k-atv-s').textContent    = `${atvFilt} de ${realFilt} (${(atvPct*100).toFixed(1)}% de ativação)`;
 
   // Dias — elementos agora só existem na guia "Ajuste de Dias" (tab 2); null-safe
   const _setTxt = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
@@ -5281,12 +5297,20 @@ function saveAtivacao(){
   const el  = document.getElementById('k-atv-input');
   const val = el.value.trim();
   if(!DB.ativacaoManual) DB.ativacaoManual = {};
+  const uid = String(currentUser?.id || 'default');
+  // Garante que ymKey é sempre objeto {userId: val}
+  if(typeof DB.ativacaoManual[currentYM] !== 'object' || DB.ativacaoManual[currentYM] === null){
+    DB.ativacaoManual[currentYM] = {};
+  }
   if(val === '' || val === null){
-    delete DB.ativacaoManual[currentYM];
+    delete DB.ativacaoManual[currentYM][uid];
+    if(Object.keys(DB.ativacaoManual[currentYM]).length === 0){
+      delete DB.ativacaoManual[currentYM];
+    }
   } else {
     const n = parseInt(val);
     if(isNaN(n) || n < 0){ toast('Valor inválido','⚠️'); return; }
-    DB.ativacaoManual[currentYM] = n;
+    DB.ativacaoManual[currentYM][uid] = n;
   }
   saveDB();
   renderDash();
@@ -5296,11 +5320,15 @@ function saveAtivacao(){
 function previewAtivacao(){
   // Atualiza % em tempo real enquanto digita, sem salvar ainda
   const el      = document.getElementById('k-atv-input');
-  const realFilt = parseInt(document.getElementById('k-atv-s').textContent.split(' de ')[1])||0;
+  const subText = document.getElementById('k-atv-s').textContent;
+  // Extrai o realFilt do texto "X de Y (Z% de ativação)"
+  const matchDe = subText.match(/de (\d+)/);
+  const realFilt = matchDe ? parseInt(matchDe[1]) : 0;
   const n       = parseInt(el.value) || 0;
   const pct     = realFilt > 0 ? n / realFilt : 0;
   document.getElementById('k-atv-fill').style.width = Math.min(100, pct*100).toFixed(1)+'%';
   document.getElementById('k-atv-pct').textContent  = (pct*100).toFixed(1)+'%';
+  document.getElementById('k-atv-s').textContent    = `${n} de ${realFilt} (${(pct*100).toFixed(1)}% de ativação)`;
 }
 
 // ── Ativação manual na guia Visão Geral por Regional (chave própria, independente do dashboard) ──
