@@ -4799,9 +4799,12 @@ function renderRegionais(){
   }
   el.innerHTML=regs.map(rg=>{
     const times=(DB.times||[]).filter(t=>t.regionalId===rg.id);
-    const sellers=DB.sellers.filter(s=>times.map(t=>t.id).includes(s.timeId));
+    const tids=times.map(t=>t.id);
+    const sellers=DB.sellers.filter(s=>tids.includes(s.timeId)&&!s.inativo);
     const real=sellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
-    const meta=sellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
+    // Meta: soma das metas dos HUBs (igual ao Dashboard) com fallback para meta individual
+    const metaHub=times.reduce((a,t)=>a+getHubMeta(ymKey,t.id),0);
+    const meta=metaHub>0?metaHub:sellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
     const adm=DB.users?.find(u=>u.role==='regional'&&u.regionalId===rg.id);
     const pct=meta>0?real/meta:0;
     const pcColor=pct>=1?'var(--green)':pct>=0.6?'var(--orange)':'var(--red)';
