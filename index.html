@@ -811,7 +811,7 @@ select.sel:focus{border-color:var(--blue);}
 .ov-table-wrap{background:var(--white);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden;}
 /* ── OVERVIEW TABLE — base ── */
 .ov-tbl{table-layout:fixed;width:100%;}
-.ov-kpi-row{display:grid;grid-template-columns:repeat(4,1fr) 1.7fr 1.7fr;gap:14px;margin-bottom:20px;}
+.ov-kpi-row{display:grid;grid-template-columns:repeat(5,1fr) 1.7fr 1.7fr;gap:14px;margin-bottom:20px;}
 /* ── TPV Médio card inputs ── */
 .tpv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0 8px;width:100%;}
 .tpv-col-head{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--purple);text-align:center;padding-bottom:4px;border-bottom:1px solid rgba(124,58,237,.2);margin-bottom:6px;}
@@ -2010,6 +2010,12 @@ canvas { display:block; max-width:100%; }
         <div class="kc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg></div>
         <div class="kc-lbl">GAP Total</div><div class="kc-val" id="ov-gap">—</div>
         <div class="kc-sub">para bater a meta</div>
+      </div>
+      <div class="kc kc-o"><div class="kc-bar"></div>
+        <div class="kc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+        <div class="kc-lbl">Projeção</div><div class="kc-val" id="ov-proj">—</div>
+        <div class="kc-prog"><div class="kc-pf" id="ov-proj-pf" style="width:0%;background:linear-gradient(90deg,var(--orange),var(--orange-l))"></div></div>
+        <div class="kc-sub" id="ov-proj-s">0% da meta</div>
       </div>
 
       <!-- ── CARD GRÁFICO VISÃO % ── -->
@@ -5374,12 +5380,20 @@ function previewAtivacao(){
 
 // ── Ativação manual na guia Visão Geral por Regional (chave própria, independente do dashboard) ──
 function saveOvAtvManual(){
-  const el = document.getElementById('ov-atv-input');
-  const v  = el?.value.trim();
-  const n  = v===''?null:parseInt(v);
+  const el  = document.getElementById('ov-atv-input');
+  const v   = el?.value.trim();
+  const n   = v===''?null:parseInt(v);
+  const uid = String(currentUser?.id || 'default');
   if(!DB.ativacaoManualOv) DB.ativacaoManualOv = {};
-  if(n===null) delete DB.ativacaoManualOv[currentYM];
-  else DB.ativacaoManualOv[currentYM] = n;
+  if(typeof DB.ativacaoManualOv[currentYM] !== 'object' || DB.ativacaoManualOv[currentYM] === null){
+    DB.ativacaoManualOv[currentYM] = {};
+  }
+  if(n===null){
+    delete DB.ativacaoManualOv[currentYM][uid];
+    if(Object.keys(DB.ativacaoManualOv[currentYM]).length === 0) delete DB.ativacaoManualOv[currentYM];
+  } else {
+    DB.ativacaoManualOv[currentYM][uid] = n;
+  }
   saveDB();
   renderOverview();
   toast('Ativação (overview) salva ✓');
@@ -6228,11 +6242,20 @@ function dbToTables(db) {
     });
   });
 
-  // ── ativacaoManualOv: achata {ymKey: val} ──
+  // ── ativacaoManualOv: achata {ymKey: {userId: val}} ──
   const ativacaoManualOv = [];
   Object.keys(db.ativacaoManualOv || {}).forEach(ymKey => {
-    const v = db.ativacaoManualOv[ymKey];
-    if (v != null) ativacaoManualOv.push({ ymKey, val: v });
+    const entry = db.ativacaoManualOv[ymKey];
+    if (entry == null) return;
+    // Suporte ao formato legado (número direto) e novo ({userId: val})
+    if (typeof entry === 'object') {
+      Object.keys(entry).forEach(userId => {
+        const v = entry[userId];
+        if (v != null) ativacaoManualOv.push({ ymKey, userId, val: v });
+      });
+    } else {
+      ativacaoManualOv.push({ ymKey, userId: 'default', val: entry });
+    }
   });
 
   // ── deletedVendaIds: achata {mes: [id,...]} ──
@@ -6401,11 +6424,14 @@ function tablesToDB(tables) {
     db.ativacaoManual[ymKey][sellerId] = Number(val);
   });
 
-  // ── ativacaoManualOv: reconstrói {ymKey: val} ──
+  // ── ativacaoManualOv: reconstrói {ymKey: {userId: val}} ──
   db.ativacaoManualOv = {};
-  (tables.ativacaoManualOv || []).forEach(({ ymKey, val }) => {
+  (tables.ativacaoManualOv || []).forEach(({ ymKey, userId, val }) => {
     if (!ymKey) return;
-    db.ativacaoManualOv[ymKey] = Number(val);
+    const uid = String(userId || 'default');
+    if (typeof db.ativacaoManualOv[ymKey] !== 'object' || db.ativacaoManualOv[ymKey] === null)
+      db.ativacaoManualOv[ymKey] = {};
+    db.ativacaoManualOv[ymKey][uid] = Number(val);
   });
 
   // ── deletedVendaIds: reconstrói {mes: [id,...]} ──
@@ -7425,7 +7451,7 @@ function renderOverview(){
     const pct   = meta>0?real/meta:0;
     const gap   = Math.max(0,meta-real);
     const proj  = duPass>0?real/duPass*duTotal:0;
-    const atvM  = (DB.ativacaoManualOv||{})[ymKey];
+    const atvM  = (()=>{ const o=(DB.ativacaoManualOv||{})[ymKey]; const uid=String(currentUser?.id||'default'); return (o && typeof o==='object') ? (o[uid]??null) : null; })();
     const atv   = atvM!=null ? atvM : sellers.reduce((a,s)=>a+totalAtivacao(ymKey,s.id),0);
     const atvP  = real>0?atv/real:0;
     return {sellers:sellers.length,real,meta,pct,gap,proj,atv,atvP};
@@ -7437,7 +7463,9 @@ function renderOverview(){
   const tReal = allScopedSellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
   const tMeta = timesVisiveis.reduce((a,t)=>a+getHubMeta(ymKey,t.id),0)||
                 allScopedSellers.reduce((a,s)=>a+getSellerMeta(ymKey,s.id),0);
-  const tAtvM = (DB.ativacaoManualOv||{})[ymKey];
+  const _ovAtvRaw = (DB.ativacaoManualOv||{})[ymKey];
+  const _ovUid    = String(currentUser?.id || 'default');
+  const tAtvM = (_ovAtvRaw && typeof _ovAtvRaw==='object') ? (_ovAtvRaw[_ovUid]??null) : null;
   const tAtv  = tAtvM!=null ? tAtvM : allScopedSellers.reduce((a,s)=>a+totalAtivacao(ymKey,s.id),0);
   const tGap  = Math.max(0,tMeta-tReal);
   const tPct  = tMeta>0?tReal/tMeta:0;
@@ -7461,6 +7489,17 @@ function renderOverview(){
   if(ovAtvFill) ovAtvFill.style.width = Math.min(100, tAtvP*100).toFixed(1)+'%';
   if(ovAtvPct)  ovAtvPct.textContent  = (tAtvP*100).toFixed(1)+'%';
   document.getElementById('ov-gap').textContent=tGap;
+
+  // ── Projeção ──
+  const projPct = tMeta > 0 ? Math.min(100, tProj / tMeta * 100) : 0;
+  const projColor = projPct >= 100 ? '#059669' : projPct >= 80 ? '#d97706' : '#dc2626';
+  const ovProjEl  = document.getElementById('ov-proj');
+  const ovProjPf  = document.getElementById('ov-proj-pf');
+  const ovProjS   = document.getElementById('ov-proj-s');
+  if(ovProjEl) ovProjEl.textContent = tProj;
+  if(ovProjPf) ovProjPf.style.width = projPct.toFixed(1) + '%';
+  if(ovProjS)  ovProjS.textContent  = `${projPct.toFixed(1)}% da meta`;
+  if(ovProjEl) ovProjEl.style.color = projColor;
 
   // ── Donut chart Visão % ──
   const metaPct = tMeta>0 ? Math.min(100, tPct*100) : 0;
