@@ -1330,7 +1330,7 @@ canvas { display:block; max-width:100%; }
           <table class="dt">
             <thead><tr>
               <th>Vendedor</th><th>Compromisso</th><th>Realizado</th>
-              <th style="min-width:110px">% Compromisso</th><th>GAP</th><th>Projeção</th><th>Patente</th>
+              <th style="min-width:110px">% Compromisso</th><th>GAP</th><th>Projeção</th>
             </tr></thead>
             <tbody id="main-tb"></tbody>
           </table>
@@ -2110,9 +2110,9 @@ canvas { display:block; max-width:100%; }
             <th style="width:5.5%;text-align:center;background:rgba(37,99,235,.10);color:#1d4ed8;border-radius:4px 4px 0 0">M0</th>
             <th style="width:5.5%;text-align:center;background:rgba(5,150,105,.10);color:#065f46;border-radius:4px 4px 0 0">M1</th>
             <th style="width:5.5%;text-align:center;background:rgba(217,119,6,.10);color:#92400e;border-radius:4px 4px 0 0">M2</th>
-            <th style="width:5.5%;text-align:center;background:rgba(37,99,235,.10);color:#1d4ed8;border-radius:4px 4px 0 0">PARM0</th>
-            <th style="width:5.5%;text-align:center;background:rgba(5,150,105,.10);color:#065f46;border-radius:4px 4px 0 0">PARM1</th>
-            <th style="width:5.5%;text-align:center;background:rgba(217,119,6,.10);color:#92400e;border-radius:4px 4px 0 0">PARM2</th>
+            <th style="width:5.5%;text-align:center;background:rgba(37,99,235,.10);color:#1d4ed8;border-radius:4px 4px 0 0">PM0</th>
+            <th style="width:5.5%;text-align:center;background:rgba(5,150,105,.10);color:#065f46;border-radius:4px 4px 0 0">PM1</th>
+            <th style="width:5.5%;text-align:center;background:rgba(217,119,6,.10);color:#92400e;border-radius:4px 4px 0 0">PM2</th>
           </tr></thead>
           <tbody id="ov-tb"></tbody>
         </table>
@@ -3742,18 +3742,19 @@ function renderDash(){
       <td><div class="pw"><div class="pt"><div class="pf ${pcls(s.pct)}" style="width:${Math.min(100,s.pct*100).toFixed(1)}%"></div></div><span class="pp ${ptcls(s.pct)}">${pc}</span></div></td>
       <td><span class="gb ${s.gap===0?'gz':'gn'}">${s.gap===0?'✓':'-'+s.gap}</span></td>
       <td class="mono fg-o">${s.proj.toFixed(0)}</td>
-      <td>${patenteHTML(s.pat)}</td>
     </tr>`;
   });
-  const tR=stats.reduce((a,s)=>a+s.real,0);
-  const tC=stats.reduce((a,s)=>a+s.meta,0); // soma dos compromissos individuais
-  const tM=getMeta(ymKey); // meta dos HUBs (usada no GAP e %)
-  const tG=Math.max(0,tM-tR), tP=tM>0?tR/tM:0;
-  const tPr=duPass>0?tR/duPass*duTotal:0;
-  tb+=`<tr class="tr-tot"><td>TOTAL EQUIPE</td><td class="mono" title="Soma dos compromissos">${tC}</td><td class="mono">${tR}</td>
+  // Totais respeitam o filtro de vendedor ativo
+  const filtStats = sid ? stats.filter(s=>s.id===sid) : stats;
+  const tR  = filtStats.reduce((a,s)=>a+s.real,0);
+  const tC  = filtStats.reduce((a,s)=>a+s.meta,0);
+  const tG  = Math.max(0, tC-tR);
+  const tP  = tC>0 ? tR/tC : 0;
+  const tPr = duPass>0 ? tR/duPass*duTotal : 0;
+  tb+=`<tr class="tr-tot"><td>${sid?'TOTAL SELEÇÃO':'TOTAL EQUIPE'}</td><td class="mono" title="Soma dos compromissos">${tC}</td><td class="mono">${tR}</td>
     <td><div class="pw"><div class="pt"><div class="pf pb" style="width:${Math.min(100,tP*100).toFixed(1)}%"></div></div><span class="pp fg-b">${(tP*100).toFixed(1)}%</span></div></td>
     <td><span class="gb ${tG===0?'gz':'gn'}">${tG===0?'✓':'-'+tG}</span></td>
-    <td class="mono">${tPr.toFixed(0)}</td><td>—</td>
+    <td class="mono">${tPr.toFixed(0)}</td>
   </tr>`;
   document.getElementById('main-tb').innerHTML=tb;
 
@@ -3763,9 +3764,10 @@ function renderDash(){
   document.getElementById('leg-g').textContent=gap;
   buildDonut(realFilt,gap);
 
-  // GAP LIST
+  // GAP LIST — respeita filtro de vendedor selecionado
+  const gapStats = sid ? [...stats].filter(s=>s.id===sid) : [...stats];
   let gHtml='';
-  [...stats].sort((a,b)=>a.gap-b.gap).forEach((s,i)=>{
+  gapStats.sort((a,b)=>a.gap-b.gap).forEach((s,i)=>{
     const p=s.meta>0?s.real/s.meta:0;
     const hl=selectedSeller===s.id?'background:#eff6ff;':'';
     gHtml+=`<div class="gsi" style="${hl}cursor:pointer" onclick="selectSeller(${s.id})">
@@ -5315,6 +5317,45 @@ function saveAtivacao(){
   saveDB();
   renderDash();
   toast('Ativação salva ✓');
+}
+
+// ── Ativação manual na guia PSV (espelho do dashboard) ──
+function savePsvAtivacao(){
+  const el  = document.getElementById('psv-atv-input');
+  if(!el) return;
+  const val = el.value.trim();
+  if(!DB.ativacaoManual) DB.ativacaoManual = {};
+  const uid = String(currentUser?.id || 'default');
+  if(typeof DB.ativacaoManual[currentYM] !== 'object' || DB.ativacaoManual[currentYM] === null){
+    DB.ativacaoManual[currentYM] = {};
+  }
+  if(val === '' || val === null){
+    delete DB.ativacaoManual[currentYM][uid];
+    if(Object.keys(DB.ativacaoManual[currentYM]).length === 0) delete DB.ativacaoManual[currentYM];
+  } else {
+    const n = parseInt(val);
+    if(isNaN(n) || n < 0){ toast('Valor inválido','⚠️'); return; }
+    DB.ativacaoManual[currentYM][uid] = n;
+  }
+  saveDB();
+  renderPSV();
+  renderDash();
+  toast('Ativação salva ✓');
+}
+
+function previewPsvAtivacao(){
+  const el  = document.getElementById('psv-atv-input');
+  const sub = document.getElementById('psv-atv-sub');
+  if(!el) return;
+  const matchDe = sub?.textContent.match(/de (\d+)/);
+  const realFilt = matchDe ? parseInt(matchDe[1]) : 0;
+  const n   = parseInt(el.value) || 0;
+  const pct = realFilt > 0 ? n / realFilt : 0;
+  const fill = document.getElementById('psv-atv-fill');
+  const pctEl = document.getElementById('psv-atv-pct');
+  if(fill) fill.style.width = Math.min(100, pct*100).toFixed(1)+'%';
+  if(pctEl) pctEl.textContent = (pct*100).toFixed(1)+'%';
+  if(sub) sub.textContent = `${n} de ${realFilt} (${(pct*100).toFixed(1)}% de ativação)`;
 }
 
 function previewAtivacao(){
@@ -8833,13 +8874,18 @@ function _renderPSVKpis(ymKey, y, m, sellers){
   const mc={m0:0,m1:0,m2:0,full:0};
   sellers.forEach(s=>{ mc[sellerMaturity(s)]++; });
 
+  // Percentuais de cada KPI
+  const pctReal = pct; // real/meta*100 (já calculado)
+  const pctGap  = meta > 0 ? Math.round(gap  / meta * 100) : 0;
+  const pctProj = meta > 0 ? Math.round(proj / meta * 100) : 0;
+  const pctAtv  = real > 0 ? (atv / real * 100).toFixed(1) : '0.0';
+
   const kpis = [
-    {lbl:'Realizado', val:real,    color:'#059669'},
-    {lbl:'Meta Total',val:meta,    color:'#2563eb'},
-    {lbl:'GAP',       val:gap,     color:gap>0?'#dc2626':'#059669'},
-    {lbl:'Projeção',  val:proj,    color:'#7c3aed'},
-    {lbl:'Ativado',   val:atv,     color:'#d97706'},
-    {lbl:'% Meta',    val:pct+'%', color:pct>=100?'#059669':pct>=80?'#d97706':'#dc2626'},
+    {lbl:'Meta Total',val:meta,    color:'#2563eb', sub:'base do mês',                   subColor:'var(--tl)'},
+    {lbl:'Realizado', val:real,    color:'#059669', sub:`${pctReal}% da meta`,             subColor:pctReal>=100?'#059669':pctReal>=80?'#d97706':'#dc2626'},
+    {lbl:'GAP',       val:gap,     color:gap>0?'#dc2626':'#059669', sub:`${pctGap}% da meta`,subColor:gap>0?'#dc2626':'#059669'},
+    {lbl:'Projeção',  val:proj,    color:'#7c3aed', sub:`${pctProj}% da meta`,             subColor:pctProj>=100?'#059669':pctProj>=80?'#d97706':'#dc2626'},
+    {lbl:'% Meta',    val:pct+'%', color:pct>=100?'#059669':pct>=80?'#d97706':'#dc2626', sub:pct>=100?'✓ Meta atingida':pct>=80?'Quase lá':'Abaixo da meta', subColor:pct>=100?'#059669':pct>=80?'#d97706':'#dc2626'},
   ];
 
   const tidsNoScope = [...new Set(sellers.map(s=>s.timeId).filter(Boolean))];
@@ -8865,15 +8911,48 @@ function _renderPSVKpis(ymKey, y, m, sellers){
   }
   function tpvColor(v){ if(!v||v<15000) return '#dc2626'; if(v<20000) return '#d97706'; return '#059669'; }
 
-  // ── Células KPI (6 células) ──
+  // ── Células KPI (5 células: Meta Total, Realizado, GAP, Projeção, % Meta) ──
   kpis.forEach(k=>{
     const d=document.createElement('div');
     d.style.cssText=`background:var(--white);border:1px solid var(--border);border-radius:var(--rs);padding:10px 10px 10px;box-shadow:var(--sh);border-top:3px solid ${k.color};min-width:0;display:flex;flex-direction:column;justify-content:space-between`;
     d.innerHTML=`
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px">${k.lbl}</div>
-      <div style="font-size:26px;font-weight:900;color:${k.color};font-family:var(--mono);line-height:1">${k.val}</div>`;
+      <div style="font-size:26px;font-weight:900;color:${k.color};font-family:var(--mono);line-height:1">${k.val}</div>
+      <div style="font-size:10.5px;font-weight:700;color:${k.subColor};margin-top:6px">${k.sub}</div>`;
     row.appendChild(d);
   });
+
+  // ── Célula ATIVADO — espelha o card do Dashboard (input + barra + %) ──
+  const _atvUserId2 = String(currentUser?.id || 'default');
+  const _atvYmObj2  = (DB.ativacaoManual||{})[ymKey];
+  let atvManual2 = null;
+  if(_atvYmObj2 !== undefined && _atvYmObj2 !== null){
+    atvManual2 = typeof _atvYmObj2 === 'object' ? (_atvYmObj2[_atvUserId2] ?? null) : _atvYmObj2;
+  }
+  const _atvAuto2 = sellers.reduce((a,s)=>a+totalAtivacao(ymKey,s.id),0);
+  const atvVal2   = atvManual2 !== null ? atvManual2 : _atvAuto2;
+  const atvFill2  = real > 0 ? Math.min(100, atvVal2 / real * 100).toFixed(1) : '0.0';
+  const atvPctTxt2 = real > 0 ? (atvVal2 / real * 100).toFixed(1) : '0.0';
+
+  const atvCd = document.createElement('div');
+  atvCd.style.cssText = 'background:var(--white);border:1px solid var(--border);border-radius:var(--rs);padding:10px 10px;box-shadow:var(--sh);border-top:3px solid #0d9488;min-width:0;display:flex;flex-direction:column;justify-content:space-between';
+  atvCd.innerHTML = `
+    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);margin-bottom:6px">Ativado</div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+      <input type="number" id="psv-atv-input" min="0" placeholder="${_atvAuto2||0}"
+        value="${atvManual2 !== null ? atvManual2 : ''}"
+        style="width:72px;background:rgba(13,148,136,.08);border:2px solid rgba(13,148,136,.3);border-radius:8px;padding:4px 8px;font-family:var(--mono);font-size:22px;font-weight:800;color:var(--teal);outline:none;text-align:center;-moz-appearance:textfield;"
+        oninput="previewPsvAtivacao()" onkeydown="if(event.key==='Enter'){savePsvAtivacao();this.blur();event.preventDefault()}">
+      <button onclick="savePsvAtivacao()" style="background:var(--teal);color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap;">✓ Salvar</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+      <div style="flex:1;height:4px;background:var(--border);border-radius:99px;overflow:hidden">
+        <div id="psv-atv-fill" style="height:100%;border-radius:99px;background:linear-gradient(90deg,var(--teal),var(--teal-l));width:${atvFill2}%;transition:width .8s var(--ease)"></div>
+      </div>
+      <span id="psv-atv-pct" style="font-size:11.5px;font-weight:800;color:var(--teal);font-family:var(--mono);min-width:40px;text-align:right">${atvPctTxt2}%</span>
+    </div>
+    <div id="psv-atv-sub" style="font-size:10.5px;color:var(--tl);font-weight:600">${atvVal2} de ${real} (${atvPctTxt2}% de ativação)</div>`
+  row.appendChild(atvCd);
 
   // ── Célula SAFRA ──
   const safraCd=document.createElement('div');
