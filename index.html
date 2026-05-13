@@ -6130,11 +6130,11 @@ function _deepMerge(cloud, local) {
     r.psvTpv = [...map.values()];
   }
 
-  // ── psvDp: union por (ymKey + hubId + tipo + safra), local vence ──
+  // ── psvDp: union por (userId + ymKey + hubId + tipo + safra), local vence ──
   {
     const map = new Map();
-    (r.psvDp||[]).forEach(row => { map.set(`${String(row.ymKey)}|${String(row.hubId)}|${String(row.tipo)}|${String(row.safra)}`, row); });
-    (local.psvDp||[]).forEach(row => { map.set(`${String(row.ymKey)}|${String(row.hubId)}|${String(row.tipo)}|${String(row.safra)}`, row); });
+    (r.psvDp||[]).forEach(row => { map.set(`${String(row.userId||'')}|${String(row.ymKey)}|${String(row.hubId)}|${String(row.tipo)}|${String(row.safra)}`, row); });
+    (local.psvDp||[]).forEach(row => { map.set(`${String(row.userId||'')}|${String(row.ymKey)}|${String(row.hubId)}|${String(row.tipo)}|${String(row.safra)}`, row); });
     r.psvDp = [...map.values()];
   }
 
@@ -6461,14 +6461,15 @@ function tablesToDB(tables) {
   })).filter(r => r.ymKey && r.hubId && r.mk);
 
   // ── psv_detrator_promotor ──
-  // Força ymKey, hubId, tipo, safra como string
+  // Força userId, ymKey, hubId, tipo, safra como string
   db.psvDp = (tables.psv_detrator_promotor || []).map(r => ({
-    ymKey      : String(r.ymKey       || ''),
-    hubId      : String(r.hubId       || ''),
-    tipo       : String(r.tipo        || ''),
-    safra      : String(r.safra       || ''),
+    userId     : String(r.userId       || 'default'),
+    ymKey      : String(r.ymKey        || ''),
+    hubId      : String(r.hubId        || ''),
+    tipo       : String(r.tipo         || ''),
+    safra      : String(r.safra        || ''),
     vendedorId : (r.vendedorId != null && r.vendedorId !== '') ? (Number(r.vendedorId) || String(r.vendedorId)) : null,
-    nome_manual: String(r.nome_manual || ''),
+    nome_manual: String(r.nome_manual  || ''),
     valor      : (r.valor != null && r.valor !== '') ? String(r.valor) : null,
     photo      : r.photo ? String(r.photo) : '',
   })).filter(r => r.ymKey && r.hubId);
@@ -7750,7 +7751,7 @@ function _parseBRL(s) {
   return isNaN(n) ? null : n;
 }
 
-// Salva no DB.mValues usando a chave "tpv_stats" + subchave (ex: "tpv_real_M1")
+// Salva no DB.mValues usando a chave "tpv_stats_<userId>" + subchave (ex: "tpv_real_M1")
 function saveTpvMedio(input, key) {
   // Aplica máscara ao sair (onblur)
   const raw = input.value.replace(/\D/g,'');
@@ -7759,7 +7760,8 @@ function saveTpvMedio(input, key) {
 
   const ymKey = String(currentYM);
   const val   = _parseBRL(input.value);
-  const grpId = 'tpv_stats';
+  const uid   = String(currentUser?.id || 'default');
+  const grpId = 'tpv_stats_' + uid;
 
   if (!DB.mValues) DB.mValues = {};
   if (!DB.mValues[ymKey]) DB.mValues[ymKey] = {};
@@ -7794,7 +7796,9 @@ function _tpvTextColor(v) {
 // Carrega os valores do TPV Médio nos inputs do card
 function loadTpvMedioCard() {
   const ymKey = String(currentYM);
-  const data  = (DB.mValues || {})[ymKey]?.['tpv_stats'] || {};
+  const uid   = String(currentUser?.id || 'default');
+  const grpId = 'tpv_stats_' + uid;
+  const data  = (DB.mValues || {})[ymKey]?.[grpId] || {};
   const fields = ['tpv_real_M1','tpv_real_M2','tpv_real_M3',
                   'tpv_proj_M1','tpv_proj_M2','tpv_proj_M3'];
   const ids    = ['tpv-real-M1','tpv-real-M2','tpv-real-M3',
@@ -7951,9 +7955,11 @@ function dpUploadPhoto(type, mk){
 }
 function dpSetPhoto(e, type, mk){
   const f=e.target.files[0]; if(!f) return;
+  const uid = String(currentUser?.id || 'default');
   const r=new FileReader();
   r.onload=ev=>{
-    _dpPhotos[`${type}_${mk}`]=ev.target.result;
+    const photoKey = `${uid}_${type}_${mk}`;
+    _dpPhotos[photoKey]=ev.target.result;
     _saveDpPhotos();
     const slot=document.getElementById(`dp-photo-${type}-${mk}`);
     if(slot){
@@ -7968,17 +7974,19 @@ function dpSetPhoto(e, type, mk){
 function saveDpAll(){
   const ymKey  = String(currentYM);
   const hubId  = _getHubIdForPsv();  // já retorna string
+  const uid    = String(currentUser?.id || 'default');
   if(!DB.psvDp) DB.psvDp = [];
-  // Remove linhas antigas deste ymKey+hubId
-  DB.psvDp = DB.psvDp.filter(r => !(String(r.ymKey)===ymKey && String(r.hubId)===hubId));
+  // Remove linhas antigas deste userId+ymKey+hubId
+  DB.psvDp = DB.psvDp.filter(r => !(String(r.userId||'default')===uid && String(r.ymKey)===ymKey && String(r.hubId)===hubId));
   ['M0','M1','M2'].forEach(mk=>{
     ['prom','det'].forEach(tipo=>{
       const nome_manual = document.getElementById(`dp-name-${tipo}-${mk}`)?.value||'';
       const valor       = document.getElementById(`dp-val-${tipo}-${mk}`)?.value||'';
       const vendedorId  = document.getElementById(`dp-sel-${tipo}-${mk}`)?.value||'';
-      const photo       = _dpPhotos[`${tipo}_${mk}`]||'';
+      const photoKey    = `${uid}_${tipo}_${mk}`;
+      const photo       = _dpPhotos[photoKey]||'';
       DB.psvDp.push({
-        ymKey, hubId, tipo, safra: mk,
+        userId: uid, ymKey, hubId, tipo, safra: mk,
         vendedorId: vendedorId||null,
         nome_manual, valor: valor||null,
         photo
@@ -8000,6 +8008,8 @@ function dpSelectSeller(type, mk, val){
   const ni  = document.getElementById(`dp-name-${type}-${mk}`);
   const slot= document.getElementById(`dp-photo-${type}-${mk}`);
   const color = type==='prom'?'#059669':'#dc2626';
+  const uid   = String(currentUser?.id || 'default');
+  const photoKey = `${uid}_${type}_${mk}`;
 
   if(!val){
     // Limpou a seleção — apaga nome e volta ao ícone padrão
@@ -8007,7 +8017,7 @@ function dpSelectSeller(type, mk, val){
     if(slot){
       const ico=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
       slot.innerHTML=ico; slot.style.cssText=`width:46px;height:46px;border-radius:50%;flex-shrink:0;cursor:pointer;border:2px dashed ${color};display:flex;align-items:center;justify-content:center;overflow:hidden;background:${color}11`;
-      delete _dpPhotos[`${type}_${mk}`]; _saveDpPhotos();
+      delete _dpPhotos[photoKey]; _saveDpPhotos();
     }
     return;
   }
@@ -8025,13 +8035,13 @@ function dpSelectSeller(type, mk, val){
     if(photo){
       slot.innerHTML=`<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
       slot.style.border=`2px solid ${color}`;
-      _dpPhotos[`${type}_${mk}`]=photo;
+      _dpPhotos[photoKey]=photo;
       _saveDpPhotos();
     } else {
       // Sem foto: mostra inicial com cor do vendedor
       slot.innerHTML=`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${s.color||color}33;font-size:18px;font-weight:800;color:${s.color||color};font-family:var(--font)">${s.name[0]}</div>`;
       slot.style.border=`2px solid ${color}`;
-      delete _dpPhotos[`${type}_${mk}`]; _saveDpPhotos();
+      delete _dpPhotos[photoKey]; _saveDpPhotos();
     }
   }
 }
@@ -8039,13 +8049,15 @@ function dpSelectSeller(type, mk, val){
 function _restoreDpFields(){
   const ymKey = String(currentYM);
   const hubId = _getHubIdForPsv();  // já retorna string
-  // Lê da nova tabela; fallback para psvData legado
-  const newRows = (DB.psvDp||[]).filter(r => String(r.ymKey)===ymKey && String(r.hubId)===hubId);
+  const uid   = String(currentUser?.id || 'default');
+  // Lê da nova tabela filtrando por userId+ymKey+hubId; fallback para psvData legado
+  const newRows = (DB.psvDp||[]).filter(r => String(r.userId||'default')===uid && String(r.ymKey)===ymKey && String(r.hubId)===hubId);
   const dpDb_legacy = (DB.psvData?.dp||{})[ymKey]||{};
 
   ['M0','M1','M2'].forEach(mk=>{
     ['prom','det'].forEach(tipo=>{
-      const k = `${tipo}_${mk}`;
+      const k       = `${tipo}_${mk}`;
+      const photoKey= `${uid}_${tipo}_${mk}`;
       // Tenta nova tabela primeiro
       const row = newRows.find(r=>r.tipo===tipo && r.safra===mk);
       const d   = row
@@ -8062,11 +8074,11 @@ function _restoreDpFields(){
       if(vi){ vi.value = d.val||''; if(d.val) vi.style.color = color; }
       if(sel && d.sellerId) sel.value = d.sellerId;
 
-      const photo = d.photo || _dpPhotos[k] || null;
+      const photo = d.photo || _dpPhotos[photoKey] || null;
       if(photo && slot){
         slot.innerHTML=`<img src="${photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
         slot.style.border=`2px solid ${color}`;
-        _dpPhotos[k]=photo; _saveDpPhotos();
+        _dpPhotos[photoKey]=photo; _saveDpPhotos();
       } else if(d.name && !photo && slot){
         // Vendedor salvo mas sem foto — mostra inicial
         const sellerId = d.sellerId ? parseInt(d.sellerId) : null;
