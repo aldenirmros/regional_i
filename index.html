@@ -6338,8 +6338,37 @@ function _deepMerge(cloud, local) {
   r.hubMetas          = mergeDictCloudWins(r.hubMetas,          local.hubMetas);
   r.sellerMetas       = mergeDictCloudWins(r.sellerMetas,        local.sellerMetas);
   r.mValues           = mergeDictCloudWins(r.mValues,            local.mValues);
-  r.ativacaoManual    = mergeDictCloudWins(r.ativacaoManual,     local.ativacaoManual);
-  r.ativacaoManualOv  = mergeDictCloudWins(r.ativacaoManualOv,   local.ativacaoManualOv);
+
+  // ── ativacaoManual: merge de 3 níveis {ymKey: {userId: val}} — union de usuários ──
+  // Garante que os dados de diferentes usuários sejam somados, não substituídos
+  {
+    function mergeAtivacao3Level(cld, loc) {
+      const out = JSON.parse(JSON.stringify(cld||{}));
+      Object.keys(loc||{}).forEach(ymKey => {
+        const locEntry = loc[ymKey];
+        if(locEntry != null && typeof locEntry === 'object' && !Array.isArray(locEntry)){
+          if(!out[ymKey] || typeof out[ymKey] !== 'object') out[ymKey] = {};
+          // Itera pelos userIds do local e mescla
+          Object.keys(locEntry).forEach(uid => {
+            if(cloudIsNewer){
+              // Cloud vence: só usa local se cloud não tiver o userId
+              if(out[ymKey][uid] === undefined) out[ymKey][uid] = locEntry[uid];
+            } else {
+              // Local vence: sobrescreve o userId do usuário logado
+              out[ymKey][uid] = locEntry[uid];
+            }
+          });
+        } else if(locEntry != null) {
+          // Legado: era número direto → mantém se cloud não tiver
+          if(out[ymKey] === undefined) out[ymKey] = locEntry;
+        }
+      });
+      return out;
+    }
+    r.ativacaoManual   = mergeAtivacao3Level(r.ativacaoManual,   local.ativacaoManual);
+    r.ativacaoManualOv = mergeAtivacao3Level(r.ativacaoManualOv, local.ativacaoManualOv);
+  }
+
   if (local.psvData && Object.keys(local.psvData).length)
     r.psvData         = mergeDictCloudWins(r.psvData,            local.psvData);
 
@@ -6383,11 +6412,11 @@ function _deepMerge(cloud, local) {
     r.psvPlano = [...map.values()];
   }
 
-  // ── psvTpv: union por (ymKey + hubId + mk), local vence ──
+  // ── psvTpv: union por (userId + ymKey + hubId + mk), local vence ──
   {
     const map = new Map();
-    (r.psvTpv||[]).forEach(row => { map.set(`${String(row.ymKey)}|${String(row.hubId)}|${String(row.mk)}`, row); });
-    (local.psvTpv||[]).forEach(row => { map.set(`${String(row.ymKey)}|${String(row.hubId)}|${String(row.mk)}`, row); });
+    (r.psvTpv||[]).forEach(row => { map.set(`${String(row.userId||'')}|${String(row.ymKey)}|${String(row.hubId)}|${String(row.mk)}`, row); });
+    (local.psvTpv||[]).forEach(row => { map.set(`${String(row.userId||'')}|${String(row.ymKey)}|${String(row.hubId)}|${String(row.mk)}`, row); });
     r.psvTpv = [...map.values()];
   }
 
@@ -6536,7 +6565,7 @@ function dbToTables(db) {
   // ── psv_plano_acao: {userId, ymKey, indicador, problema, causa, acoes, periodo, resultado} ──
   const psvPlanoAcao = (db.psvPlano || []).map(r => ({...r}));
 
-  // ── psv_tpv: {ymKey, hubId, mk, valor_real, valor_proj} ──
+  // ── psv_tpv: {userId, ymKey, hubId, mk, valor_real, valor_proj} — inclui userId para isolamento ──
   const psvTpv = (db.psvTpv || []).map(r => ({...r}));
 
   // ── psv_detrator_promotor: {ymKey, hubId, tipo, safra, vendedorId, nome_manual, valor} ──
@@ -6733,8 +6762,9 @@ function tablesToDB(tables) {
   })).filter(r => r.userId && r.ymKey);
 
   // ── psv_tpv ──
-  // Força ymKey, hubId, mk como string; valores como número
+  // Força userId, ymKey, hubId, mk como string; valores como número
   db.psvTpv = (tables.psv_tpv || []).map(r => ({
+    userId    : String(r.userId || ''),
     ymKey     : String(r.ymKey  || ''),
     hubId     : String(r.hubId  || ''),
     mk        : String(r.mk     || ''),
@@ -8238,14 +8268,16 @@ function _getHubIdForPsv(){
 
 function _getTpvRow(ymKey, hubId, mk){
   if(!DB.psvTpv) DB.psvTpv = [];
-  return DB.psvTpv.find(r => String(r.ymKey)===String(ymKey) && String(r.hubId)===String(hubId) && String(r.mk)===String(mk));
+  const uid = String(currentUser?.id || 'default');
+  return DB.psvTpv.find(r => String(r.userId||'')===uid && String(r.ymKey)===String(ymKey) && String(r.hubId)===String(hubId) && String(r.mk)===String(mk));
 }
 
 function _upsertTpvRow(ymKey, hubId, mk, field, value){
   if(!DB.psvTpv) DB.psvTpv = [];
-  let row = DB.psvTpv.find(r => String(r.ymKey)===String(ymKey) && String(r.hubId)===String(hubId) && String(r.mk)===String(mk));
+  const uid = String(currentUser?.id || 'default');
+  let row = DB.psvTpv.find(r => String(r.userId||'')===uid && String(r.ymKey)===String(ymKey) && String(r.hubId)===String(hubId) && String(r.mk)===String(mk));
   if(!row){
-    row = {ymKey: String(ymKey), hubId: String(hubId), mk: String(mk), valor_real:null, valor_proj:null};
+    row = {userId: uid, ymKey: String(ymKey), hubId: String(hubId), mk: String(mk), valor_real:null, valor_proj:null};
     DB.psvTpv.push(row);
   }
   row[field] = value || null;
@@ -9244,8 +9276,14 @@ function _renderPSVKpis(ymKey, y, m, sellers){
   // Projeção: mesmo cálculo do dashboard
   const gap  = Math.max(0, meta - real);
   const proj = duPass > 0 ? Math.round(real / duPass * duTotal) : 0;
-  const atv  = (DB.ativacaoManual||{})[ymKey] != null
-    ? (DB.ativacaoManual||{})[ymKey]
+  // Lê ativação filtrada pelo userId logado (formato: {ymKey: {userId: val}})
+  const _ovAtvUserId = String(currentUser?.id || 'default');
+  const _ovAtvYmObj  = (DB.ativacaoManual||{})[ymKey];
+  const _ovAtvManual = (_ovAtvYmObj != null && typeof _ovAtvYmObj === 'object')
+    ? (_ovAtvYmObj[_ovAtvUserId] ?? null)
+    : (typeof _ovAtvYmObj === 'number' ? _ovAtvYmObj : null); // retrocompatibilidade
+  const atv  = _ovAtvManual !== null
+    ? _ovAtvManual
     : sellers.reduce((a,s)=>a+totalAtivacao(ymKey,s.id),0);
   const pct  = meta > 0 ? Math.round(real / meta * 100) : 0;
 
@@ -9277,11 +9315,15 @@ function _renderPSVKpis(ymKey, y, m, sellers){
     {k:'M2', v:safraM2, c:'#d97706', bg:'rgba(217,119,6,.07)', border:'rgba(217,119,6,.2)'},
   ];
 
-  // TPV: lê da nova tabela DB.psvTpv por hubId
+  // TPV: lê da nova tabela DB.psvTpv por hubId + userId
   const hubId = String(_getHubIdForPsv());
+  const _tpvUserId = String(currentUser?.id || 'default');
   function getTpvVal(mk, field){
-    const row = (DB.psvTpv||[]).find(r => String(r.ymKey)===String(ymKey) && String(r.hubId)===String(hubId) && String(r.mk)===String(mk));
+    const row = (DB.psvTpv||[]).find(r => String(r.userId||'')===_tpvUserId && String(r.ymKey)===String(ymKey) && String(r.hubId)===String(hubId) && String(r.mk)===String(mk));
     if(row && row[field] != null) return row[field];
+    // Fallback legado: sem userId (registros antigos)
+    const rowLegacy = (DB.psvTpv||[]).find(r => !r.userId && String(r.ymKey)===String(ymKey) && String(r.hubId)===String(hubId) && String(r.mk)===String(mk));
+    if(rowLegacy && rowLegacy[field] != null) return rowLegacy[field];
     // Fallback legado para psvData
     if(field==='valor_real' && DB.psvData?.tpv?.[ymKey]?.[mk]) return DB.psvData.tpv[ymKey][mk];
     if(field==='valor_proj' && DB.psvData?.tpvProj?.[ymKey]?.[mk]) return DB.psvData.tpvProj[ymKey][mk];
