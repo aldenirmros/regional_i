@@ -1447,33 +1447,40 @@ canvas { display:block; max-width:100%; }
     <!-- ══ TAB 2: AJUSTE DE DIAS ══ -->
     <div id="dash-tab-dias" class="tab-pane">
       <div class="dias-config">
-        <!-- ── Override manual ── -->
-        <span class="dias-config-title">⚙️ Ajuste Manual de Dias</span>
+        <!-- ── Cálculo Automático com Feriados ── -->
+        <span class="dias-config-title">📅 Dias Úteis — Cálculo Automático</span>
         <div class="dias-config-sep"></div>
-        <div class="dias-config-field">
-          <label>Total úteis (override):</label>
-          <input type="number" id="cfg-du-total" min="1" max="31" placeholder="Auto">
+
+        <!-- Equação visual -->
+        <div id="dias-equacao" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:13px;font-weight:700;">
+          <span style="color:var(--tl);font-size:11px;font-weight:600;">Calendário:</span>
+          <span id="eq-bruto" style="color:var(--blue);font-size:20px;">—</span>
+          <span style="color:var(--tl);">−</span>
+          <span style="color:var(--tl);font-size:11px;font-weight:600;">Feriados:</span>
+          <span id="eq-feriados" style="color:var(--orange);font-size:20px;">0</span>
+          <span style="color:var(--tl);">=</span>
+          <span style="color:var(--tl);font-size:11px;font-weight:600;">Úteis Reais:</span>
+          <span id="eq-uteis" style="color:var(--green);font-size:20px;font-weight:900;">—</span>
         </div>
-        <div class="dias-config-field">
-          <label>Decorridos (override):</label>
-          <input type="number" id="cfg-du-pass" min="0" max="31" placeholder="Auto">
-        </div>
-        <button class="btn-sm" onclick="saveDiasConfig()">Aplicar</button>
-        <button class="btn-sm btn-sm-g" onclick="resetDiasConfig()">Resetar</button>
-        <span id="dias-config-status" style="font-size:10.5px;color:var(--tl)"></span>
-        <div class="dias-config-divider"></div>
-        <!-- ── Dias a Descontar ── -->
-        <span class="dias-config-title">📉 Dias a Descontar</span>
+
         <div class="dias-config-sep"></div>
+
+        <!-- Campo de feriados -->
         <div class="dias-config-field">
-          <label>Dias úteis a remover:</label>
+          <label>🏖️ Descontar Feriados:</label>
           <input type="number" id="cfg-desconto-dias" min="0" max="31" placeholder="0"
-            style="width:70px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:5px 8px;font-family:var(--mono);font-size:13px;color:var(--td);outline:none;transition:border-color .14s;"
-            onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"
+            style="width:70px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:5px 8px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--td);outline:none;transition:border-color .14s;"
+            onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'"
             oninput="saveDescontoDias(this.value)"
             onkeydown="if(event.key==='Enter')this.blur()">
         </div>
-        <span id="desconto-dias-info" style="font-size:10.5px;color:var(--tl)">Ex: 2 → subtrai 2 dias úteis do total do mês</span>
+        <button class="btn-sm btn-sm-g" onclick="resetDescontoDias()">🔄 Resetar</button>
+        <span id="desconto-dias-info" style="font-size:10.5px;color:var(--tl)">Digite o nº de feriados a subtrair do mês</span>
+        <span id="dias-config-status" style="font-size:10.5px;color:var(--green);font-weight:700;"></span>
+
+        <!-- Hidden inputs mantidos para compatibilidade com saveDiasConfig / resetDiasConfig -->
+        <input type="hidden" id="cfg-du-total">
+        <input type="hidden" id="cfg-du-pass">
       </div>
 
       <!-- Resumo dos dias do mês -->
@@ -3606,15 +3613,38 @@ function goPage(name, el){
   const lb={dash:'Dashboard — Visão Geral',lancar:'Lançar Vendas',sellers:'Vendedores / HUBs',regionais:'Gestão de Regionais',db:'Banco de Dados',overview:'Visão Geral por Regional',psv:'PSV — Apresentação de Resultados'};
   const tbSub=document.getElementById('tb-sub'); if(tbSub) tbSub.textContent=lb[name]||'';
   if(name==='dash'){
-    renderDash();
-    // FIX: Chart.js cria gráficos com dimensão 0 quando a página
-    // acaba de se tornar visível. Dois frames de requestAnimationFrame
-    // garantem que o browser finalizou o layout antes do resize.
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      if(typeof chartDonut!=='undefined'&&chartDonut){try{chartDonut.resize();}catch(e){}}
-      if(typeof chartBar  !=='undefined'&&chartBar  ){try{chartBar.resize();  }catch(e){}}
-      if(typeof chartLine !=='undefined'&&chartLine ){try{chartLine.resize(); }catch(e){}}
-    }));
+    // FIX: se DB ainda não tem vendas (DB vazio / antes do cloudPull terminar),
+    // aguarda o pull antes de renderizar para evitar dash em branco
+    const _hasData = currentUser && (DB.sellers?.length > 0);
+    const _renderDashSafe = () => {
+      renderDash();
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        if(typeof chartDonut!=='undefined'&&chartDonut){try{chartDonut.resize();}catch(e){}}
+        if(typeof chartBar  !=='undefined'&&chartBar  ){try{chartBar.resize();  }catch(e){}}
+        if(typeof chartLine !=='undefined'&&chartLine ){try{chartLine.resize(); }catch(e){}}
+      }));
+    };
+    if(!_hasData && typeof cloudPull === 'function'){
+      // Mostra estado de carregando temporariamente
+      const dashPage = document.getElementById('page-dash');
+      if(dashPage && !dashPage.querySelector('._dash-loading')){
+        const _ld = document.createElement('div');
+        _ld.className = '_dash-loading';
+        _ld.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--tl);z-index:5;background:var(--bg)';
+        _ld.textContent = 'Carregando dados...';
+        dashPage.style.position = 'relative';
+        dashPage.appendChild(_ld);
+        cloudPull().then(()=>{
+          populateMes(); populateQESellers();
+          _ld.remove();
+          _renderDashSafe();
+        }).catch(()=>{ _ld.remove(); _renderDashSafe(); });
+      } else {
+        _renderDashSafe();
+      }
+    } else {
+      _renderDashSafe();
+    }
   }
   if(name==='lancar')    renderLancar();
   if(name==='sellers')   renderSellers();
@@ -3646,33 +3676,44 @@ function renderDash(){
   const ymKey=currentYM, {y,m}=ymToYM(ymKey), t=today();
   const duAll=getDiasUteis(y,m), coAll=getDiasCorridos(y,m);
 
-  // ── Desconto de dias: subtrai quantidade numérica dos dias úteis totais ──
+  // ── Desconto de feriados: valor salvo em DB.diasConfig[key].totalFeriados ──
   const cfg = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
-  const desconto = Math.max(0, parseInt(cfg.totalFeriados)||0);  // "Dias a descontar"
+  const desconto = Math.max(0, parseInt(cfg.totalFeriados)||0);
 
-  // Manual overrides
-  const duTotal = cfg.total  != null ? cfg.total  : Math.max(0, duAll.length - desconto);
-  const coTotal = cfg.total  != null ? cfg.total  : Math.max(0, coAll.length - desconto);
-  const duPass  = cfg.passed != null ? cfg.passed : Math.max(0, duAll.filter(d=>d<=t).length - (duAll.filter(d=>d<=t).length > 0 ? Math.round(desconto * duAll.filter(d=>d<=t).length / duAll.length) : 0));
-  const coPass  = cfg.passed != null ? cfg.passed : coAll.filter(d=>d<=t).length;
-  const duRest  = Math.max(0, duTotal - duPass);
+  // ── Cálculo 100% automático (sem override manual) ──
+  // Total = dias úteis do calendário − feriados informados
+  const duBruto = duAll.length;
+  const duTotal = Math.max(0, duBruto - desconto);
+  const coTotal = Math.max(0, coAll.length - desconto);
 
-  // Populate config inputs with current values
-  const cfgTotalEl = document.getElementById('cfg-du-total');
-  const cfgPassEl  = document.getElementById('cfg-du-pass');
-  if(cfgTotalEl && !cfgTotalEl.dataset.dirty) cfgTotalEl.placeholder = Math.max(0, duAll.length - desconto) + ' (auto)';
-  if(cfgPassEl  && !cfgPassEl.dataset.dirty)  cfgPassEl.placeholder  = duPass + ' (auto)';
-  if(cfg.total  != null && cfgTotalEl) cfgTotalEl.value = cfg.total;
-  if(cfg.passed != null && cfgPassEl)  cfgPassEl.value  = cfg.passed;
+  // Dias passados = dias úteis (seg-sex) anteriores a hoje inclusive,
+  // mas se hoje for fim de semana, conta até a última sexta passada.
+  // Desconta proporção de feriados nos dias já corridos.
+  const duPassedRaw = duAll.filter(d => d <= t).length;
+  const duPassFeriadosProp = duAll.length > 0
+    ? Math.round(desconto * duPassedRaw / duAll.length)
+    : 0;
+  const duPass = Math.max(0, duPassedRaw - duPassFeriadosProp);
+  const coPass = coAll.filter(d=>d<=t).length;
+  const duRest = Math.max(0, duTotal - duPass);
 
-  // Popula o campo de desconto com o valor atual
+  // ── Popula equação visual na aba de dias ──
+  const _eqEl = id => document.getElementById(id);
+  if(_eqEl('eq-bruto'))    _eqEl('eq-bruto').textContent    = duBruto;
+  if(_eqEl('eq-feriados')) _eqEl('eq-feriados').textContent = desconto;
+  if(_eqEl('eq-uteis'))    _eqEl('eq-uteis').textContent    = duTotal;
+
+  // Popula o campo de desconto com o valor atual (sem sobrescrever se o user está editando)
   const descontoInp = document.getElementById('cfg-desconto-dias');
-  if(descontoInp && desconto > 0) descontoInp.value = desconto;
-  else if(descontoInp && !descontoInp.value) descontoInp.value = '';
+  if(descontoInp && document.activeElement !== descontoInp){
+    descontoInp.value = desconto > 0 ? desconto : '';
+  }
 
-  // Status
+  // Status da aba dias
   const statusEl = document.getElementById('dias-config-status');
-  if(statusEl) statusEl.textContent = (cfg.total!=null||cfg.passed!=null) ? '⚠️ Modo manual ativo' : (desconto>0 ? `📉 ${desconto} dia(s) descontado(s)` : '');
+  if(statusEl) statusEl.textContent = desconto > 0
+    ? `✅ ${desconto} feriado(s) descontado(s) — ${duTotal} dias úteis reais`
+    : '';
 
 
   const metaTotal=getScopedMeta(ymKey);
@@ -3784,13 +3825,13 @@ function renderDash(){
   const _el = id => document.getElementById(id);
   if(_el('d-uteis2'))    _el('d-uteis2').textContent    = duPass;
   if(_el('d-uteis-v2'))  _el('d-uteis-v2').textContent  = `${duPass} dia(s) passado(s)`;
-  if(_el('d-uteis-s2'))  _el('d-uteis-s2').textContent  = `de ${duTotal} úteis no mês`;
+  if(_el('d-uteis-s2'))  _el('d-uteis-s2').textContent  = `de ${duTotal} úteis reais no mês`;
   if(_el('d-rest2'))     _el('d-rest2').textContent     = duRest;
   if(_el('d-rest-v2'))   _el('d-rest-v2').textContent   = `${duRest} dia(s) restante(s)`;
   if(_el('d-fd2'))       _el('d-fd2').textContent       = fazerDia;
   if(_el('d-total2'))    _el('d-total2').textContent    = duTotal;
-  if(_el('d-total-v2'))  _el('d-total-v2').textContent  = `${duAll.length} brutos no mês`;
-  if(_el('d-feriados-s2')) _el('d-feriados-s2').textContent = desconto ? `${desconto} dia(s) descontado(s)` : 'sem desconto';
+  if(_el('d-total-v2'))  _el('d-total-v2').textContent  = `${duBruto} calendário − ${desconto} feriado(s)`;
+  if(_el('d-feriados-s2')) _el('d-feriados-s2').textContent = desconto ? `${desconto} feriado(s) descontado(s)` : 'sem feriados';
   if(_el('dias-resumo-mes')) _el('dias-resumo-mes').textContent = `${MESES[m]} ${y}`;
 
   // TABLE — sempre mostra todos os vendedores, mas linha selecionada fica destacada
@@ -3869,8 +3910,11 @@ function renderRankingDia(){
   const inp = document.getElementById('ranking-dia-input');
   if(!inp) return;
   if(!inp.value){
-    const t = today(); // retorna YYYY-MM-DD
-    inp.value = t;
+    const t = today();
+    const yyyy = t.getFullYear();
+    const mm   = String(t.getMonth()+1).padStart(2,'0');
+    const dd   = String(t.getDate()).padStart(2,'0');
+    inp.value  = `${yyyy}-${mm}-${dd}`;
   }
   const dateStr = inp.value; // YYYY-MM-DD
   const content = document.getElementById('ranking-dia-content');
@@ -5369,8 +5413,10 @@ function resetDiasConfig(){
   const _dk = getUserDiasKey(currentYM);
   const existing = DB.diasConfig[_dk] || {};
   DB.diasConfig[_dk]={...existing, total:null, passed:null};
-  document.getElementById('cfg-du-total').value='';
-  document.getElementById('cfg-du-pass').value='';
+  const cfgTotalEl = document.getElementById('cfg-du-total');
+  const cfgPassEl  = document.getElementById('cfg-du-pass');
+  if(cfgTotalEl) cfgTotalEl.value='';
+  if(cfgPassEl)  cfgPassEl.value='';
   saveDB(); renderDash();
   toast('🔄 Override de dias removido (automático com feriados)');
 }
@@ -5387,6 +5433,9 @@ function saveDescontoDias(val){
   const _dk = getUserDiasKey(currentYM);
   if(!DB.diasConfig[_dk]) DB.diasConfig[_dk]={total:null,passed:null};
   DB.diasConfig[_dk].totalFeriados = n > 0 ? n : null;
+  // Garante que overrides manuais sejam nulos (modo automático)
+  DB.diasConfig[_dk].total  = null;
+  DB.diasConfig[_dk].passed = null;
   DB._savedAt = Date.now();
   try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
   flashSaved();
@@ -5395,8 +5444,25 @@ function saveDescontoDias(val){
   renderDash();
   const info = document.getElementById('desconto-dias-info');
   if(info) info.textContent = n > 0
-    ? `✅ ${n} dia(s) útil(eis) será(ão) subtraído(s) do total automático`
-    : 'Ex: 2 → subtrai 2 dias úteis do total do mês';
+    ? `📅 ${n} feriado(s) será(ão) subtraído(s) do total automático do mês`
+    : 'Digite o nº de feriados a subtrair do mês';
+}
+
+function resetDescontoDias(){
+  if(!DB.diasConfig) DB.diasConfig={};
+  const _dk = getUserDiasKey(currentYM);
+  DB.diasConfig[_dk] = {total:null, passed:null, totalFeriados:null};
+  const inp = document.getElementById('cfg-desconto-dias');
+  if(inp) inp.value = '';
+  const info = document.getElementById('desconto-dias-info');
+  if(info) info.textContent = 'Digite o nº de feriados a subtrair do mês';
+  DB._savedAt = Date.now();
+  try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+  flashSaved();
+  clearTimeout(saveDB._t);
+  _syncEnqueue();
+  renderDash();
+  toast('🔄 Feriados removidos — usando calendário automático puro');
 }
 
 function saveSellerMeta(sid){
@@ -6277,25 +6343,25 @@ function _deepMerge(cloud, local) {
   if (local.psvData && Object.keys(local.psvData).length)
     r.psvData         = mergeDictCloudWins(r.psvData,            local.psvData);
 
-  // ── diasConfig: merge — scalars usam cloudIsNewer, totalFeriados usa local wins ──
+  // ── diasConfig: merge por chave completa (ymKey ou u{id}_ymKey) — local vence em totalFeriados ──
   {
     const cld = r.diasConfig     || {};
     const loc = local.diasConfig || {};
     const merged = JSON.parse(JSON.stringify(cld));
-    Object.keys(loc).forEach(ymKey => {
-      if (!merged[ymKey]) merged[ymKey] = {};
-      const cldCfg = cld[ymKey] || {};
-      const locCfg = loc[ymKey] || {};
+    Object.keys(loc).forEach(fullKey => {
+      if (!merged[fullKey]) merged[fullKey] = {};
+      const cldCfg = cld[fullKey] || {};
+      const locCfg = loc[fullKey] || {};
       // total / passed: local vence (ou cloud se cloudIsNewer)
       if(!cloudIsNewer){
-        if(locCfg.total  != null) merged[ymKey].total  = locCfg.total;
-        if(locCfg.passed != null) merged[ymKey].passed = locCfg.passed;
+        if(locCfg.total  != null) merged[fullKey].total  = locCfg.total;
+        if(locCfg.passed != null) merged[fullKey].passed = locCfg.passed;
       } else {
-        if(merged[ymKey].total  == null && locCfg.total  != null) merged[ymKey].total  = locCfg.total;
-        if(merged[ymKey].passed == null && locCfg.passed != null) merged[ymKey].passed = locCfg.passed;
+        if(merged[fullKey].total  == null && locCfg.total  != null) merged[fullKey].total  = locCfg.total;
+        if(merged[fullKey].passed == null && locCfg.passed != null) merged[fullKey].passed = locCfg.passed;
       }
-      // totalFeriados: local sempre vence (é uma entrada do usuário local)
-      if(locCfg.totalFeriados != null) merged[ymKey].totalFeriados = locCfg.totalFeriados;
+      // totalFeriados: local sempre vence (é uma entrada do usuário local, individual por usuário)
+      if(locCfg.totalFeriados != null) merged[fullKey].totalFeriados = locCfg.totalFeriados;
     });
     r.diasConfig = merged;
   }
@@ -6405,14 +6471,20 @@ function dbToTables(db) {
     });
   });
 
-  // ── diasConfig: achata {ymKey: {total,passed,totalFeriados}} ──
+  // ── diasConfig: achata {key: {total,passed,totalFeriados}} → com coluna userId separada ──
+  // A chave pode ser 'YYYYMM' (global/gerente) ou 'u{userId}_{YYYYMM}' (individual)
   const diasConfig = [];
-  Object.keys(db.diasConfig || {}).forEach(ymKey => {
-    const cfg = db.diasConfig[ymKey] || {};
-    if (cfg.total  != null) diasConfig.push({ ymKey, chave: 'total',        val: cfg.total });
-    if (cfg.passed != null) diasConfig.push({ ymKey, chave: 'passed',       val: cfg.passed });
+  Object.keys(db.diasConfig || {}).forEach(fullKey => {
+    const cfg = db.diasConfig[fullKey] || {};
+    // Decompõe a chave: 'u1002_202605' → userId='1002', ymKey='202605'
+    //                   '202605'       → userId='',     ymKey='202605'
+    let userId = '', ymKey = fullKey;
+    const m = fullKey.match(/^u(\d+)_(\d{6})$/);
+    if (m) { userId = m[1]; ymKey = m[2]; }
+    if (cfg.total  != null) diasConfig.push({ ymKey, userId, chave: 'total',        val: cfg.total });
+    if (cfg.passed != null) diasConfig.push({ ymKey, userId, chave: 'passed',       val: cfg.passed });
     if (cfg.totalFeriados != null && cfg.totalFeriados > 0)
-      diasConfig.push({ ymKey, chave: 'totalFeriados', val: cfg.totalFeriados });
+      diasConfig.push({ ymKey, userId, chave: 'totalFeriados', val: cfg.totalFeriados });
   });
 
   // ── ativacaoManual: achata {ymKey: {sellerId: val}} ──
@@ -6582,18 +6654,21 @@ function tablesToDB(tables) {
     db.mValues[ymKey][timeId][mk] = Number(val);
   });
 
-  // ── diasConfig: reconstrói {ymKey: {total, passed, totalFeriados}} ──
+  // ── diasConfig: reconstrói {fullKey: {total, passed, totalFeriados}} ──
+  // fullKey = 'u{userId}_{ymKey}' se userId presente, ou 'ymKey' se global
   db.diasConfig = {};
-  (tables.diasConfig || []).forEach(({ ymKey, chave, val }) => {
+  (tables.diasConfig || []).forEach(({ ymKey, userId, chave, val }) => {
     if (!ymKey || !chave) return;
-    if (!db.diasConfig[ymKey]) db.diasConfig[ymKey] = {};
+    // Reconstrói a chave composta
+    const fullKey = (userId && String(userId).trim()) ? `u${userId}_${ymKey}` : ymKey;
+    if (!db.diasConfig[fullKey]) db.diasConfig[fullKey] = {};
     if (chave === 'totalFeriados') {
       const n = Number(val);
-      db.diasConfig[ymKey].totalFeriados = (!isNaN(n) && n > 0) ? n : null;
+      db.diasConfig[fullKey].totalFeriados = (!isNaN(n) && n > 0) ? n : null;
     } else if (chave === 'feriados') {
       // Retrocompatibilidade: ignora formato antigo de datas (não mais usado)
     } else {
-      db.diasConfig[ymKey][chave] = Number(val);
+      db.diasConfig[fullKey][chave] = Number(val);
     }
   });
 
@@ -7440,6 +7515,7 @@ function doLogin(){
   if(loginBtn){ loginBtn.textContent='Carregando…'; loginBtn.disabled=true; }
   cloudPull().then(ok=>{
     if(ok){
+      // Atualiza currentUser com dados frescos do Sheets
       const freshUser = DB.users?.find(u=>u.id===currentUser.id)
                      || DB.users?.find(u=>(u.username||'').toLowerCase()===currentUser.username?.toLowerCase());
       if(freshUser){
@@ -7447,13 +7523,24 @@ function doLogin(){
         setSession(currentUser);
         applySession();
       }
-      populateMes(); populateQESellers();
     }
-    setTimeout(()=>{ goPage('dash', navEl); }, 50);
-    if(loginBtn){ loginBtn.textContent='Entrar'; loginBtn.disabled=false; }
+    // FIX: popula seletores ANTES de navegar para o dash
+    // Garante que currentUser e DB estejam prontos antes de qualquer render
+    populateMes();
+    populateQESellers();
+    // Usa requestAnimationFrame para garantir layout finalizado antes dos graficos
+    requestAnimationFrame(()=>{
+      goPage('dash', navEl);
+      if(loginBtn){ loginBtn.textContent='Entrar'; loginBtn.disabled=false; }
+    });
   }).catch(()=>{
-    setTimeout(()=>{ goPage('dash', navEl); }, 50);
-    if(loginBtn){ loginBtn.textContent='Entrar'; loginBtn.disabled=false; }
+    // Mesmo sem dados da nuvem, renderiza com DB local
+    populateMes();
+    populateQESellers();
+    requestAnimationFrame(()=>{
+      goPage('dash', navEl);
+      if(loginBtn){ loginBtn.textContent='Entrar'; loginBtn.disabled=false; }
+    });
   });
 }
 
@@ -7574,7 +7661,7 @@ function clearOvFilter(){
 function renderOverview(){
   const ymKey=currentYM, {y,m}=ymToYM(ymKey), t=today();
   const duAll   = getDiasUteis(y,m);
-  const cfg     = DB.diasConfig[ymKey]||{};
+  const cfg     = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
   const duTotal = cfg.total  ?? duAll.length;
   const duPass  = cfg.passed ?? duAll.filter(d=>d<=t).length;
   const u       = currentUser;
@@ -8911,13 +8998,30 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
     setSession(currentUser);
     document.getElementById('login-ov').classList.add('hidden');
     applySession();
-    // ── FIX: usa setTimeout para garantir que o browser finalize o layout
-    // antes de criar os gráficos Chart.js. Sem isso, os canvas têm dimensão
-    // 0×0 no primeiro render (síncrono) e nada aparece na tela inicial.
-    setTimeout(() => {
+    // FIX: sincroniza com a nuvem ANTES de renderizar o dash
+    // Garante que DB esteja populado e currentUser correto antes de qualquer render
+    {
       const navEl = document.querySelectorAll('.ni')[0];
-      goPage('dash', navEl);
-    }, 0);
+      const _doRender = () => {
+        populateMes();
+        populateQESellers();
+        requestAnimationFrame(() => goPage('dash', navEl));
+      };
+      cloudPull().then(ok => {
+        if(ok){
+          // Atualiza currentUser com dados frescos do Sheets
+          const sess = getSession();
+          const freshUser = sess && (DB.users?.find(u=>u.id===sess.id)
+                         || DB.users?.find(u=>(u.username||'').toLowerCase()===(sess.username||'').toLowerCase()));
+          if(freshUser){
+            currentUser = {...sess, ...freshUser, password: sess.password || freshUser.password};
+            setSession(currentUser);
+            applySession();
+          }
+        }
+        _doRender();
+      }).catch(() => _doRender());
+    }
   } else {
     document.getElementById('login-ov').classList.remove('hidden');
     if(!getCfg().gsUrl)
