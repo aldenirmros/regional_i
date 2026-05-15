@@ -1106,7 +1106,11 @@ select.sel:focus{border-color:var(--blue);}
 .scope-banner{display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,rgba(37,99,235,.07),transparent);border-left:3px solid var(--blue);border-radius:0 var(--rs) var(--rs) 0;padding:8px 16px;margin-bottom:16px;font-size:12px;font-weight:600;color:var(--blue);}
 .scope-banner span{color:var(--tm);font-weight:400;}
 /* gerente dash filter */
-.dash-filter{display:flex;align-items:center;gap:10px;background:var(--white);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);padding:10px 16px;margin-bottom:18px;flex-wrap:wrap;}
+/* ── CONTROLS ROW: filtro + tabs na mesma linha ── */
+.dash-controls-row{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+.dash-controls-row .dash-filter{margin-bottom:0;}
+.dash-controls-row #dash-tabs{margin-bottom:0!important;box-shadow:none;background:transparent;border:none;padding:0;}
+.dash-filter{display:inline-flex;align-items:center;gap:10px;max-width:fit-content;background:var(--white);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);padding:10px 16px;flex-wrap:wrap;}
 .dash-filter-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tl);white-space:nowrap;}
 .dash-filter select{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12.5px;font-weight:500;color:var(--td);outline:none;cursor:pointer;transition:border-color .14s;min-width:160px;}
 .dash-filter select:focus{border-color:var(--blue);}
@@ -1645,48 +1649,53 @@ canvas { display:block; max-width:100%; }
   <!-- ══ PAGE: DASHBOARD ══ -->
   <div id="page-dash" class="page active">
 
-    <!-- FILTRO DO GERENTE: Regional / Time -->
-    <div class="dash-filter" id="dash-gerente-filter" style="display:none">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--tl)" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-      <span class="dash-filter-label">Visualizando:</span>
-      <select id="df-regional" onchange="onDashFilterRegional()">
-        <option value="">🏠 Todas as Regionais</option>
-      </select>
-      <select id="df-time" onchange="onDashFilterTime()">
-        <option value="">🏢 Todos os HUBs</option>
-      </select>
-      <div class="dash-filter-sep"></div>
-      <span class="dash-filter-info" id="df-info">Exibindo toda a equipe</span>
-      <!-- Badge de travado -->
-      <span class="filter-lock-badge" id="filter-lock-badge">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        Filtro travado
-      </span>
-      <button class="btn-sm btn-sm-g" id="btn-clear-dash-filter" onclick="clearDashFilter()">✕ Limpar</button>
-      <!-- Botão Travar -->
-      <button class="btn-lock-filter" id="btn-lock-filter" onclick="toggleFilterLock()" title="Travar filtro (mantém ao trocar mês)">
-        <svg id="lock-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <span id="lock-label">Travar</span>
-      </button>
-    </div>
+    <!-- ══ LINHA DE CONTROLES: filtro + tabs na mesma linha ══ -->
+    <div class="dash-controls-row">
+
+      <!-- FILTRO DO GERENTE: Regional / Time -->
+      <div class="dash-filter" id="dash-gerente-filter" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--tl)" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <span class="dash-filter-label">Visualizando:</span>
+        <select id="df-regional" onchange="onDashFilterRegional()">
+          <option value="">🏠 Todas as Regionais</option>
+        </select>
+        <select id="df-time" onchange="onDashFilterTime()">
+          <option value="">🏢 Todos os HUBs</option>
+        </select>
+        <div class="dash-filter-sep"></div>
+        <span class="dash-filter-info" id="df-info">Exibindo toda a equipe</span>
+        <!-- Badge de travado -->
+        <span class="filter-lock-badge" id="filter-lock-badge">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Filtro travado
+        </span>
+        <button class="btn-sm btn-sm-g" id="btn-clear-dash-filter" onclick="clearDashFilter()">&#10005; Limpar</button>
+        <!-- Botão Travar -->
+        <button class="btn-lock-filter" id="btn-lock-filter" onclick="toggleFilterLock()" title="Travar filtro (mantém ao trocar mês)">
+          <svg id="lock-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span id="lock-label">Travar</span>
+        </button>
+      </div>
+
+      <!-- ══ TABS DO DASHBOARD ══ -->
+      <div class="tabs" id="dash-tabs" style="margin-bottom:14px">
+        <button class="tab-btn on" id="dash-tab-btn-visao" onclick="switchTab('dash-tab-visao',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Visão Geral
+        </button>
+        <button class="tab-btn" id="dash-tab-btn-dias" onclick="switchTab('dash-tab-dias',this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Ajuste de Dias
+        </button>
+      </div>
+
+    </div><!-- /.dash-controls-row -->
 
     <!-- Filter banner (por vendedor) -->
     <div class="sel-banner" id="sel-banner">
       <div class="sel-banner-dot" id="sel-banner-dot"></div>
       <span id="sel-banner-txt">Exibindo dados de: —</span>
-      <button onclick="clearSellerFilter()">✕ Ver todos</button>
-    </div>
-
-    <!-- ══ TABS DO DASHBOARD ══ -->
-    <div class="tabs" id="dash-tabs" style="margin-bottom:14px">
-      <button class="tab-btn on" id="dash-tab-btn-visao" onclick="switchTab('dash-tab-visao',this)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        Visão Geral
-      </button>
-      <button class="tab-btn" id="dash-tab-btn-dias" onclick="switchTab('dash-tab-dias',this)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        Ajuste de Dias
-      </button>
+      <button onclick="clearSellerFilter()">&#10005; Ver todos</button>
     </div>
 
     <!-- ══ TAB 1: VISÃO GERAL ══ -->
