@@ -3521,15 +3521,21 @@ function getUserDiasKey(ymKey){
 }
 
 // ── Fonte única de verdade para dias úteis do mês ──────────────────────────
-// Retorna { duTotal, duPass, duRest } aplicando desconto de feriados
-// de forma idêntica no Dashboard e na página PSV.
+// Retorna { duTotal, duPass, duRest, desconto, duAll }
+// Usa exclusivamente a chave pessoal (getUserDiasKey) — sem fallback global —
+// para evitar que overrides de outro perfil contaminem o cálculo automático.
+// Se não houver dados salvos, retorna o cálculo padrão via getDiasUteis().
 function getMonthTimeStats(ymKey){
   const {y, m} = ymToYM(ymKey);
   const t       = today();
-  const duAll   = getDiasUteis(y, m);
+  const duAll   = getDiasUteis(y, m);          // array de datas úteis do mês
 
-  // Configuração salva pelo usuário (feriados / override manual de total/passed)
-  const cfg      = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
+  // Busca SOMENTE na chave pessoal do usuário; sem fallback para chave global,
+  // pois ela pode carregar overrides manuais de outro perfil (ex: gerente).
+  const personalKey = getUserDiasKey(ymKey);
+  const cfg         = DB.diasConfig?.[personalKey] || {};
+
+  // Feriados a descontar (sempre >= 0)
   const desconto = Math.max(0, parseInt(cfg.totalFeriados) || 0);
 
   // duTotal: usa override manual se existir; senão calendário − feriados
@@ -5942,24 +5948,32 @@ function resetDiasConfig(){
 //  DESCONTO DE DIAS — substitui o sistema de feriados por data
 // ══════════════════════════════════════════════════════════
 function saveDescontoDias(val){
-  const n = Math.max(0, parseInt(val)||0);
-  if(!DB.diasConfig) DB.diasConfig={};
+  // ── Lê e normaliza o valor de feriados ──
+  const n = Math.max(0, parseInt(val) || 0);
+  if(!DB.diasConfig) DB.diasConfig = {};
   const _dk = getUserDiasKey(currentYM);
-  if(!DB.diasConfig[_dk]) DB.diasConfig[_dk]={total:null,passed:null};
+
+  // Inicializa a chave pessoal caso ainda não exista
+  if(!DB.diasConfig[_dk]) DB.diasConfig[_dk] = { total: null, passed: null };
+
+  // Salva feriados e garante modo "Cálculo Automático":
+  // limpa overrides manuais de total e passed para que o sistema
+  // recalcule a partir do calendário + desconto de feriados.
   DB.diasConfig[_dk].totalFeriados = n > 0 ? n : null;
-  // Garante que overrides manuais sejam nulos (modo automático)
-  DB.diasConfig[_dk].total  = null;
-  DB.diasConfig[_dk].passed = null;
-  DB._savedAt = Date.now();
-  try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
-  flashSaved();
-  clearTimeout(saveDB._t);
-  _syncEnqueue();
-  renderDash();
+  DB.diasConfig[_dk].total         = null;   // ← limpa override manual de total
+  DB.diasConfig[_dk].passed        = null;   // ← limpa override manual de dias passados
+
+  // Persiste localmente e enfileira sync na nuvem (saveDB centraliza tudo)
+  saveDB();
+
+  // Atualiza o texto informativo
   const info = document.getElementById('desconto-dias-info');
   if(info) info.textContent = n > 0
     ? `📅 ${n} feriado(s) será(ão) subtraído(s) do total automático do mês`
     : 'Digite o nº de feriados a subtrair do mês';
+
+  // Redesenha o dashboard imediatamente com os novos valores
+  renderDash();
 }
 
 function resetDescontoDias(){
