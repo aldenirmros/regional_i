@@ -474,60 +474,186 @@ select.sel:focus{border-color:var(--blue);}
 .dt tbody tr.seller-row.selected td:first-child{padding-left:11px;}
 .dt .tr-tot td{background:linear-gradient(90deg,rgba(37,99,235,.12),rgba(37,99,235,.07));font-weight:800;color:var(--blue);border-top:3px solid var(--blue);border-bottom:2px solid rgba(37,99,235,.3);font-size:13px;}
 
-/* ── OV-TBL (Resultado por Time) — linha alta, dados legíveis ── */
-.ov-tbl th{padding:11px 10px;font-size:11px;letter-spacing:.5px;font-weight:800;white-space:nowrap;}
-.ov-tbl td{padding:14px 10px;font-size:13.5px;line-height:1.4;vertical-align:middle;}
-.ov-tbl .mono{font-family:var(--mono);font-size:13.5px;}
+/* ══ OV-TBL — Resultado por Time · Premium Redesign ══════════════════════ */
+
+/* ── Base table ── */
+.ov-tbl{border-collapse:separate;border-spacing:0;width:100%;}
+.ov-tbl th{
+  padding:13px 11px;font-size:10.5px;letter-spacing:.6px;font-weight:800;
+  white-space:nowrap;text-transform:uppercase;color:var(--tl);
+  border-bottom:2px solid #e2e8f0;background:var(--white);
+}
+.ov-tbl td{
+  padding:16px 11px;font-size:13px;line-height:1.4;vertical-align:middle;
+  border-bottom:1px solid rgba(226,232,240,.7);
+}
+
+/* ── Monospace numbers ── */
+.ov-tbl .mono{font-family:'JetBrains Mono',var(--mono);font-size:13px;font-variant-numeric:tabular-nums;}
 .ov-tbl .fw7{font-weight:800;}
-/* m-cell: centraliza conteúdo horizontalmente */
+
+/* ── HUB name cell — left accent border instead of dot ── */
+.ov-tbl .hub-name-cell{
+  padding-left:0!important;
+}
+.ov-tbl .hub-name-inner{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:6px 10px 6px 12px;
+  border-left:4px solid var(--hub-color,#2563eb);
+  border-radius:0 6px 6px 0;
+  background:rgba(0,0,0,.018);
+  min-height:36px;
+}
+.ov-tbl .hub-name-inner .hub-title{
+  font-family:'Outfit',var(--font);font-weight:700;font-size:12px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;
+  color:var(--td);
+}
+.ov-tbl .hub-name-inner .hub-sup{
+  font-family:'Outfit',var(--font);font-size:9.5px;color:var(--tl);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;
+  margin-top:1px;
+}
+
+/* ── % Badge (Meta / Atv / Proj) ── */
+.ov-badge{
+  display:inline-flex;flex-direction:column;align-items:center;
+  gap:3px;min-width:58px;
+}
+.ov-badge-pill{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:3px 9px;border-radius:99px;
+  font-family:'JetBrains Mono',var(--mono);font-size:12px;font-weight:800;
+  letter-spacing:.3px;white-space:nowrap;
+  border:1.5px solid transparent;
+  transition:filter .15s;
+}
+.ov-badge-pill.bg-green{background:rgba(5,150,105,.10);color:#065f46;border-color:rgba(5,150,105,.25);}
+.ov-badge-pill.bg-orange{background:rgba(217,119,6,.10);color:#92400e;border-color:rgba(217,119,6,.25);}
+.ov-badge-pill.bg-red{background:rgba(220,38,38,.10);color:#7f1d1d;border-color:rgba(220,38,38,.25);}
+.ov-badge-pill.bg-gray{background:rgba(100,116,139,.09);color:#475569;border-color:rgba(100,116,139,.2);}
+
+/* slim progress bar under % Meta badge */
+.ov-badge-bar{width:100%;height:3px;border-radius:99px;background:#e2e8f0;overflow:hidden;max-width:58px;}
+.ov-badge-bar-fill{height:100%;border-radius:99px;transition:width .6s var(--ease);}
+.ov-badge-bar-fill.bg-green{background:var(--green);}
+.ov-badge-bar-fill.bg-orange{background:var(--orange);}
+.ov-badge-bar-fill.bg-red{background:var(--red);}
+
+/* ── m-cell (M0/M1/M2 columns) ── */
 .ov-tbl .m-cell{text-align:center;}
 .ov-tbl .m-cell > div{display:inline-flex;align-items:center;justify-content:center;gap:2px;}
-.ov-tbl .m-val{min-width:52px;height:32px;font-size:13px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;}
-/* input largo o suficiente para "00,00" + espaço + "%" */
-.ov-tbl .m-inline-inp{width:52px;font-size:12.5px;padding:5px 6px;height:32px;text-align:center;}
-/* % Meta: barra compacta */
-.ov-tbl .pw{display:flex;align-items:center;gap:5px;justify-content:center;}
-.ov-tbl .pt{min-width:40px;max-width:60px;flex:1;}
-.ov-tbl .pp{font-size:12.5px;font-weight:800;min-width:44px;text-align:right;}
+.ov-tbl .m-val{
+  min-width:52px;height:32px;font-size:13px;padding:0 10px;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+
+/* ── Elegant editable inputs — transparent bg, border always matches value color ── */
+.ov-tbl .m-inline-inp{
+  width:52px;font-size:12.5px;padding:5px 6px;height:32px;text-align:center;
+  border:1.5px solid rgba(100,116,139,.25);border-radius:6px;
+  background:transparent;
+  font-family:'JetBrains Mono',var(--mono);font-weight:700;
+  outline:none;transition:border-color .16s,background .16s,box-shadow .16s;
+}
+/* Focus: blue ring, light blue tint */
+.ov-tbl .m-inline-inp:focus{
+  box-shadow:0 0 0 3px rgba(37,99,235,.13);
+  background:rgba(37,99,235,.04);
+}
+/* Empty — neutral gray border + muted text */
+.ov-tbl .m-inline-inp.m-empty{
+  color:var(--tl);
+  border-color:rgba(100,116,139,.25);
+  background:rgba(100,116,139,.05);
+}
+.ov-tbl .m-inline-inp.m-empty:focus{
+  border-color:var(--blue);
+  background:rgba(37,99,235,.04);
+}
+/* Red — red border + dark-red text */
+.ov-tbl .m-inline-inp.m-red{
+  color:#991b1b;
+  border-color:rgba(220,38,38,.45);
+  background:rgba(220,38,38,.07);
+}
+.ov-tbl .m-inline-inp.m-red:focus{
+  border-color:rgba(220,38,38,.75);
+  background:rgba(220,38,38,.12);
+  box-shadow:0 0 0 3px rgba(220,38,38,.12);
+}
+/* Yellow/Orange — amber border + dark-amber text */
+.ov-tbl .m-inline-inp.m-yellow{
+  color:#92400e;
+  border-color:rgba(217,119,6,.45);
+  background:rgba(217,119,6,.07);
+}
+.ov-tbl .m-inline-inp.m-yellow:focus{
+  border-color:rgba(217,119,6,.75);
+  background:rgba(217,119,6,.12);
+  box-shadow:0 0 0 3px rgba(217,119,6,.12);
+}
+/* Green — green border + dark-green text */
+.ov-tbl .m-inline-inp.m-green{
+  color:#065f46;
+  border-color:rgba(5,150,105,.45);
+  background:rgba(5,150,105,.07);
+}
+.ov-tbl .m-inline-inp.m-green:focus{
+  border-color:rgba(5,150,105,.75);
+  background:rgba(5,150,105,.12);
+  box-shadow:0 0 0 3px rgba(5,150,105,.12);
+}
+
+/* ── GAP badge ── */
 .ov-tbl .gb{font-size:12.5px;padding:3px 9px;}
-.ov-tbl .tr-tot td{font-size:14.5px;padding:16px 10px;}
-.ov-tbl .sc{gap:7px;}
-.ov-tbl .sd{width:11px;height:11px;}
+
+/* ── Total row ── */
+.ov-tbl .tr-tot td{
+  font-size:13.5px;padding:17px 11px;
+  background:rgba(241,245,249,.9)!important;
+  border-top:2px solid #cbd5e1;border-bottom:2px solid #cbd5e1;
+  font-weight:700;
+}
+
+/* ── Zebra: subtle alternate rows (even = very light slate) ── */
+.ov-tbl tbody tr:nth-child(even) td{background:rgba(241,245,249,.5);}
+/* Preserve tinted m-cell backgrounds on even rows */
+.ov-tbl tbody tr:nth-child(even) td[style*="background:rgba(37,99,235"]{background:rgba(37,99,235,.08)!important;}
+.ov-tbl tbody tr:nth-child(even) td[style*="background:rgba(5,150,105"]{background:rgba(5,150,105,.08)!important;}
+.ov-tbl tbody tr:nth-child(even) td[style*="background:rgba(217,119,6"]{background:rgba(217,119,6,.08)!important;}
+.ov-tbl tbody tr:nth-child(even) td[style*="background:rgba(100,116,139"]{background:rgba(100,116,139,.08)!important;}
+
+/* ── Row hover ── */
+.ov-tbl tbody tr:not(.tr-tot):hover td{background:rgba(239,246,255,.85)!important;}
+.ov-tbl tbody tr:not(.tr-tot):hover td[style]{background:rgba(239,246,255,.85)!important;}
+
+/* ── Responsive scaling ── */
 @media(min-width:1400px){
-  .ov-tbl th{font-size:12px;padding:13px 12px;}
-  .ov-tbl td{font-size:15px;padding:17px 12px;}
-  .ov-tbl .mono{font-size:15px;}
+  .ov-tbl th{font-size:11px;padding:14px 12px;}
+  .ov-tbl td{font-size:14px;padding:18px 12px;}
+  .ov-tbl .mono{font-size:14px;}
+  .ov-badge-pill{font-size:13px;}
   .ov-tbl .m-val{min-width:56px;height:34px;font-size:14px;}
   .ov-tbl .m-inline-inp{width:58px;font-size:13.5px;height:34px;}
-  .ov-tbl .pp{font-size:13.5px;min-width:48px;}
-  .ov-tbl .tr-tot td{font-size:16px;padding:18px 12px;}
+  .ov-tbl .tr-tot td{font-size:15px;padding:19px 12px;}
 }
 @media(max-width:1200px){
-  .ov-tbl th{font-size:10px;padding:10px 8px;}
-  .ov-tbl td{font-size:12.5px;padding:12px 8px;}
-  .ov-tbl .mono{font-size:12.5px;}
-  .ov-tbl .m-val{min-width:48px;height:30px;font-size:12px;}
-  .ov-tbl .m-inline-inp{width:58px;font-size:12px;height:30px;}
-  .ov-tbl .pt{min-width:30px;}
+  .ov-tbl th{font-size:9.5px;padding:11px 8px;}
+  .ov-tbl td{font-size:12px;padding:13px 8px;}
+  .ov-tbl .mono{font-size:12px;}
+  .ov-badge-pill{font-size:11px;padding:2px 7px;}
+  .ov-tbl .m-val{min-width:46px;height:29px;font-size:12px;}
+  .ov-tbl .m-inline-inp{width:54px;font-size:11.5px;height:29px;}
 }
 @media(max-width:900px){
-  .ov-tbl th{font-size:9.5px;padding:9px 6px;}
-  .ov-tbl td{font-size:12px;padding:11px 6px;}
-  .ov-tbl .mono{font-size:12px;}
-  .ov-tbl .m-val{min-width:42px;height:27px;font-size:11.5px;}
-  .ov-tbl .m-inline-inp{width:54px;font-size:11px;height:27px;}
-  .ov-tbl .pp{font-size:11.5px;min-width:38px;}
-  .ov-tbl .pt{min-width:24px;}
+  .ov-tbl th{font-size:9px;padding:9px 6px;}
+  .ov-tbl td{font-size:11.5px;padding:11px 6px;}
+  .ov-tbl .mono{font-size:11.5px;}
+  .ov-badge-pill{font-size:10.5px;padding:2px 6px;}
+  .ov-tbl .m-val{min-width:40px;height:27px;font-size:11px;}
+  .ov-tbl .m-inline-inp{width:52px;font-size:11px;height:27px;}
 }
-/* zebra + stronger borders para legibilidade */
-.ov-tbl tbody tr:nth-child(even) td{background:rgba(241,245,249,.55);}
-.ov-tbl tbody tr:nth-child(even) td[style*="background:rgba(37,99,235"]{background:rgba(37,99,235,.09)!important;}
-.ov-tbl tbody tr:nth-child(even) td[style*="background:rgba(5,150,105"]{background:rgba(5,150,105,.09)!important;}
-.ov-tbl tbody tr:nth-child(even) td[style*="background:rgba(217,119,6"]{background:rgba(217,119,6,.09)!important;}
-.ov-tbl tbody tr:nth-child(even) td[style*="background:rgba(100,116,139"]{background:rgba(100,116,139,.09)!important;}
-.ov-tbl td{border-bottom:1px solid #e2e8f0;}
-.ov-tbl tbody tr:hover td{background:#eff6ff!important;}
-.ov-tbl tbody tr:hover td[style]{background:#eff6ff!important;}
 .sc{display:inline-flex;align-items:center;gap:6px;font-weight:600;}
 .sd{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 .pw{display:flex;align-items:center;gap:7px;}
@@ -2179,6 +2305,7 @@ canvas { display:block; max-width:100%; }
             <th style="width:4%;text-align:center">Ativ.</th>
             <th style="width:4%;text-align:center">%Atv</th>
             <th style="width:4%;text-align:center">Proj.</th>
+            <th style="width:4%;text-align:center">% Proj.</th>
             <th style="width:5.5%;text-align:center;background:rgba(100,116,139,.10);color:#475569;border-radius:4px 4px 0 0">CNPJ</th>
             <th style="width:5.5%;text-align:center;background:rgba(37,99,235,.10);color:#1d4ed8;border-radius:4px 4px 0 0">M0</th>
             <th style="width:5.5%;text-align:center;background:rgba(5,150,105,.10);color:#065f46;border-radius:4px 4px 0 0">M1</th>
@@ -2221,7 +2348,7 @@ canvas { display:block; max-width:100%; }
     <div id="psv-filter-bar" class="dash-filter" style="display:none;margin-bottom:14px">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--tl)" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
       <span class="dash-filter-label">Filtrar:</span>
-      <select id="psv-df-regional" onchange="_renderPSVFilter();renderPSV()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12.5px;color:var(--td);outline:none;cursor:pointer">
+      <select id="psv-df-regional" onchange="document.getElementById('psv-df-time').value='';renderPSV()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12.5px;color:var(--td);outline:none;cursor:pointer">
         <option value="">🏠 Todas as Regionais</option>
       </select>
       <select id="psv-df-time" onchange="renderPSV()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12.5px;color:var(--td);outline:none;cursor:pointer">
@@ -3133,6 +3260,39 @@ function getUserDiasKey(ymKey){
   return `u${u.id}_${ymKey}`;           // outros: chave pessoal
 }
 
+// ── Fonte única de verdade para dias úteis do mês ──────────────────────────
+// Retorna { duTotal, duPass, duRest } aplicando desconto de feriados
+// de forma idêntica no Dashboard e na página PSV.
+function getMonthTimeStats(ymKey){
+  const {y, m} = ymToYM(ymKey);
+  const t       = today();
+  const duAll   = getDiasUteis(y, m);
+
+  // Configuração salva pelo usuário (feriados / override manual de total/passed)
+  const cfg      = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
+  const desconto = Math.max(0, parseInt(cfg.totalFeriados) || 0);
+
+  // duTotal: usa override manual se existir; senão calendário − feriados
+  const duTotal  = cfg.total != null
+    ? cfg.total
+    : Math.max(0, duAll.length - desconto);
+
+  // duPass: usa override manual se existir; senão contagem proporcional
+  let duPass;
+  if (cfg.passed != null) {
+    duPass = cfg.passed;
+  } else {
+    const duPassedRaw        = duAll.filter(d => d <= t).length;
+    const duPassFeriadosProp = duAll.length > 0
+      ? Math.round(desconto * duPassedRaw / duAll.length)
+      : 0;
+    duPass = Math.max(0, duPassedRaw - duPassFeriadosProp);
+  }
+
+  const duRest = Math.max(0, duTotal - duPass);
+  return { duTotal, duPass, duRest, desconto, duAll };
+}
+
 function getDiasUteis(y,m){
   const d=new Date(y,m,1),r=[];
   while(d.getMonth()===m){ const dw=d.getDay(); if(dw>=1&&dw<=5)r.push(new Date(d)); d.setDate(d.getDate()+1); }
@@ -3674,28 +3834,13 @@ function renderDash(){
   if(currentUser) populateDashFilter();
 
   const ymKey=currentYM, {y,m}=ymToYM(ymKey), t=today();
-  const duAll=getDiasUteis(y,m), coAll=getDiasCorridos(y,m);
+  const coAll=getDiasCorridos(y,m);
 
-  // ── Desconto de feriados: valor salvo em DB.diasConfig[key].totalFeriados ──
-  const cfg = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
-  const desconto = Math.max(0, parseInt(cfg.totalFeriados)||0);
-
-  // ── Cálculo 100% automático (sem override manual) ──
-  // Total = dias úteis do calendário − feriados informados
+  // ── Fonte única: getMonthTimeStats centraliza todo o cálculo de dias úteis ──
+  const { duTotal, duPass, duRest, desconto, duAll } = getMonthTimeStats(ymKey);
   const duBruto = duAll.length;
-  const duTotal = Math.max(0, duBruto - desconto);
   const coTotal = Math.max(0, coAll.length - desconto);
-
-  // Dias passados = dias úteis (seg-sex) anteriores a hoje inclusive,
-  // mas se hoje for fim de semana, conta até a última sexta passada.
-  // Desconta proporção de feriados nos dias já corridos.
-  const duPassedRaw = duAll.filter(d => d <= t).length;
-  const duPassFeriadosProp = duAll.length > 0
-    ? Math.round(desconto * duPassedRaw / duAll.length)
-    : 0;
-  const duPass = Math.max(0, duPassedRaw - duPassFeriadosProp);
-  const coPass = coAll.filter(d=>d<=t).length;
-  const duRest = Math.max(0, duTotal - duPass);
+  const coPass  = coAll.filter(d=>d<=t).length;
 
   // ── Popula equação visual na aba de dias ──
   const _eqEl = id => document.getElementById(id);
@@ -7690,10 +7835,8 @@ function clearOvFilter(){
 
 function renderOverview(){
   const ymKey=currentYM, {y,m}=ymToYM(ymKey), t=today();
-  const duAll   = getDiasUteis(y,m);
-  const cfg     = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
-  const duTotal = cfg.total  ?? duAll.length;
-  const duPass  = cfg.passed ?? duAll.filter(d=>d<=t).length;
+  // ── Fonte única: getMonthTimeStats — idêntico ao Dashboard e PSV ──
+  const { duTotal, duPass } = getMonthTimeStats(ymKey);
   const u       = currentUser;
 
   document.getElementById('ov-period').textContent=`${MESES[m]} ${y}`;
@@ -7892,7 +8035,7 @@ function renderOverview(){
       <td><div class="pw"><div class="pt"><div class="pf ${rgPct>=1?'pg':rgPct>=0.6?'py':'pr'}" style="width:${Math.min(100,rgPct*100).toFixed(1)}%"></div></div>
           <span class="pp" style="color:${pcColor}">${(rgPct*100).toFixed(1)}%</span></div></td>
       <td style="text-align:center"><span class="gb ${rgGap===0?'gz':'gn'}">${rgGap===0?'✓':'-'+rgGap}</span></td>
-      <td colspan="10" style="color:var(--tl);font-size:9.5px">${rgTimes.length} HUB(s)</td>
+      <td colspan="11" style="color:var(--tl);font-size:9.5px">${rgTimes.length} HUB(s)</td>
     </tr>`;
 
     // Linhas dos times
@@ -7942,33 +8085,56 @@ function renderOverview(){
         });
         return [...scoreCells, ...pctCells].join('');
       })();
+      // ── Badge helpers (inline) ──
+      const _bCls = (v,lo,hi) => v==null?'bg-gray':v>=hi?'bg-green':v>=lo?'bg-orange':'bg-red';
+      const _pctBadge = (val, lo, hi) => {
+        if(val==null) return `<span class="ov-badge-pill bg-gray">—</span>`;
+        const cls = _bCls(val,lo,hi);
+        return `<span class="ov-badge-pill ${cls}">${val.toFixed(1)}%</span>`;
+      };
+
+      // % Meta badge + slim bar
+      const metaPctVal = st.meta>0 ? st.pct*100 : null;
+      const metaCls    = metaPctVal==null?'bg-gray':metaPctVal>=100?'bg-green':metaPctVal>=80?'bg-orange':'bg-red';
+      const metaBarW   = metaPctVal!=null?Math.min(100,metaPctVal).toFixed(1):0;
+      const metaBadge  = `<div class="ov-badge">
+        <span class="ov-badge-pill ${metaCls}">${metaPctVal!=null?metaPctVal.toFixed(1)+'%':'—'}</span>
+        <div class="ov-badge-bar"><div class="ov-badge-bar-fill ${metaCls}" style="width:${metaBarW}%"></div></div>
+      </div>`;
+
+      // % Atv badge
+      const atvPctVal  = st.real>0 ? (atvDisplay/st.real*100) : null;
+      const atvBadge   = _pctBadge(atvPctVal, 60, 80);
+
+      // % Proj badge
+      const projPctVal = st.meta>0 ? (st.proj/st.meta*100) : null;
+      const projBadge  = _pctBadge(projPctVal, 80, 100);
+
+      const hubColor = tm.color||rg.color;
       tb+=`<tr>
         <td></td>
-        <td>
-          <div class="sc">
-            <div class="sd" style="background:${tm.color||rg.color};flex-shrink:0"></div>
-            <div style="min-width:0;overflow:hidden;max-width:90px">
-              <div style="font-weight:700;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tm.nome}</div>
-              ${sup?`<div style="font-size:9px;color:var(--tl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sup.nome||sup.username}</div>`:''}
-            </div>
+        <td class="hub-name-cell">
+          <div class="hub-name-inner" style="--hub-color:${hubColor}">
+            <div class="hub-title">${tm.nome}</div>
+            ${sup?`<div class="hub-sup">${sup.nome||sup.username}</div>`:''}
           </div>
         </td>
         <td class="mono fw7" style="text-align:center">${st.sellers}</td>
         <td class="mono fw7 fg-g" style="text-align:center">${st.real}</td>
         <td class="mono" style="text-align:center">${st.meta}</td>
-        <td><div class="pw"><div class="pt"><div class="pf ${st.pct>=1?'pg':st.pct>=0.6?'py':'pr'}" style="width:${Math.min(100,st.pct*100).toFixed(1)}%"></div></div>
-            <span class="pp" style="color:${pc}">${(st.pct*100).toFixed(1)}%</span></div></td>
+        <td style="text-align:center">${metaBadge}</td>
         <td style="text-align:center"><span class="gb ${st.gap===0?'gz':'gn'}">${st.gap===0?'✓':'-'+st.gap}</span></td>
         ${atvCell}
-        <td class="mono fw7" style="color:var(--teal);text-align:center">${atvPDisplay}</td>
+        <td style="text-align:center">${atvBadge}</td>
         <td class="mono" style="color:var(--purple);font-weight:700;text-align:center">${Math.round(st.proj)}</td>
+        <td style="text-align:center">${projBadge}</td>
         ${cnpjCell}
         ${mCells}
       </tr>`;
     });
   });
 
-  if(!rgCount) tb=`<tr><td colspan="17" style="text-align:center;padding:28px;color:var(--tl)">Nenhuma regional / time no escopo</td></tr>`;
+  if(!rgCount) tb=`<tr><td colspan="18" style="text-align:center;padding:28px;color:var(--tl)">Nenhuma regional / time no escopo</td></tr>`;
 
   // Linha de total geral — M0/M1/M2 editáveis manualmente (chave especial: timeId=0)
   const totMv = (DB.mValues||{})[ymKey]?.['total']||{};
@@ -8003,16 +8169,33 @@ function renderOverview(){
     return [...scoreCells, ...pctCells].join('');
   })();
 
+  // ── Total badges ──
+  const _totBadge = (val, lo, hi) => {
+    if(val==null) return `<span class="ov-badge-pill bg-gray">—</span>`;
+    const cls = val>=hi?'bg-green':val>=lo?'bg-orange':'bg-red';
+    return `<span class="ov-badge-pill ${cls}">${val.toFixed(1)}%</span>`;
+  };
+  const tMetaPctVal = tMeta>0 ? tPct*100 : null;
+  const tMetaCls    = tMetaPctVal==null?'bg-gray':tMetaPctVal>=100?'bg-green':tMetaPctVal>=80?'bg-orange':'bg-red';
+  const tMetaBarW   = tMetaPctVal!=null?Math.min(100,tMetaPctVal).toFixed(1):0;
+  const tMetaBadge  = `<div class="ov-badge">
+    <span class="ov-badge-pill ${tMetaCls}">${tMetaPctVal!=null?tMetaPctVal.toFixed(1)+'%':'—'}</span>
+    <div class="ov-badge-bar"><div class="ov-badge-bar-fill ${tMetaCls}" style="width:${tMetaBarW}%"></div></div>
+  </div>`;
+  const tAtvBadge  = _totBadge(tReal>0?(tAtvP*100):null, 60, 80);
+  const tProjPctVal = tMeta>0 ? (tProj/tMeta*100) : null;
+  const tProjBadge = _totBadge(tProjPctVal, 80, 100);
+
   tb+=`<tr class="tr-tot">
     <td colspan="3">TOTAL GERAL</td>
     <td class="mono" style="text-align:center">${tReal}</td>
     <td class="mono" style="text-align:center">${tMeta}</td>
-    <td><div class="pw"><div class="pt"><div class="pf pb" style="width:${Math.min(100,tPct*100).toFixed(1)}%"></div></div>
-        <span class="pp fg-b">${(tPct*100).toFixed(1)}%</span></div></td>
+    <td style="text-align:center">${tMetaBadge}</td>
     <td style="text-align:center"><span class="gb ${tGap===0?'gz':'gn'}">${tGap===0?'✓':'-'+tGap}</span></td>
     <td class="mono" style="color:var(--teal);text-align:center">${tAtv}</td>
-    <td class="mono" style="color:var(--teal);text-align:center">${(tAtvP*100).toFixed(1)}%</td>
+    <td style="text-align:center">${tAtvBadge}</td>
     <td class="mono" style="color:var(--purple);font-weight:800;text-align:center">${tProj}</td>
+    <td style="text-align:center">${tProjBadge}</td>
     ${totCnpjCell}
     ${totMCells}
   </tr>`;
@@ -8252,6 +8435,35 @@ function formatTpvInput(input){
 }
 
 // ── TPV — DB.psvTpv (tabela: ymKey, hubId, mk, valor_real, valor_proj) ──────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _getPsvOwnerUserId()
+//   Retorna o userId que deve ser usado para LEITURA dos dados PSV (plano,
+//   TPV, DP) do HUB selecionado no filtro.
+//
+//   Regra:
+//   • Supervisor → sempre o próprio userId (só vê/edita os seus dados).
+//   • Gerente / Admin Regional / super admin com HUB selecionado no filtro
+//     → busca o supervisor vinculado a esse HUB e retorna o userId dele.
+//     Se não houver supervisor cadastrado para o HUB, cai de volta para o
+//     próprio currentUser.id (evita tela em branco).
+//   • Gerente / Admin Regional sem HUB selecionado → próprio userId.
+// ─────────────────────────────────────────────────────────────────────────────
+function _getPsvOwnerUserId(){
+  const u = currentUser;
+  if(!u) return 'default';
+  // Supervisores sempre operam sobre si mesmos
+  if(u.role === 'supervisor') return String(u.id);
+  // Gerentes/regionais: verifica se há HUB selecionado no filtro
+  const psvTmId = parseInt(document.getElementById('psv-df-time')?.value) || null;
+  if(psvTmId){
+    const sup = (DB.users || []).find(x => x.role === 'supervisor' && x.timeId === psvTmId);
+    if(sup) return String(sup.id);
+  }
+  // Sem HUB selecionado → retorna próprio userId
+  return String(u.id);
+}
+
 function _getHubIdForPsv(){
   const u = currentUser;
   const psvTmId = parseInt(document.getElementById('psv-df-time')?.value)||null;
@@ -8268,12 +8480,14 @@ function _getHubIdForPsv(){
 
 function _getTpvRow(ymKey, hubId, mk){
   if(!DB.psvTpv) DB.psvTpv = [];
-  const uid = String(currentUser?.id || 'default');
+  // Leitura: usa o userId do supervisor dono do HUB (visão hierárquica)
+  const uid = _getPsvOwnerUserId();
   return DB.psvTpv.find(r => String(r.userId||'')===uid && String(r.ymKey)===String(ymKey) && String(r.hubId)===String(hubId) && String(r.mk)===String(mk));
 }
 
 function _upsertTpvRow(ymKey, hubId, mk, field, value){
   if(!DB.psvTpv) DB.psvTpv = [];
+  // Escrita: sempre usa o userId do usuário logado (isolamento de dados)
   const uid = String(currentUser?.id || 'default');
   let row = DB.psvTpv.find(r => String(r.userId||'')===uid && String(r.ymKey)===String(ymKey) && String(r.hubId)===String(hubId) && String(r.mk)===String(mk));
   if(!row){
@@ -8345,6 +8559,7 @@ function dpSetPhoto(e, type, mk){
 function saveDpAll(){
   const ymKey  = String(currentYM);
   const hubId  = _getHubIdForPsv();  // já retorna string
+  // Escrita: sempre usa o userId do usuário logado (isolamento de dados)
   const uid    = String(currentUser?.id || 'default');
   if(!DB.psvDp) DB.psvDp = [];
   // Remove linhas antigas deste userId+ymKey+hubId
@@ -8420,7 +8635,8 @@ function dpSelectSeller(type, mk, val){
 function _restoreDpFields(){
   const ymKey = String(currentYM);
   const hubId = _getHubIdForPsv();  // já retorna string
-  const uid   = String(currentUser?.id || 'default');
+  // Leitura: usa o userId do supervisor dono do HUB (visão hierárquica)
+  const uid   = _getPsvOwnerUserId();
   // Lê da nova tabela filtrando por userId+ymKey+hubId; fallback para psvData legado
   const newRows = (DB.psvDp||[]).filter(r => String(r.userId||'default')===uid && String(r.ymKey)===ymKey && String(r.hubId)===hubId);
   const dpDb_legacy = (DB.psvData?.dp||{})[ymKey]||{};
@@ -9190,17 +9406,49 @@ function _doRenderPSV(){
   if(!document.getElementById('page-psv')?.classList.contains('active')) return;
   const ymKey = currentYM;
   const {y,m} = ymToYM(ymKey);
-  // Aplica filtro PSV igual ao dashboard
-  const allSellers = getScopedSellers();
-  const psvRgId  = parseInt(document.getElementById('psv-df-regional')?.value)||null;
-  const psvTmId  = parseInt(document.getElementById('psv-df-time')?.value)||null;
-  let sellers = allSellers;
-  if(psvTmId)       sellers = allSellers.filter(s=>s.timeId===psvTmId);
-  else if(psvRgId)  sellers = allSellers.filter(s=>{ const tm=(DB.times||[]).find(t=>t.id===s.timeId); return tm?.regionalId===psvRgId; });
+
+  // ── Passo 1: reconstrói os dropdowns ANTES de ler os valores ──
+  // Isso garante que os options existam e o value selecionado esteja correto.
+  _renderPSVFilter();
+
+  // ── Passo 2: lê os filtros PSV (após reconstrução dos dropdowns) ──
+  const psvRgId = parseInt(document.getElementById('psv-df-regional')?.value)||null;
+  const psvTmId = parseInt(document.getElementById('psv-df-time')?.value)||null;
+  const u = currentUser;
+
+  // ── Passo 3: constrói sellers independentemente do scopeFilter do Dashboard ──
+  // Parte do conjunto completo de sellers (respeitando inativação por mês),
+  // depois aplica as restrições hierárquicas do usuário logado + filtro PSV.
+  const {y: cy, m: cm} = ymToYM(currentYM);
+  let baseSellers = DB.sellers.filter(s=>{
+    if(!s.inativo) return true;
+    if(s.desligamento){
+      const [dy,dm]=s.desligamento.split('-').map(Number);
+      if(cy < dy || (cy===dy && cm <= dm-1)) return true;
+    }
+    return false;
+  });
+
+  // Aplica restrição hierárquica do role do usuário
+  if(u.role==='supervisor'){
+    baseSellers = baseSellers.filter(s=>s.timeId===u.timeId);
+  } else if(u.role==='regional' && !isGerente(u)){
+    const tids=(DB.times||[]).filter(t=>t.regionalId===u.regionalId).map(t=>t.id);
+    baseSellers = baseSellers.filter(s=>tids.includes(s.timeId));
+  }
+  // Gerentes/super admin: baseSellers é toda a empresa (sem restrição de role)
+
+  // Aplica filtro de HUB/Regional selecionado na PSV
+  let sellers = baseSellers;
+  if(psvTmId){
+    sellers = baseSellers.filter(s=>s.timeId===psvTmId);
+  } else if(psvRgId){
+    const tids=(DB.times||[]).filter(t=>t.regionalId===psvRgId).map(t=>t.id);
+    sellers = baseSellers.filter(s=>tids.includes(s.timeId));
+  }
 
   const el = document.getElementById('psv-sub');
   if(el) el.textContent = `${MESES[m]} ${y} · ${sellers.length} HC`;
-  _renderPSVFilter();
   _renderHCGrid(sellers);
   _renderPSVKpis(ymKey, y, m, sellers);
   _renderPSVCharts(ymKey,y,m,sellers);
@@ -9226,29 +9474,40 @@ function _renderPSVFilter(){
   const rgSel = document.getElementById('psv-df-regional');
   const tmSel = document.getElementById('psv-df-time');
   if(u.role==='supervisor'){ bar.style.display='none'; return; }
+
+  // Preserva seleções atuais ANTES de reconstruir o HTML
+  const prevRg = rgSel?.value || '';
+  const prevTm = tmSel?.value || '';
+
   if(u.role==='regional'&&!isGerente(u)){
     if(rgSel){ const myRg=(DB.regionais||[]).find(r=>r.id===u.regionalId); rgSel.innerHTML=myRg?`<option value="${myRg.id}">${myRg.nome}</option>`:''; rgSel.value=u.regionalId||''; rgSel.style.display='none'; }
   } else {
-    if(rgSel){ rgSel.style.display=''; const prev=rgSel.value; rgSel.innerHTML=`<option value="">🏠 Todas as Regionais</option>`+(DB.regionais||[]).map(r=>`<option value="${r.id}"${r.id==prev?' selected':''}>${r.nome}</option>`).join(''); }
+    if(rgSel){
+      rgSel.style.display='';
+      rgSel.innerHTML=`<option value="">🏠 Todas as Regionais</option>`+(DB.regionais||[]).map(r=>`<option value="${r.id}">${r.nome}</option>`).join('');
+      // Restaura explicitamente o valor selecionado
+      if(prevRg) rgSel.value = prevRg;
+    }
   }
-  // HUBs
+
+  // HUBs: filtra pela regional selecionada (ou todos se nenhuma)
   const rgId = u.role==='regional'&&!isGerente(u) ? u.regionalId : (parseInt(rgSel?.value)||null);
   const times = rgId ? (DB.times||[]).filter(t=>t.regionalId===rgId) : (DB.times||[]);
-  const prevTm = tmSel?.value;
-  if(tmSel) tmSel.innerHTML=`<option value="">🏢 Todos os HUBs</option>`+times.map(t=>`<option value="${t.id}"${t.id==prevTm?' selected':''}>${t.nome}</option>`).join('');
+  if(tmSel){
+    tmSel.innerHTML=`<option value="">🏢 Todos os HUBs</option>`+times.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('');
+    // Restaura explicitamente o valor selecionado (só se ainda existir na lista)
+    if(prevTm && times.some(t=>String(t.id)===prevTm)){
+      tmSel.value = prevTm;
+    }
+  }
 }
 
 function _renderPSVKpis(ymKey, y, m, sellers){
   const row = document.getElementById('psv-top-row'); if(!row) return;
   const t = today();
 
-  // ── Dias úteis: mesmo cálculo do dashboard (getDiasUteis + desconto) ──
-  const duAll  = getDiasUteis(y, m);
-  const cfg    = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
-  const desconto = Math.max(0, parseInt(cfg.totalFeriados)||0);
-  const duTotal  = cfg.total  != null ? cfg.total  : Math.max(0, duAll.length - desconto);
-  const duPass   = cfg.passed != null ? cfg.passed : Math.max(0, duAll.filter(d=>d<=t).length - Math.round(desconto * duAll.filter(d=>d<=t).length / (duAll.length||1)));
-  const duRest   = Math.max(0, duTotal - duPass);
+  // ── Fonte única: getMonthTimeStats — idêntico ao Dashboard ──
+  const { duTotal, duPass, duRest } = getMonthTimeStats(ymKey);
 
   const real  = sellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
 
@@ -9315,9 +9574,9 @@ function _renderPSVKpis(ymKey, y, m, sellers){
     {k:'M2', v:safraM2, c:'#d97706', bg:'rgba(217,119,6,.07)', border:'rgba(217,119,6,.2)'},
   ];
 
-  // TPV: lê da nova tabela DB.psvTpv por hubId + userId
+  // TPV: lê da nova tabela DB.psvTpv por hubId + userId do dono do HUB
   const hubId = String(_getHubIdForPsv());
-  const _tpvUserId = String(currentUser?.id || 'default');
+  const _tpvUserId = _getPsvOwnerUserId(); // visão hierárquica: supervisor do HUB
   function getTpvVal(mk, field){
     const row = (DB.psvTpv||[]).find(r => String(r.userId||'')===_tpvUserId && String(r.ymKey)===String(ymKey) && String(r.hubId)===String(hubId) && String(r.mk)===String(mk));
     if(row && row[field] != null) return row[field];
@@ -9466,12 +9725,8 @@ function _renderHCGrid(sellers){
 
 function _renderPSVCharts(ymKey,y,m,sellers){
   const t=today();
-  // Dias úteis: espelho do dashboard
-  const duAll  = getDiasUteis(y,m);
-  const cfg    = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
-  const desconto = Math.max(0, parseInt(cfg.totalFeriados)||0);
-  const duTotal  = cfg.total  != null ? cfg.total  : Math.max(0, duAll.length - desconto);
-  const duPass   = cfg.passed != null ? cfg.passed : Math.max(0, duAll.filter(d=>d<=t).length - Math.round(desconto * duAll.filter(d=>d<=t).length / (duAll.length||1)));
+  // ── Fonte única: getMonthTimeStats — idêntico ao Dashboard e a _renderPSVKpis ──
+  const { duTotal, duPass } = getMonthTimeStats(ymKey);
 
   const real=sellers.reduce((a,s)=>a+sellerTotal(ymKey,s.id),0);
 
@@ -9577,13 +9832,8 @@ function psvUploadPhoto(e,sid){
 }
 
 function _renderPSVSellerChart(ymKey,sellers){
-  const t=today(), {y,m}=ymToYM(ymKey);
-  // Dias úteis: espelho do dashboard
-  const duAll  = getDiasUteis(y,m);
-  const cfg    = DB.diasConfig?.[getUserDiasKey(ymKey)] || DB.diasConfig?.[ymKey] || {};
-  const desconto = Math.max(0, parseInt(cfg.totalFeriados)||0);
-  const duTotal  = cfg.total  != null ? cfg.total  : Math.max(0, duAll.length - desconto);
-  const duPass   = cfg.passed != null ? cfg.passed : Math.max(0, duAll.filter(d=>d<=t).length - Math.round(desconto * duAll.filter(d=>d<=t).length / (duAll.length||1)));
+  // ── Fonte única: getMonthTimeStats — idêntico ao Dashboard e a _renderPSVKpis ──
+  const { duTotal, duPass } = getMonthTimeStats(ymKey);
   const vendas = sellers.map(s=>sellerTotal(ymKey,s.id));
   const compr  = sellers.map(s=>duTotal>0 ? +(getSellerMeta(ymKey,s.id)*duPass/duTotal).toFixed(0) : getSellerMeta(ymKey,s.id));
   const proj   = sellers.map(s=>duPass>0 ? Math.round(sellerTotal(ymKey,s.id)/duPass*duTotal) : 0);
@@ -9843,6 +10093,7 @@ function _planKey(){ return 'plan_'+(currentUser?.id||'default'); }
 
 function _writePlanToTable(){
   if(!DB.psvPlano) DB.psvPlano = [];
+  // Escrita: sempre usa o userId do usuário logado (isolamento de dados)
   const uid = String(currentUser?.id || 'default');
   const ym  = String(currentYM);
   // Remove entradas antigas do usuário+mês (substitui com dados atuais)
@@ -9865,7 +10116,8 @@ function _writePlanToTable(){
 function psvLoadPlan(){
   try{
     if(!DB.psvPlano) DB.psvPlano = [];
-    const uid = String(currentUser?.id || 'default');
+    // Leitura: usa o userId do supervisor dono do HUB (visão hierárquica)
+    const uid = _getPsvOwnerUserId();
     const ym  = String(currentYM);
     // Usa String() em ambos os lados — Sheets pode devolver ymKey como número
     const rows = DB.psvPlano.filter(r => String(r.userId)===uid && String(r.ymKey)===ym);
@@ -9878,7 +10130,8 @@ function psvLoadPlan(){
       return;
     }
     // Fallback legado: psvData blob → migra para tabela automaticamente
-    if(DB.psvData){
+    // (só aplica se for o próprio usuário — não migra dados de terceiros)
+    if(uid === String(currentUser?.id || 'default') && DB.psvData){
       const fromDB = DB.psvData[_planKey()];
       if(Array.isArray(fromDB) && fromDB.length){
         _psvPlan = fromDB;
@@ -9887,16 +10140,18 @@ function psvLoadPlan(){
         return;
       }
     }
-    // Fallback: localStorage legado → migra automaticamente
-    const lsKey = 'psv_plan_'+(currentUser?.id||'default');
-    const raw = localStorage.getItem(lsKey);
-    if(raw){
-      const d = JSON.parse(raw);
-      if(Array.isArray(d) && d.length){
-        _psvPlan = d;
-        _writePlanToTable();
-        saveDB();
-        localStorage.removeItem(lsKey);
+    // Fallback: localStorage legado → migra automaticamente (apenas para o próprio usuário)
+    if(uid === String(currentUser?.id || 'default')){
+      const lsKey = 'psv_plan_'+(currentUser?.id||'default');
+      const raw = localStorage.getItem(lsKey);
+      if(raw){
+        const d = JSON.parse(raw);
+        if(Array.isArray(d) && d.length){
+          _psvPlan = d;
+          _writePlanToTable();
+          saveDB();
+          localStorage.removeItem(lsKey);
+        }
       }
     }
     // Se nenhum dado encontrado, garante pelo menos uma linha em branco
