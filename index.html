@@ -6655,28 +6655,25 @@ async function _runSync() {
       try {
         const ctrl = new AbortController();
         const tid  = setTimeout(()=>ctrl.abort(), 25000);
-        const postRes = await fetch(cfg.gsUrl, {
+        // mode:'no-cors' evita pre-flight CORS ao enviar para Google Apps Script.
+        // Com no-cors a resposta é opaca (não é possível ler body/status):
+        // se o fetch não lançar exceção, assume-se que o POST chegou ao GAS.
+        await fetch(cfg.gsUrl, {
           method : 'POST',
+          mode   : 'no-cors',
           headers: {'Content-Type': 'text/plain;charset=UTF-8'},
           body   : jsonBody,
           signal : ctrl.signal
         });
         clearTimeout(tid);
-        if(postRes.ok){
-          const json = await postRes.json().catch(()=>null);
-          if(json && !json.error){ postOk = true; }
-          else if(json && json.error){ throw new Error('GAS: ' + json.error); }
-          else { postOk = true; }
-        } else {
-          throw new Error('POST HTTP ' + postRes.status);
-        }
+        postOk = true; // Resposta opaca — ausência de erro = envio confirmado
       } catch(fetchErr) {
         // Fallback: sendBeacon com Blob text/plain
         if(typeof navigator.sendBeacon === 'function'){
           const blob = new Blob([jsonBody], {type:'text/plain;charset=UTF-8'});
           navigator.sendBeacon(cfg.gsUrl, blob);
           postOk = true;
-          console.warn('[sync] cors falhou, usou sendBeacon:', fetchErr.message);
+          console.warn('[sync] no-cors/fetch falhou, usou sendBeacon:', fetchErr.message);
         } else {
           throw fetchErr;
         }
