@@ -220,6 +220,16 @@ select.sel:focus{border-color:var(--blue);}
 .cloud-dot.err{background:var(--red);box-shadow:0 0 0 2px rgba(220,38,38,.2);}
 .cloud-dot.sync{background:var(--orange);animation:pulse 1s infinite;}
 .cloud-dot.off{background:#94a3b8;}
+/* Estado "novos dados recebidos de outro usuário" — pulsa azul 4× e some */
+.cloud-dot.new-data{
+  background:var(--blue);
+  box-shadow:0 0 0 3px rgba(37,99,235,.35);
+  animation:cloudFlash .55s ease 4;
+}
+@keyframes cloudFlash{
+  0%,100%{opacity:1;transform:scale(1);}
+  50%{opacity:.5;transform:scale(1.6);}
+}
 /* modal */
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
 .modal-ov.show{display:flex;}
@@ -6446,6 +6456,21 @@ function setCloudUI(state, txt){
   }
 }
 
+// ── Feedback visual discreto: pisca a pill de nuvem em azul ─────────────────
+// Chamado quando novos dados chegam de outro usuário via polling silencioso.
+function _flashCloudUpdate(){
+  const dot = document.getElementById('cloud-dot');
+  if(!dot) return;
+  // Salva classe atual para restaurar depois do flash
+  const prev = dot.className;
+  dot.className = 'cloud-dot new-data';
+  clearTimeout(window._flashCloudTimer);
+  // 4 pulsos × 0,55 s = ~2,2 s → restaura estado verde
+  window._flashCloudTimer = setTimeout(()=>{
+    dot.className = prev.includes('err') ? prev : 'cloud-dot ok';
+  }, 2400);
+}
+
 // ── Atualizar manualmente ──
 // ══════════════════════════════════════════════════════════
 //  RESET DE CACHE — limpa localStorage e força cloudPull
@@ -6561,7 +6586,13 @@ function saveDB() {
   // ── 3. Salva localmente de forma síncrona (zero latência para o usuário) ──
   try { localStorage.setItem('bi_v5', JSON.stringify(DB)); } catch(e){}
   flashSaved();
-  // ── 3. Agenda sync com nuvem — debounce 350ms para batching de edições rápidas ──
+  // ── 4. Sem internet: marca pendente e atualiza pill — sync ocorre ao reconectar ──
+  if(!navigator.onLine){
+    _syncPending = true;
+    setCloudUI('err','Sem conexão');
+    return;
+  }
+  // ── 5. Agenda sync com nuvem — debounce 350ms para batching de edições rápidas ──
   clearTimeout(saveDB._t);
   saveDB._t = setTimeout(_syncEnqueue, 350);
 }
@@ -6578,6 +6609,7 @@ function saveDB() {
 
 let _syncQueue   = false; // há um sync agendado/em curso?
 let _syncRunning = false; // sync está executando agora?
+let _syncPending = false; // há dados locais não enviados à nuvem (salvo offline)?
 
 async function _syncEnqueue() {
   _syncQueue = true;
@@ -6707,12 +6739,19 @@ async function _runSync() {
   }
 
   // Todas as tentativas falharam — dados seguros no localStorage, avisa usuário
-  setCloudUI('err', 'Sem conexão');
+  // Distingue erro de rede (sem internet) de erro de servidor (GAS / HTTP)
+  const _isNetErr = lastErr instanceof TypeError || !navigator.onLine;
+  _syncPending = true;
+  setCloudUI('err', _isNetErr ? 'Desconectado' : 'Sem conexão');
   syncLog('⚠️ Falha ao sincronizar. Dado salvo localmente — será reenviado ao reconectar.');
   console.error('[sync] todas as tentativas falharam:', lastErr?.message);
 
-  // Agenda reenvio automático em 45s
-  setTimeout(_syncEnqueue, 45000);
+  // Para erros de rede genuínos, não adianta fazer retry por timer:
+  // o evento 'online' vai disparar a reconexão automaticamente.
+  // Para erros de servidor (ex: GAS em deploy), agenda 45 s de retry.
+  if(!_isNetErr){
+    setTimeout(_syncEnqueue, 45000);
+  }
   _syncRunning = false;
 }
 
@@ -7476,9 +7515,19 @@ async function cloudPull(mergeLocal = false){
     return true;
 
   } catch(err){
-    setCloudUI('err','Erro ao carregar');
-    syncLog('Erro: ' + err.message);
-    console.error('[cloudPull]', err);
+    // Distingue erro de rede (TypeError: Failed to fetch / sem internet) de erro de servidor.
+    // Erros de rede são silenciados: pill vira "Desconectado" e _syncPending agenda reenvio.
+    // Erros de servidor (HTTP, JSON inválido, GAS) são logados normalmente.
+    const _netErr = err instanceof TypeError || !navigator.onLine;
+    if(_netErr){
+      _syncPending = true;
+      setCloudUI('err','Desconectado');
+      syncLog('Sem conexão — sincronizará ao reconectar.');
+    } else {
+      setCloudUI('err','Erro ao carregar');
+      syncLog('Erro: ' + err.message);
+    }
+    console.error('[cloudPull]', err.message || err);
     return false;
   }
 }
@@ -9640,16 +9689,58 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
   // ── PASSO 3: Motor de atualização em tempo real ───────────────────────────
   // Cobre todos os dispositivos: iOS Safari, Android Chrome, Firefox, Edge, Samsung Browser
 
-  async function _pull(){
-    if(!currentUser || _syncRunning) return;
-    // mergeLocal=true: preserva alterações locais (ex: feriado recém-adicionado)
-    // que ainda não foram sincronizadas com a nuvem (debounce de 350ms pendente)
-    const r = await cloudPull(true);
-    if(r){ _refreshCurrentUserFromDB(); populateMes(); populateQESellers(); renderAll(); renderPSVIfActive(); }
+  // ── Utilitário: retorna true se o usuário está com foco em campo de texto ──
+  function _userIsTyping(){
+    const ae = document.activeElement;
+    if(!ae || ae === document.body) return false;
+    const tag = ae.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || ae.isContentEditable;
   }
 
-  // a) Polling 15s — ativo somente quando a aba está visível
-  setInterval(()=>{ if(!document.hidden) _pull(); }, 15000);
+  async function _pull(){
+    if(!currentUser || _syncRunning) return;
+
+    // Snapshot do timestamp antes do pull para detectar dados novos
+    const prevSavedAt = DB._savedAt || 0;
+
+    // mergeLocal=true: preserva alterações locais pendentes (ex: feriado recém-adicionado
+    // que ainda não passou pelo debounce de 350 ms do saveDB)
+    const r = await cloudPull(true);
+    if(!r) return;
+
+    _refreshCurrentUserFromDB();
+    populateMes();
+    populateQESellers();
+
+    const cloudSavedAt = DB._savedAt || 0;
+    // Há dados novos quando a nuvem tem um _savedAt maior que o local pré-pull
+    const hasNewData   = cloudSavedAt > prevSavedAt;
+    // Primeira carga (prevSavedAt era 0 → não conta como "outro usuário salvou")
+    const isFirstLoad  = prevSavedAt === 0;
+
+    if(!hasNewData && !isFirstLoad) return; // nada mudou — sem render desnecessário
+
+    if(_userIsTyping()){
+      // Usuário está digitando: adia a renderização para não limpar o campo
+      clearTimeout(window._deferredRenderTimer);
+      window._deferredRenderTimer = setTimeout(()=>{
+        renderAll();
+        renderPSVIfActive();
+      }, 3000);
+    } else {
+      renderAll();
+      renderPSVIfActive();
+    }
+
+    // Feedback visual + toast só quando houver dados genuinamente novos (não 1ª carga)
+    if(hasNewData && !isFirstLoad){
+      _flashCloudUpdate();
+      toast('🔄 Dados atualizados por outro usuário', '🔄');
+    }
+  }
+
+  // a) Polling 5s — ativo somente quando a aba está visível
+  setInterval(()=>{ if(!document.hidden) _pull(); }, 5000);
 
   // b) visibilitychange — Chrome, Firefox, Edge, Samsung Browser
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) _pull(); });
@@ -9660,11 +9751,36 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
   // d) focus — desktop ao voltar para a janela do browser
   window.addEventListener('focus', ()=>_pull());
 
-  // e) online — reconectou à internet (Wi-Fi voltou, dados móveis ligados)
-  window.addEventListener('online', ()=>{ toast('🌐 Conexão restaurada — sincronizando…'); _pull(); saveDB(); });
+  // e) offline — marca dados como pendentes e atualiza pill para vermelho
+  window.addEventListener('offline', ()=>{
+    _syncPending = true;
+    setCloudUI('err','Sem conexão');
+    toast('⚠️ Sem internet. Dados salvos localmente.','⚠️');
+  });
 
-  // f) offline — avisa e mantém dados locais seguros
-  window.addEventListener('offline', ()=>{ setCloudUI('err','Sem conexão'); toast('⚠️ Sem internet. Dados salvos localmente.','⚠️'); });
+  // f) online — reconectou: pill amarela "Reconectando…", aguarda 1,5 s para rede
+  //    estabilizar, depois: pull (busca dados mais recentes) → save (envia pendentes)
+  window.addEventListener('online', ()=>{
+    setCloudUI('sync','Reconectando…');   // amarelo pulsante enquanto tenta
+    toast('🌐 Conexão restaurada — sincronizando…');
+    setTimeout(async ()=>{
+      if(!currentUser) return;
+      try{
+        if(_syncPending){
+          // Há dados locais não enviados: pull para fundir + save para enviar
+          await manualRefresh();           // GET: traz estado atual da nuvem
+          await manualSave();              // POST: envia dados locais mesclados
+          _syncPending = false;
+        } else {
+          // Nenhum dado pendente: pull silencioso para atualizar a UI
+          await _pull();
+        }
+      } catch(e){
+        console.warn('[online handler]', e.message);
+        setCloudUI('err','Sem conexão');
+      }
+    }, 1500); // 1,5 s: tempo para Wi-Fi/dados móveis estabilizarem
+  });
 
   // g) pagehide + beforeunload — sendBeacon: garante POST mesmo ao fechar o app no mobile
   function _beacon(){
@@ -10566,21 +10682,7 @@ document.addEventListener('keydown', function(e){
   }
 });
 
-// ── Detecta reconexão de rede → atualiza automaticamente ──
-window.addEventListener('online', async function(){
-  if(!currentUser) return;
-  toast('🌐 Conexão restaurada — atualizando…');
-  const refreshed = await cloudPull();
-  if(refreshed){
-    _refreshCurrentUserFromDB();
-    populateMes(); populateQESellers(); renderAll();
-    await _syncEnqueue(); // reenvia dados pendentes
-  }
-});
-window.addEventListener('offline', function(){
-  setCloudUI('err', 'Sem conexão');
-  toast('⚠️ Sem internet. Dados salvos localmente.', '⚠️');
-});
+// (Os listeners online/offline estão centralizados na IIFE de inicialização acima)
 </script>
 
 <!-- ══ FOOTER ══ -->
