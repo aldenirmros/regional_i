@@ -10211,7 +10211,7 @@ function _renderPSVSellerChart(ymKey,sellers){
   // ── Fonte única: getMonthTimeStats — idêntico ao Dashboard e a _renderPSVKpis ──
   const { duTotal, duPass } = getMonthTimeStats(ymKey);
   const vendas = sellers.map(s=>sellerTotal(ymKey,s.id));
-  const compr  = sellers.map(s=>duTotal>0 ? +(getSellerMeta(ymKey,s.id)*duPass/duTotal).toFixed(0) : getSellerMeta(ymKey,s.id));
+  const compr  = sellers.map(s=>getSellerMeta(ymKey,s.id));
   const proj   = sellers.map(s=>duPass>0 ? Math.round(sellerTotal(ymKey,s.id)/duPass*duTotal) : 0);
 
   if(_psvCharts.sellers) _psvCharts.sellers.destroy();
