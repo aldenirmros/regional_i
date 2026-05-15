@@ -1,0 +1,9 @@
+/* spin */
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* footer */
+
+@media(max-width:768px){
+  #app-footer{left:0;bottom:60px;}
+  .page{padding-bottom:104px!important;}
+}
