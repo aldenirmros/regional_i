@@ -1506,7 +1506,7 @@ canvas { display:block; max-width:100%; }
   </div>
   <div class="ni" onclick="goPage('sellers',this)" id="nav-sellers" style="display:none">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>
-    <div class="tip">Vendedores / HUBs</div>
+    <div class="tip">HC / HUBs</div>
   </div>
   <div class="ni" onclick="goPage('regionais',this)" id="nav-regionais" style="display:none">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1631,9 +1631,9 @@ canvas { display:block; max-width:100%; }
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>
         <span class="tb-lbl">Usuários</span>
       </button>
-      <button class="btn btn-g" onclick="goPage('sellers',document.querySelectorAll('.ni')[2])" title="Vendedores">
+      <button class="btn btn-g" onclick="goPage('sellers',document.querySelectorAll('.ni')[2])" title="HC">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span class="tb-lbl">Vendedor</span>
+        <span class="tb-lbl">HC</span>
       </button>
       <button class="btn" onclick="goPage('lancar',document.querySelectorAll('.ni')[1])">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1738,13 +1738,13 @@ canvas { display:block; max-width:100%; }
     <div class="dash-layout">
       <div class="card">
         <div class="card-head">
-          <div class="card-title"><div class="ctd" style="background:var(--blue)"></div>Vendedores — clique para filtrar gráficos</div>
+          <div class="card-title"><div class="ctd" style="background:var(--blue)"></div>HC — clique para filtrar gráficos</div>
           <span style="font-size:10.5px;color:var(--tl)" id="tbl-per"></span>
         </div>
         <div style="overflow-x:auto">
           <table class="dt">
             <thead><tr>
-              <th>Vendedor</th><th>Compromisso</th><th>Realizado</th>
+              <th>HC</th><th>Compromisso</th><th>Realizado</th>
               <th style="min-width:110px">% Compromisso</th><th>GAP</th><th>Projeção</th>
             </tr></thead>
             <tbody id="main-tb"></tbody>
@@ -1753,7 +1753,7 @@ canvas { display:block; max-width:100%; }
       </div>
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="card">
-          <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--red)"></div>GAP por Vendedor</div></div>
+          <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--red)"></div>GAP por HC</div></div>
           <div class="gsl" id="gap-l"></div>
         </div>
       </div>
@@ -1876,7 +1876,7 @@ canvas { display:block; max-width:100%; }
             <div>
               <div class="dc-lbl">Dias Restantes</div>
               <div class="dc-val" id="d-rest-v2">—</div>
-              <div class="dc-sub">Precisa: <strong id="d-fd2" style="color:var(--orange)">—</strong>/vendedor/dia</div>
+              <div class="dc-sub">Precisa: <strong id="d-fd2" style="color:var(--orange)">—</strong>/HC/dia</div>
             </div>
           </div>
           <div class="dc dc-c">
@@ -1903,8 +1903,8 @@ canvas { display:block; max-width:100%; }
       </div>
       <div class="excel-upload-info">
         <strong>Importar Vendas via Excel</strong>
-        <span>Envie vendas de múltiplos vendedores de uma vez</span>
-        <div class="excel-drop-hint">Formato: aba <b>Conquistas</b> e aba <b>Ativações</b> — linha 1: datas | coluna A: vendedor | células: quantidade</div>
+        <span>Envie vendas de múltiplos HC de uma vez</span>
+        <div class="excel-drop-hint">Formato: aba <b>Conquistas</b> e aba <b>Ativações</b> — linha 1: datas | coluna A: HC | células: quantidade</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
         <button class="btn btn-green" onclick="document.getElementById('xl-file').click()" style="font-size:12px">
@@ -1924,7 +1924,7 @@ canvas { display:block; max-width:100%; }
       </div>
       <div class="qe-grid">
         <div class="qe-field">
-          <div class="qe-lbl">Vendedor</div>
+          <div class="qe-lbl">HC</div>
           <select class="qe-input" id="qe-seller"></select>
         </div>
         <div class="qe-field">
@@ -1960,7 +1960,7 @@ canvas { display:block; max-width:100%; }
         <option value="">🏢 Todos os HUBs</option>
       </select>
       <select id="lf-seller" onchange="onLancarSellerChange()" style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12.5px;color:var(--td);outline:none;cursor:pointer;min-width:180px">
-        <option value="">👤 Todos os Vendedores</option>
+        <option value="">👤 Todos os HC</option>
       </select>
       <button class="btn-sm btn-sm-g" id="lf-clear-btn" onclick="clearLancarFilter()" style="display:none">✕ Limpar</button>
       <span id="lf-info" style="font-size:11px;color:var(--tl);margin-left:auto"></span>
@@ -1977,7 +1977,7 @@ canvas { display:block; max-width:100%; }
       </div>
       <div class="hist-scroll">
         <table class="dt">
-          <thead><tr><th>Data</th><th>Dia</th><th>Vendedor</th><th>Qtd.</th><th>Tipo</th><th></th></tr></thead>
+          <thead><tr><th>Data</th><th>Dia</th><th>HC</th><th>Qtd.</th><th>Tipo</th><th></th></tr></thead>
           <tbody id="hist-tb"></tbody>
         </table>
       </div>
@@ -2006,7 +2006,7 @@ canvas { display:block; max-width:100%; }
 
     <!-- Tabs: Vendedores | Times | Usuários (visibilidade por role) -->
     <div class="tabs" id="sellers-tabs">
-      <button class="tab-btn on" onclick="switchTab('tab-vendedores',this)">👤 Vendedores</button>
+      <button class="tab-btn on" onclick="switchTab('tab-vendedores',this)">👤 HC</button>
       <button class="tab-btn" id="tab-btn-times" onclick="switchTab('tab-times',this)">🏢 HUBs</button>
       <button class="tab-btn" id="tab-btn-users" onclick="switchTab('tab-usuarios',this)">🔑 Usuários</button>
     </div>
@@ -2016,7 +2016,7 @@ canvas { display:block; max-width:100%; }
       <div class="sellers-grid">
         <div id="seller-form-wrap">
           <div class="card" style="overflow:visible">
-            <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--blue)"></div>Adicionar Vendedor</div></div>
+            <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--blue)"></div>Adicionar HC</div></div>
             <div style="padding:18px">
               <label class="form-lbl">Nome *</label>
               <input type="text" class="form-inp" id="v-nome" placeholder="Ex: JOÃO SILVA">
@@ -2028,7 +2028,7 @@ canvas { display:block; max-width:100%; }
               <select class="form-sel" id="v-time"></select>
               <label class="form-lbl">Data de Admissão</label>
               <input type="date" class="form-inp" id="v-adm">
-              <label class="form-lbl">Foto do Vendedor</label>
+              <label class="form-lbl">Foto do HC</label>
               <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
                 <div id="v-photo-preview" onclick="document.getElementById('v-photo-file').click()" style="width:52px;height:52px;border-radius:50%;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:var(--bg);flex-shrink:0">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tl)" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -2046,7 +2046,7 @@ canvas { display:block; max-width:100%; }
                 <option value="#0891b2">🩵 Ciano</option>
                 <option value="#db2777">🩷 Rosa</option>
               </select>
-              <button class="btn" style="width:100%;justify-content:center;margin-top:4px" onclick="addSeller()">+ Adicionar Vendedor</button>
+              <button class="btn" style="width:100%;justify-content:center;margin-top:4px" onclick="addSeller()">+ Adicionar HC</button>
               <div class="sep"></div>
               <label class="form-lbl">Meta Total do Mês</label>
               <div style="background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.2);border-radius:8px;padding:10px 13px;font-size:12px;color:#1e3a8a;line-height:1.6">
@@ -2059,7 +2059,7 @@ canvas { display:block; max-width:100%; }
         <div>
           <div class="card">
             <div class="card-head">
-              <div class="card-title"><div class="ctd" style="background:var(--green)"></div>Vendedores (<span id="v-cnt">0</span>)</div>
+              <div class="card-title"><div class="ctd" style="background:var(--green)"></div>HC (<span id="v-cnt">0</span>)</div>
             </div>
             <div style="padding:12px 14px" id="v-list"></div>
           </div>
@@ -2249,7 +2249,7 @@ canvas { display:block; max-width:100%; }
 
     <!-- Tabs -->
     <div class="tabs">
-      <button class="tab-btn on" onclick="switchTab('db-tab-sellers',this)">👤 Vendedores</button>
+      <button class="tab-btn on" onclick="switchTab('db-tab-sellers',this)">👤 HC</button>
       <button class="tab-btn" onclick="switchTab('db-tab-vendas',this)">📋 Vendas</button>
       <button class="tab-btn" onclick="switchTab('db-tab-hubs',this)">🏢 HUBs</button>
       <button class="tab-btn" onclick="switchTab('db-tab-regionais',this)">🏠 Regionais</button>
@@ -2260,11 +2260,11 @@ canvas { display:block; max-width:100%; }
     <div id="db-tab-sellers" class="tab-pane on">
       <div class="db-tab-header">
         <span style="font-size:12px;font-weight:600;color:var(--tl)" id="db-sellers-count"></span>
-        <button class="db-btn-add" onclick="dbToggleAddForm('add-seller')">＋ Novo Vendedor</button>
+        <button class="db-btn-add" onclick="dbToggleAddForm('add-seller')">＋ Novo HC</button>
       </div>
       <!-- Formulário inline: novo vendedor -->
       <div class="db-add-form" id="add-seller">
-        <div class="db-add-form-title">Novo Vendedor</div>
+        <div class="db-add-form-title">Novo HC</div>
         <div class="db-add-grid">
           <div class="db-inp-wrap"><label>Nome *</label><input class="db-inp" id="dba-s-nome" placeholder="NOME COMPLETO" style="text-transform:uppercase"></div>
           <div class="db-inp-wrap"><label>CPF / Matrícula</label><input class="db-inp" id="dba-s-cpf" placeholder="000.000.000-00"></div>
@@ -2275,7 +2275,7 @@ canvas { display:block; max-width:100%; }
         </div>
         <div class="db-add-actions">
           <button class="db-btn db-btn-edit" onclick="dbToggleAddForm('add-seller')">Cancelar</button>
-          <button class="btn btn-green" onclick="dbSaveSeller()">✓ Salvar Vendedor</button>
+          <button class="btn btn-green" onclick="dbSaveSeller()">✓ Salvar HC</button>
         </div>
       </div>
       <div class="db-table-wrap">
@@ -2298,7 +2298,7 @@ canvas { display:block; max-width:100%; }
       <div class="db-table-wrap">
         <table class="db-table">
           <thead><tr>
-            <th>Data</th><th>Vendedor</th><th>HUB</th><th>Regional</th><th>Qtd</th><th>Tipo</th><th>Ações</th>
+            <th>Data</th><th>HC</th><th>HUB</th><th>Regional</th><th>Qtd</th><th>Tipo</th><th>Ações</th>
           </tr></thead>
           <tbody id="db-vendas-body"><tr><td colspan="7" class="db-empty">Selecione um mês</td></tr></tbody>
         </table>
@@ -2335,7 +2335,7 @@ canvas { display:block; max-width:100%; }
       <div class="db-table-wrap">
         <table class="db-table">
           <thead><tr>
-            <th>ID</th><th>Nome</th><th>Regional</th><th>Cor</th><th>Vendedores Ativos</th><th>Meta Mês</th><th>Ações</th>
+            <th>ID</th><th>Nome</th><th>Regional</th><th>Cor</th><th>HC Ativos</th><th>Meta Mês</th><th>Ações</th>
           </tr></thead>
           <tbody id="db-hubs-body"><tr><td colspan="7" class="db-empty">Carregando…</td></tr></tbody>
         </table>
@@ -2347,7 +2347,7 @@ canvas { display:block; max-width:100%; }
       <div class="db-table-wrap">
         <table class="db-table">
           <thead><tr>
-            <th>ID</th><th>Nome</th><th>Cor</th><th>HUBs</th><th>Vendedores</th><th>Ações</th>
+            <th>ID</th><th>Nome</th><th>Cor</th><th>HUBs</th><th>HC</th><th>Ações</th>
           </tr></thead>
           <tbody id="db-regionais-body"><tr><td colspan="6" class="db-empty">Carregando…</td></tr></tbody>
         </table>
@@ -2629,8 +2629,8 @@ canvas { display:block; max-width:100%; }
     <!-- 3. Vendas & Compromisso — ponta a ponta, fotos abaixo do nome alinhadas com colunas -->
     <div class="card" style="margin-bottom:24px">
       <div class="card-head" style="justify-content:space-between">
-        <div class="card-title"><div class="ctd" style="background:#d97706"></div>Vendas &amp; Compromisso por Vendedor</div>
-        <button onclick="psvMaximize('sellers','Vendas &amp; Compromisso por Vendedor')" title="Maximizar" style="background:none;border:none;cursor:pointer;color:var(--tl);font-size:14px;padding:2px 6px">⛶</button>
+        <div class="card-title"><div class="ctd" style="background:#d97706"></div>Vendas &amp; Compromisso por HC</div>
+        <button onclick="psvMaximize('sellers','Vendas &amp; Compromisso por HC')" title="Maximizar" style="background:none;border:none;cursor:pointer;color:var(--tl);font-size:14px;padding:2px 6px">⛶</button>
       </div>
       <!-- Faixa de fotos: alinhada com as colunas do gráfico via JS -->
       <div id="psv-photos-row" style="display:flex;padding:10px 20px 0;gap:0;border-bottom:1px solid var(--border)"></div>
@@ -2725,12 +2725,12 @@ canvas { display:block; max-width:100%; }
 <div class="modal-ov" id="transfer-modal" onclick="if(event.target===this)closeTransferModal()">
   <div class="modal-box" style="max-width:420px">
     <div class="modal-x" onclick="closeTransferModal()">✕</div>
-    <div class="modal-h">🔄 Transferir Vendedor</div>
+    <div class="modal-h">🔄 Transferir HC</div>
     <div class="modal-s" id="tr-subtitle">—</div>
     <div style="background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.2);border-radius:8px;padding:12px 14px;font-size:12px;color:#7c3aed;margin-bottom:16px;line-height:1.6">
       <strong>ℹ️ Como funciona a transferência:</strong><br>
       O histórico de vendas anterior à data de transferência <strong>permanece vinculado ao HUB atual</strong>.<br>
-      A partir da data informada, o vendedor terá um novo histórico no HUB destino.
+      A partir da data informada, o HC terá um novo histórico no HUB destino.
     </div>
     <div class="mf">
       <label>Data da Transferência *</label>
@@ -2756,10 +2756,10 @@ canvas { display:block; max-width:100%; }
 <div class="modal-ov" id="edit-seller-modal" onclick="if(event.target===this)closeEditSellerModal()">
   <div class="modal-box" style="max-width:460px">
     <div class="modal-x" onclick="closeEditSellerModal()">✕</div>
-    <div class="modal-h">✏️ Editar Vendedor</div>
+    <div class="modal-h">✏️ Editar HC</div>
     <div class="mf">
       <label>Nome *</label>
-      <input type="text" id="es-nome" placeholder="NOME DO VENDEDOR" style="text-transform:uppercase">
+      <input type="text" id="es-nome" placeholder="NOME DO HC" style="text-transform:uppercase">
     </div>
     <div class="mf">
       <label>CPF / Matrícula</label>
@@ -2774,7 +2774,7 @@ canvas { display:block; max-width:100%; }
       <select id="es-time" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;cursor:pointer"></select>
     </div>
     <div class="mf">
-      <label>Foto do Vendedor</label>
+      <label>Foto do HC</label>
       <div style="display:flex;align-items:center;gap:12px">
         <div id="es-photo-preview" onclick="document.getElementById('es-photo-file').click()" style="width:52px;height:52px;border-radius:50%;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:var(--bg);flex-shrink:0">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--tl)" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -3061,7 +3061,7 @@ canvas { display:block; max-width:100%; }
           3. Clique em <b>Implantar → Novo Implantamento → App da Web</b><br>
           4. Defina acesso: <b>Qualquer pessoa</b> — copie a URL<br>
           5. Cole a URL abaixo e clique em <b>Conectar</b><br>
-          <span style="color:#166534;font-size:10.5px">✅ As abas (Vendedores, Vendas, Usuários…) serão criadas automaticamente.</span>
+          <span style="color:#166534;font-size:10.5px">✅ As abas (HC, Vendas, Usuários…) serão criadas automaticamente.</span>
         </div>
 
         <div class="modal-warn" id="cloud-warn"></div>
@@ -3163,7 +3163,7 @@ canvas { display:block; max-width:100%; }
   <div class="modal-box" style="max-width:400px">
     <div class="modal-x" onclick="closeModeloExcelModal()">✕</div>
     <div class="modal-h">📥 Baixar Modelo Excel</div>
-    <div class="modal-s">O modelo será gerado com os vendedores do seu escopo.</div>
+    <div class="modal-s">O modelo será gerado com os HC do seu escopo.</div>
     <div style="background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.2);border-radius:9px;padding:10px 13px;margin-bottom:16px;font-size:12px;color:#1e3a8a;display:flex;align-items:center;gap:8px">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
       <span id="modelo-scope-txt">—</span>
@@ -3625,12 +3625,12 @@ function renderMapaSemanal(ymKey, sellers, containerId){
   let html=`
     <div class="card-head" style="flex-wrap:wrap;gap:8px">
       <div class="card-title"><div class="ctd" style="background:var(--green)"></div>📅 Mapa Semanal — ${MESES[m]} ${y}</div>
-      <span style="font-size:10.5px;color:var(--tl)">${sellers.length} vendedor(es) · ${semanas.length} semana(s)</span>
+      <span style="font-size:10.5px;color:var(--tl)">${sellers.length} HC · ${semanas.length} semana(s)</span>
     </div>
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px">
       <table class="dt" style="min-width:${minW}px;border-collapse:separate;border-spacing:0">
         <thead><tr>
-          <th style="min-width:150px;position:sticky;left:0;z-index:2;background:#f8fafc">Vendedor</th>
+          <th style="min-width:150px;position:sticky;left:0;z-index:2;background:#f8fafc">HC</th>
           ${wLabels.map((l,i)=>`<th class="mapa-week-th${i===semAtualIdx?' mapa-sem-atual':''}">${l}</th>`).join('')}
           <th class="mapa-week-th mapa-total-col" style="min-width:90px">Total</th>
         </tr></thead>
@@ -3852,19 +3852,19 @@ function updateDashFilterInfo(){
     const tm=(DB.times||[]).find(x=>x.id===u.timeId);
     const rg=(DB.regionais||[]).find(x=>x.id===tm?.regionalId);
     const c=rg?.color||'var(--blue)';
-    el.innerHTML=`<span class="dash-filter-tag" style="background:${c}18;color:${c};border-color:${c}44">🏢 ${tm?.nome||'Meu HUB'}</span> <span style="font-size:10.5px">${total} vendedor(es)</span>`;
+    el.innerHTML=`<span class="dash-filter-tag" style="background:${c}18;color:${c};border-color:${c}44">🏢 ${tm?.nome||'Meu HUB'}</span> <span style="font-size:10.5px">${total} HC</span>`;
     return;
   }
 
   if(scopeFilter.timeId){
     const t=(DB.times||[]).find(x=>x.id===scopeFilter.timeId);
     const rg=(DB.regionais||[]).find(x=>x.id===t?.regionalId);
-    el.innerHTML=`<span class="dash-filter-tag" style="background:${rg?.color+'18'||'var(--blue-g)'};color:${rg?.color||'var(--blue)'};border-color:${rg?.color+'44'||'rgba(37,99,235,.2)'}">🏢 ${t?.nome||'Time'}</span> <span style="font-size:10.5px">${total} vendedor(es)</span>`;
+    el.innerHTML=`<span class="dash-filter-tag" style="background:${rg?.color+'18'||'var(--blue-g)'};color:${rg?.color||'var(--blue)'};border-color:${rg?.color+'44'||'rgba(37,99,235,.2)'}">🏢 ${t?.nome||'Time'}</span> <span style="font-size:10.5px">${total} HC</span>`;
   } else if(scopeFilter.regionalId){
     const r=(DB.regionais||[]).find(x=>x.id===scopeFilter.regionalId);
-    el.innerHTML=`<span class="dash-filter-tag" style="background:${r?.color+'18'||'var(--blue-g)'};color:${r?.color||'var(--blue)'};border-color:${r?.color+'44'||'rgba(37,99,235,.2)'}">🏠 ${r?.nome||'Regional'}</span> <span style="font-size:10.5px">${total} vendedor(es)</span>`;
+    el.innerHTML=`<span class="dash-filter-tag" style="background:${r?.color+'18'||'var(--blue-g)'};color:${r?.color||'var(--blue)'};border-color:${r?.color+'44'||'rgba(37,99,235,.2)'}">🏠 ${r?.nome||'Regional'}</span> <span style="font-size:10.5px">${total} HC</span>`;
   } else {
-    el.innerHTML=`<span style="font-size:11px;color:var(--tl)">Toda a equipe — ${total} vendedor(es)</span>`;
+    el.innerHTML=`<span style="font-size:11px;color:var(--tl)">Toda a equipe — ${total} HC</span>`;
   }
 }
 
@@ -4064,7 +4064,7 @@ function goPage(name, el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.getElementById('page-'+name)?.classList.add('active');
   if(el) el.classList.add('on');
-  const lb={dash:'Dashboard — Visão Geral',lancar:'Lançar Vendas',sellers:'Vendedores / HUBs',regionais:'Gestão de Regionais',db:'Banco de Dados',overview:'Visão Geral por Regional',psv:'PSV — Apresentação de Resultados'};
+  const lb={dash:'Dashboard — Visão Geral',lancar:'Lançar Vendas',sellers:'HC / HUBs',regionais:'Gestão de Regionais',db:'Banco de Dados',overview:'Visão Geral por Regional',psv:'PSV — Apresentação de Resultados'};
   const tbSub=document.getElementById('tb-sub'); if(tbSub) tbSub.textContent=lb[name]||'';
   if(name==='dash'){
     // FIX: se DB ainda não tem vendas (DB vazio / antes do cloudPull terminar),
@@ -4395,7 +4395,7 @@ function renderRankingDia(){
   // Escopo de vendedores (respeita filtros ativos)
   const scopedSellers = getScopedSellers();
   if(!scopedSellers.length){
-    content.innerHTML = '<div class="ranking-dia-empty">Nenhum vendedor encontrado no escopo atual.</div>';
+    content.innerHTML = '<div class="ranking-dia-empty">Nenhum HC encontrado no escopo atual.</div>';
     return;
   }
 
@@ -4427,7 +4427,7 @@ function renderRankingDia(){
   const dateLabel = `${d}/${mo}/${y}`;
 
   if(totalDia === 0){
-    content.innerHTML = `<div class="ranking-dia-empty">Nenhuma venda registrada em <strong>${dateLabel}</strong> para os vendedores do escopo.</div>`;
+    content.innerHTML = `<div class="ranking-dia-empty">Nenhuma venda registrada em <strong>${dateLabel}</strong> para os HC do escopo.</div>`;
     return;
   }
 
@@ -4806,7 +4806,7 @@ function renderLancar(){
 
   let html='';
   if(vs.length===0 && vsHistorico.length===0){
-    html=`<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--tl)">Nenhuma venda registrada${lancarSellerFilter?' para este vendedor':' neste mês'}</td></tr>`;
+    html=`<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--tl)">Nenhuma venda registrada${lancarSellerFilter?' para este HC':' neste mês'}</td></tr>`;
   } else {
     if(vs.length===0){
       html=`<tr><td colspan="6" style="text-align:center;padding:16px 24px;color:var(--tl)">Nenhuma venda da equipe atual neste mês</td></tr>`;
@@ -4815,7 +4815,7 @@ function renderLancar(){
     }
     if(vsHistorico.length>0){
       html+=`<tr><td colspan="6" style="padding:6px 14px 4px;border-top:2px dashed rgba(124,58,237,.25)">
-        <span style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#7c3aed">📦 Histórico — Vendedores Transferidos</span>
+        <span style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#7c3aed">📦 Histórico — HC Transferidos</span>
       </td></tr>`;
       vsHistorico.forEach(v=>{ html+=buildRow(v, true); });
     }
@@ -5117,7 +5117,7 @@ function renderSellers(){
     if(inativo) lhInativo+=card; else lh+=card;
   });
   const allHtml=(lh||'')+(lhInativo?`<div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tl);margin-bottom:8px">Inativos</div>${lhInativo}</div>`:'');
-  document.getElementById('v-list').innerHTML=allHtml||'<div style="color:var(--tl);text-align:center;padding:20px">Nenhum vendedor</div>';
+  document.getElementById('v-list').innerHTML=allHtml||'<div style="color:var(--tl);text-align:center;padding:20px">Nenhum HC</div>';
 
   // Seção: Histórico de Transferidos (vendedores que saíram deste hub)
   const viewTid = sfTmId || (u?.role==='supervisor'?u.timeId:null);
@@ -5174,7 +5174,7 @@ function renderTimesList(){
         <div class="time-ic" style="background:${t.color||'#2563eb'}">${(t.nome||'?')[0].toUpperCase()}</div>
         <div style="flex:1">
           <div class="time-nm">${t.nome||'HUB sem nome'}</div>
-          <div class="time-sub">${rg?`Regional: ${rg.nome||'?'} · `:''}${cnt} vendedor(es) · Realizado: ${real}${sup?` · Sup: @${sup.username}`:''}</div>
+          <div class="time-sub">${rg?`Regional: ${rg.nome||'?'} · `:''}${cnt} HC · Realizado: ${real}${sup?` · Sup: @${sup.username}`:''}</div>
         </div>
         ${(canEdit||isMySup)?`<button class="btn btn-g" onclick="openHubEditById(${t.id})" style="font-size:11px;padding:4px 10px;border-color:rgba(37,99,235,.3);color:var(--blue)">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -5284,7 +5284,7 @@ function delSeller(id){
   if(!s) return;
   // Valida escopo
   const scopeIds = new Set(getScopedSellers(true).map(x=>x.id));
-  if(!scopeIds.has(id)){ toast('Sem permissão para remover este vendedor','⚠️'); return; }
+  if(!scopeIds.has(id)){ toast('Sem permissão para remover este HC','⚠️'); return; }
   if(confirm(`Inativar "${s.name}" em vez de excluir?\n\nInativar preserva todo o histórico de vendas.\nCancelar e clicar Excluir remove permanentemente.`)){
     toggleSellerInativo(id,true); return;
   }
@@ -5294,8 +5294,8 @@ function delSellerPermanent(id){
   if(!s) return;
   // Valida escopo
   const scopeIds = new Set(getScopedSellers(true).map(x=>x.id));
-  if(!scopeIds.has(id)){ toast('Sem permissão para excluir este vendedor','⚠️'); return; }
-  if(!confirm(`⚠️ Excluir PERMANENTEMENTE "${s.name}"?\nO histórico de vendas será mantido, mas o vendedor não poderá ser restaurado.`)) return;
+  if(!scopeIds.has(id)){ toast('Sem permissão para excluir este HC','⚠️'); return; }
+  if(!confirm(`⚠️ Excluir PERMANENTEMENTE "${s.name}"?\nO histórico de vendas será mantido, mas o HC não poderá ser restaurado.`)) return;
   if(!DB.deleted) DB.deleted={userIds:[],sellerIds:[],timeIds:[],regionalIds:[]};
   if(!DB.deleted.sellerIds.includes(String(id))) DB.deleted.sellerIds.push(String(id));
   DB.sellers=DB.sellers.filter(x=>x.id!==id);
@@ -5334,7 +5334,7 @@ function openInativarModal(id){
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center';
   modal.innerHTML=`<div style="background:var(--white);border-radius:var(--r);padding:24px 24px 20px;max-width:380px;width:90%;box-shadow:var(--sh2)">
     <div style="font-size:16px;font-weight:800;color:var(--td);margin-bottom:6px">Inativar ${s.name}</div>
-    <div style="font-size:12px;color:var(--tl);margin-bottom:16px">Informe a data de desligamento. O vendedor só desaparecerá a partir do mês seguinte.</div>
+    <div style="font-size:12px;color:var(--tl);margin-bottom:16px">Informe a data de desligamento. O HC só desaparecerá a partir do mês seguinte.</div>
     <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);display:block;margin-bottom:5px">Data de Desligamento *</label>
     <input type="date" id="inativar-date" value="${fmtD(today())}" style="width:100%;border:1.5px solid var(--border);border-radius:var(--rs);padding:8px 12px;font-family:var(--font);font-size:13px;color:var(--td);background:var(--bg);outline:none;margin-bottom:16px;box-sizing:border-box">
     <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -5402,7 +5402,7 @@ function addTime(){
 
 function delTime(id){
   const t=(DB.times||[]).find(x=>x.id===id);
-  if(!t||!confirm(`Remover HUB "${t.nome}"? Vendedores vinculados ficam sem time.`)) return;
+  if(!t||!confirm(`Remover HUB "${t.nome}"? HC vinculados ficam sem time.`)) return;
   if(!DB.deleted) DB.deleted={userIds:[],sellerIds:[],timeIds:[],regionalIds:[]};
   if(!DB.deleted.timeIds.includes(String(id))) DB.deleted.timeIds.push(String(id));
   // registra supervisores deste HUB como deletados
@@ -5511,7 +5511,7 @@ function renderRegionais(){
       <div class="rg-card-top" style="background:${rg.color}"></div>
       <div class="rg-card-body">
         <div class="rg-card-nm" style="color:${rg.color}">${rg.nome}</div>
-        <div class="rg-card-sub">${adm?`Admin: @${adm.username}`:' sem admin'} · ${times.length} HUB(s) · ${sellers.length} vendedor(es)</div>
+        <div class="rg-card-sub">${adm?`Admin: @${adm.username}`:' sem admin'} · ${times.length} HUB(s) · ${sellers.length} HC</div>
         <div class="rg-stats">
           <div class="rg-stat"><div class="rg-stat-val" style="color:var(--green)">${real}</div><div class="rg-stat-lbl">Realizado</div></div>
           <div class="rg-stat"><div class="rg-stat-val" style="color:var(--blue)">${meta}</div><div class="rg-stat-lbl">Meta</div></div>
@@ -5589,7 +5589,7 @@ function renderDbSellers(){
   sellers.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
   const cnt=document.getElementById('db-sellers-count');
   if(cnt) cnt.textContent=`${sellers.filter(s=>!s.inativo).length} ativo(s) · ${sellers.length} total`;
-  if(!sellers.length){ tbody.innerHTML=`<tr><td colspan="9" class="db-empty">Nenhum vendedor encontrado</td></tr>`; return; }
+  if(!sellers.length){ tbody.innerHTML=`<tr><td colspan="9" class="db-empty">Nenhum HC encontrado</td></tr>`; return; }
   tbody.innerHTML=sellers.map(s=>{
     const t=(DB.times||[]).find(x=>x.id==s.timeId);
     const rg=(DB.regionais||[]).find(r=>r.id==t?.regionalId);
@@ -5810,7 +5810,7 @@ function dbOnAddUserRoleChange(){
 
 function dbSaveSeller(){
   const nome=(document.getElementById('dba-s-nome')?.value||'').trim().toUpperCase();
-  if(!nome){ toast('Informe o nome do vendedor','⚠️'); return; }
+  if(!nome){ toast('Informe o nome do HC','⚠️'); return; }
   const hubId=parseInt(document.getElementById('dba-s-hub')?.value)||null;
   if(!hubId){ toast('Selecione o HUB','⚠️'); return; }
   const cpf=(document.getElementById('dba-s-cpf')?.value||'').trim();
@@ -6332,10 +6332,10 @@ function openModeloExcelModal(){
   const sellers=getScopedSellers();
   const u=currentUser;
   let desc='';
-  if(isGerente(u))             desc=`Todos os vendedores (${sellers.length})`;
-  else if(u?.role==='regional'){ const rg=(DB.regionais||[]).find(r=>r.id===u.regionalId); desc=`Regional: ${rg?.nome||'—'} · ${sellers.length} vendedor(es)`; }
-  else if(u?.role==='supervisor'){ const tm=(DB.times||[]).find(t=>t.id===u.timeId); desc=`HUB: ${tm?.nome||'—'} · ${sellers.length} vendedor(es)`; }
-  else desc=`${sellers.length} vendedor(es)`;
+  if(isGerente(u))             desc=`Todos os HC (${sellers.length})`;
+  else if(u?.role==='regional'){ const rg=(DB.regionais||[]).find(r=>r.id===u.regionalId); desc=`Regional: ${rg?.nome||'—'} · ${sellers.length} HC`; }
+  else if(u?.role==='supervisor'){ const tm=(DB.times||[]).find(t=>t.id===u.timeId); desc=`HUB: ${tm?.nome||'—'} · ${sellers.length} HC`; }
+  else desc=`${sellers.length} HC`;
   document.getElementById('modelo-scope-txt').textContent=desc;
   document.getElementById('modelo-excel-modal').classList.add('show');
 }
@@ -6350,7 +6350,7 @@ function downloadModeloExcel(){
   // getScopedSellers funciona para TODOS os papéis automaticamente
   const sellers=getScopedSellers();
   const nomes=sellers.map(s=>s.name);
-  if(!nomes.length){ toast('Nenhum vendedor no seu escopo','⚠️'); return; }
+  if(!nomes.length){ toast('Nenhum HC no seu escopo','⚠️'); return; }
   const dias=getDiasUteis(y,m);
   function makeSheet(){
     const header=['VENDEDOR',...dias];
@@ -6370,7 +6370,7 @@ function downloadModeloExcel(){
   XLSX.utils.book_append_sheet(wb,makeSheet(),'Ativações');
   XLSX.writeFile(wb,`modelo_vendas_${MESES[m]}_${y}.xlsx`);
   closeModeloExcelModal();
-  toast(`📥 Modelo ${MESES[m]} ${y} — ${nomes.length} vendedor(es)!`);
+  toast(`📥 Modelo ${MESES[m]} ${y} — ${nomes.length} HC!`);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -7818,7 +7818,7 @@ function _bkReadFile(file){
       const vendas  = Object.values(d.vendas||{}).reduce((s,v)=>s+(v?.length||0),0);
       document.getElementById('bk-fname').textContent = file.name;
       document.getElementById('bk-finfo').textContent =
-        sellers + ' vendedores · ' + meses + ' meses · ' + vendas + ' lançamentos · ' +
+        sellers + ' HC · ' + meses + ' meses · ' + vendas + ' lançamentos · ' +
         (file.size > 1024*1024 ? (file.size/1024/1024).toFixed(1)+'MB' : Math.round(file.size/1024)+'KB');
       document.getElementById('bk-drop').style.display    = 'none';
       document.getElementById('bk-preview').style.display = '';
@@ -7846,7 +7846,7 @@ async function bkDoRestore(){
   if(!confirm(
     '⚠️ CONFIRMAR RESTAURAÇÃO\n\n' +
     'Este backup contém:\n' +
-    '  • ' + sellers + ' vendedores\n' +
+    '  • ' + sellers + ' HC\n' +
     '  • ' + vendas  + ' lançamentos\n\n' +
     'O banco de dados atual será SUBSTITUÍDO por este backup.\n\n' +
     'Deseja continuar?'
