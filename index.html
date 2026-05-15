@@ -3543,16 +3543,18 @@ function getMonthTimeStats(ymKey){
     ? cfg.total
     : Math.max(0, duAll.length - desconto);
 
-  // duPass: usa override manual se existir; senão contagem proporcional
+  // duPass: usa override manual se existir; senão proporção sobre duTotal
+  // CORREÇÃO: feriados só reduzem o total do mês, NÃO os dias já decorridos.
+  // Usar (duPassedRaw * duTotal / duAll.length) mantém a proporção correta
+  // e evita o desconto duplo que fazia duPass aparecer 2 dias a menos.
   let duPass;
   if (cfg.passed != null) {
     duPass = cfg.passed;
   } else {
-    const duPassedRaw        = duAll.filter(d => d <= t).length;
-    const duPassFeriadosProp = duAll.length > 0
-      ? Math.round(desconto * duPassedRaw / duAll.length)
+    const duPassedRaw = duAll.filter(d => d <= t).length;
+    duPass = duAll.length > 0
+      ? Math.min(duTotal, Math.round(duPassedRaw * duTotal / duAll.length))
       : 0;
-    duPass = Math.max(0, duPassedRaw - duPassFeriadosProp);
   }
 
   const duRest = Math.max(0, duTotal - duPass);
