@@ -429,8 +429,8 @@ select.sel:focus{border-color:var(--blue);}
   /* ── DIAS: 1 coluna ── */
   .dias-row{grid-template-columns:1fr;gap:8px;margin-bottom:14px;}
 
-  /* ── DASH LAYOUT: 1 coluna ── */
-  .dash-layout{grid-template-columns:1fr;gap:12px;margin-bottom:14px;}
+  /* ── DASH LAYOUT: já é block/100% ── */
+  .dash-layout{margin-bottom:14px;}
 
   /* ── GRÁFICOS: 1 coluna ── */
   .charts-row{grid-template-columns:1fr!important;gap:12px;}
@@ -636,7 +636,7 @@ select.sel:focus{border-color:var(--blue);}
 .dc-sub{font-size:10.5px;color:var(--tl);margin-top:1px;}
 
 /* ── LAYOUT ── */
-.dash-layout{display:grid;grid-template-columns:1fr 420px;gap:16px;margin-bottom:18px;}
+.dash-layout{display:block;width:100%;margin-bottom:18px;}
 .card{background:var(--white);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden;}
 .card-head{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .card-title{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px;}
@@ -1300,7 +1300,6 @@ canvas { display:block; max-width:100%; }
   #psv-top-row{grid-template-columns:1fr 1fr 1fr!important;}
 
   .hc-card{min-width:160px;}
-  .dash-layout{grid-template-columns:1fr!important;}
   .charts-row{grid-template-columns:1fr 1fr!important;}
 }
 
@@ -1768,12 +1767,6 @@ canvas { display:block; max-width:100%; }
             </tr></thead>
             <tbody id="main-tb"></tbody>
           </table>
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:16px">
-        <div class="card">
-          <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--red)"></div>GAP por HC</div></div>
-          <div class="gsl" id="gap-l"></div>
         </div>
       </div>
     </div>
@@ -4383,7 +4376,8 @@ function renderDash(){
       <span class="gap-badge ${gCls}" style="flex-shrink:0;font-size:11px;padding:2px 7px">${s.gap===0?'✓':'-'+s.gap}</span>
     </div>`;
   });
-  document.getElementById('gap-l').innerHTML=gHtml;
+  const _gapEl = document.getElementById('gap-l');
+  if(_gapEl) _gapEl.innerHTML=gHtml;
 
   // CHARTS
   buildBar(stats, sid, duPass, duTotal);
