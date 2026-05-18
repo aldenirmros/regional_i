@@ -7183,13 +7183,32 @@ function tablesToDB(tables) {
     else o.timeId = null;
     if (o.inativo === 'true' || o.inativo === true) o.inativo = true;
     else o.inativo = false;
-    // Normaliza activeFrom: Sheets pode retornar Date ou ISO string
-    if (o.activeFrom instanceof Date) {
-      const d = o.activeFrom;
-      o.activeFrom = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    } else if (typeof o.activeFrom === 'string' && o.activeFrom.length > 10) {
-      o.activeFrom = o.activeFrom.slice(0, 10);
+
+    // ── Helper: normaliza campos de data para "YYYY-MM-DD" ──────────────────
+    // Sheets pode devolver: Date object, ISO string completa ("2026-05-03T00:00:00.000Z"),
+    // string com espaço ("2026-05-03 00:00:00"), ou já "YYYY-MM-DD" — todos normalizados aqui.
+    function _normDate(v){
+      if(!v) return null;
+      if(v instanceof Date){
+        return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')}`;
+      }
+      if(typeof v === 'string'){
+        // Extrai apenas os 10 primeiros caracteres (YYYY-MM-DD) de qualquer formato ISO
+        const s = v.trim().slice(0,10);
+        // Valida padrão básico YYYY-MM-DD antes de retornar
+        return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null;
+      }
+      return null;
     }
+
+    // admDate: data de contratação — essencial para cálculo de safra (M0/M1/M2/full)
+    o.admDate     = _normDate(o.admDate)     || o.admDate     || null;
+    // desligamento: data de saída — usada para filtrar HC por mês
+    o.desligamento= _normDate(o.desligamento)|| o.desligamento|| null;
+    // activeFrom: legado — normaliza da mesma forma
+    o.activeFrom  = _normDate(o.activeFrom)  || o.activeFrom  || null;
+    if(o.activeFrom === null) delete o.activeFrom; // mantém ausente se nunca foi definido
+
     return o;
   });
 
@@ -9464,7 +9483,18 @@ function openEditSellerModal(id){
   _editSellerId=id; _editSellerPhoto=null;
   document.getElementById('es-nome').value=s.name||'';
   document.getElementById('es-cpf').value=s.cpf||'';
-  document.getElementById('es-adm').value=s.admDate||'';
+
+  // Normaliza admDate antes de exibir no input type="date" (requer "YYYY-MM-DD")
+  // Protege contra Date objects ou ISO strings vindos do Sheets
+  const _admRaw = s.admDate;
+  let _admDisplay = '';
+  if(_admRaw instanceof Date){
+    _admDisplay = `${_admRaw.getFullYear()}-${String(_admRaw.getMonth()+1).padStart(2,'0')}-${String(_admRaw.getDate()).padStart(2,'0')}`;
+  } else if(typeof _admRaw === 'string'){
+    _admDisplay = _admRaw.trim().slice(0,10); // garante "YYYY-MM-DD"
+  }
+  document.getElementById('es-adm').value = _admDisplay;
+
   document.getElementById('es-cor').value=s.color||'#2563eb';
   document.getElementById('es-warn').style.display='none';
 
@@ -9509,8 +9539,13 @@ function saveEditSeller(){
   if(!nome){ warn.style.display='block'; warn.textContent='⚠️ Informe o nome.'; return; }
   s.name=nome;
   s.cpf=document.getElementById('es-cpf').value.trim();
-  const adm=document.getElementById('es-adm').value;
-  if(adm) s.admDate=adm;
+
+  // admDate: persiste SEMPRE — inclui o caso de limpeza intencional do campo
+  // O guard "if(adm)" anterior impedia que o campo fosse limpo e não registrava
+  // alterações quando o campo ficava vazio entre edições consecutivas.
+  const adm = document.getElementById('es-adm').value.trim();
+  s.admDate = adm || null;   // null = sem data definida (limpa o campo corretamente)
+
   const u=currentUser;
   if(u?.role!=='supervisor'){
     const tmId=parseInt(document.getElementById('es-time').value)||null;
@@ -9518,6 +9553,7 @@ function saveEditSeller(){
   }
   s.color=document.getElementById('es-cor').value||s.color;
   if(_editSellerPhoto) s.photo=_editSellerPhoto;
+  s._ts = Date.now(); // marca timestamp de alteração para o merge (local vence cloud em empate)
   saveDB(); renderSellers(); renderDash(); populateQESellers();
   closeEditSellerModal();
   toast(`✅ ${nome} atualizado!`);
