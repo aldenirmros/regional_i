@@ -7145,7 +7145,8 @@ function dbToTables(db) {
     { chave: '_savedAt', val: db._savedAt || 0 }
   ];
 
-  // ── psv_plano_acao: {userId, ymKey, indicador, problema, causa, acoes, periodo, resultado} ──
+  // ── psv_plano_acao: inclui rowId (para merge estável) + todos os campos ──
+  // ({...r}) já propaga rowId, userId, ymKey e campos de texto — sem filtro aqui.
   const psvPlanoAcao = (db.psvPlano || []).map(r => ({...r}));
 
   // ── psv_tpv: {userId, ymKey, hubId, mk, valor_real, valor_proj} — inclui userId para isolamento ──
@@ -7331,11 +7332,14 @@ function tablesToDB(tables) {
   //    mas não é mais serializado nem usado para salvar dados do PSV ──
   db.psvData = {};
 
-  // ── psv_plano_acao ──
-  // Força userId e ymKey como string (Sheets pode devolver como número)
+  // ── psv_plano_acao ──────────────────────────────────────────────────────────
+  // Regra 1: mapeamento estrito por userId + ymKey (Sheets devolve como número → String forçado)
+  // Regra 2: dedup por userId+ymKey+indicador — mantém APENAS A ÚLTIMA ocorrência
+  //          (Sheets acumula linhas sequencialmente; a linha mais recente fica sempre por último)
   db.psvPlano = (tables.psv_plano_acao || []).map(r => ({
-    userId   : String(r.userId   || ''),
-    ymKey    : String(r.ymKey    || ''),
+    rowId    : String(r.rowId     || ''),    // ← preserva rowId para merge estável (Ponto 3)
+    userId   : String(r.userId   || ''),     // ← chave de isolamento — sempre string
+    ymKey    : String(r.ymKey    || ''),     // ← chave de período   — sempre string
     indicador: String(r.indicador|| ''),
     problema : String(r.problema || ''),
     causa    : String(r.causa    || ''),
@@ -7343,9 +7347,19 @@ function tablesToDB(tables) {
     periodo  : String(r.periodo  || ''),
     resultado: String(r.resultado|| ''),
   })).filter(r => r.userId && r.ymKey);
+  // Dedup "última vence": Map.set sobrescreve iterando da esquerda → direita = última linha do Sheets prevalece
+  {
+    const _lastMap = new Map();
+    db.psvPlano.forEach(r => {
+      const k = `${r.userId}|${r.ymKey}|${r.indicador}`;
+      _lastMap.set(k, r);
+    });
+    db.psvPlano = [..._lastMap.values()];
+  }
 
-  // ── psv_tpv ──
-  // Força userId, ymKey, hubId, mk como string; valores como número
+  // ── psv_tpv ──────────────────────────────────────────────────────────────
+  // Regra 1: mapeamento por userId + ymKey + hubId + mk
+  // Regra 2: dedup por chave composta — última ocorrência vence
   db.psvTpv = (tables.psv_tpv || []).map(r => ({
     userId    : String(r.userId || ''),
     ymKey     : String(r.ymKey  || ''),
@@ -7354,20 +7368,35 @@ function tablesToDB(tables) {
     valor_real: (r.valor_real != null && r.valor_real !== '') ? Number(r.valor_real) || null : null,
     valor_proj: (r.valor_proj != null && r.valor_proj !== '') ? Number(r.valor_proj) || null : null,
   })).filter(r => r.ymKey && r.hubId && r.mk);
+  {
+    const _lastMap = new Map();
+    db.psvTpv.forEach(r => { _lastMap.set(`${r.userId}|${r.ymKey}|${r.hubId}|${r.mk}`, r); });
+    db.psvTpv = [..._lastMap.values()];
+  }
 
-  // ── psv_detrator_promotor ──
-  // Força userId, ymKey, hubId, tipo, safra como string
+  // ── psv_detrator_promotor ─────────────────────────────────────────────────
+  // Regra 1: mapeamento por userId + ymKey + hubId + tipo + safra
+  // Regra 2: dedup por chave composta — última ocorrência vence
+  // Regra 3: vendedorId normalizado para Number quando possível
+  //          (ID é imutável — garante integridade histórica mesmo se o nome do vendedor mudar)
   db.psvDp = (tables.psv_detrator_promotor || []).map(r => ({
     userId     : String(r.userId       || 'default'),
     ymKey      : String(r.ymKey        || ''),
     hubId      : String(r.hubId        || ''),
     tipo       : String(r.tipo         || ''),
     safra      : String(r.safra        || ''),
-    vendedorId : (r.vendedorId != null && r.vendedorId !== '') ? (Number(r.vendedorId) || String(r.vendedorId)) : null,
+    vendedorId : (r.vendedorId != null && r.vendedorId !== '')
+                   ? (Number(r.vendedorId) || String(r.vendedorId))   // ← Number preferido; string como fallback
+                   : null,
     nome_manual: String(r.nome_manual  || ''),
     valor      : (r.valor != null && r.valor !== '') ? String(r.valor) : null,
     photo      : r.photo ? String(r.photo) : '',
   })).filter(r => r.ymKey && r.hubId);
+  {
+    const _lastMap = new Map();
+    db.psvDp.forEach(r => { _lastMap.set(`${r.userId}|${r.ymKey}|${r.hubId}|${r.tipo}|${r.safra}`, r); });
+    db.psvDp = [..._lastMap.values()];
+  }
 
   return db;
 }
@@ -9107,6 +9136,15 @@ function _restoreDpFields(){
       const color= tipo==='prom'?'#059669':'#dc2626';
 
       if(ni) ni.value = d.name||'';
+      // Regra 3 (integridade histórica): se há vendedorId, busca o nome ATUAL no cadastro pelo ID.
+      // Isso garante que renomear um vendedor não quebre os dados históricos do PSV —
+      // o ID é imutável; o nome exibido acompanha o cadastro atual.
+      if(d.sellerId){
+        const _sid = typeof d.sellerId==='number' ? d.sellerId : parseInt(d.sellerId);
+        const _s   = isNaN(_sid) ? null : DB.sellers.find(x=>x.id===_sid);
+        if(_s && ni) ni.value = _s.name; // sobrescreve com nome atual do cadastro
+        // Se seller não existe mais no cadastro, mantém nome_manual como fallback histórico
+      }
       if(vi){ vi.value = d.val||''; if(d.val) vi.style.color = color; }
       if(sel && d.sellerId) sel.value = d.sellerId;
 
