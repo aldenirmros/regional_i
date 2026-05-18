@@ -6765,6 +6765,41 @@ async function _runSync() {
   _syncRunning = false;
 }
 
+// ── Helpers do merge PSV (declarados antes de _deepMerge) ───────────────────
+
+// Gera ID único e estável para cada linha do Plano de Ação
+function _genRowId(){
+  const rnd = Math.floor(Math.random()*0xffff).toString(16).padStart(4,'0');
+  return `r_${Date.now()}_${rnd}`;
+}
+
+// Merge robusto de DB.psvPlano: substitui em bloco por userId+ymKey
+// Garante que linhas com indicador duplicado/vazio não se percam e que
+// dados de usuários distintos coexistam sem sobrescrição mútua.
+function _mergePsvPlano(cloudArr, localArr){
+  function groupByUserMonth(arr){
+    const map=new Map();
+    (arr||[]).forEach(row=>{
+      const k=`${String(row.userId||'default')}|${String(row.ymKey||'')}`;
+      if(!map.has(k)) map.set(k,[]);
+      map.get(k).push(row);
+    });
+    return map;
+  }
+  const cloudGroups=groupByUserMonth(cloudArr);
+  const localGroups=groupByUserMonth(localArr);
+  // Local substitui cloud para cada userId+ymKey; outras chaves (outros users) ficam intactas
+  localGroups.forEach((rows,key)=>{ cloudGroups.set(key,rows); });
+  const result=[];
+  cloudGroups.forEach(rows=>{
+    rows.forEach(row=>{
+      if(!row.rowId) row.rowId=_genRowId(); // garante rowId em linhas legadas
+      result.push(row);
+    });
+  });
+  return result;
+}
+
 // ── Merge profundo: cloud + local → sem perdas ──────────────────────────────
 // Regras:
 //   vendas   → union por id (todos os lançamentos de todos os usuários)
@@ -6954,19 +6989,11 @@ function _deepMerge(cloud, local) {
   // ── Preserva _savedAt: usa o mais recente entre cloud e local ──
   r._savedAt = Math.max(cloudSavedAt, localSavedAt);
 
-  // ── psvPlano: union por (userId + ymKey + indicador), local vence em empate ──
-  {
-    const map = new Map();
-    (r.psvPlano||[]).forEach(row => {
-      const k = `${String(row.userId)}|${String(row.ymKey||'')}|${String(row.indicador||'')}`;
-      map.set(k, row);
-    });
-    (local.psvPlano||[]).forEach(row => {
-      const k = `${String(row.userId)}|${String(row.ymKey||'')}|${String(row.indicador||'')}`;
-      map.set(k, row);
-    });
-    r.psvPlano = [...map.values()];
-  }
+  // ── psvPlano: merge por bloco (userId + ymKey) — via _mergePsvPlano() ──────
+  // Substitui a chave frágil userId|ymKey|indicador pela estratégia de bloco:
+  // para cada par userId+ymKey, o conjunto LOCAL substitui o CLOUD integralmente.
+  // Linhas de outros usuários na nuvem são sempre preservadas.
+  r.psvPlano = _mergePsvPlano(r.psvPlano, local.psvPlano);
 
   // ── psvTpv: union por (userId + ymKey + hubId + mk), local vence ──
   {
@@ -8857,31 +8884,33 @@ function formatTpvInput(input){
 // ── TPV — DB.psvTpv (tabela: ymKey, hubId, mk, valor_real, valor_proj) ──────
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _getPsvOwnerUserId()
-//   Retorna o userId que deve ser usado para LEITURA dos dados PSV (plano,
-//   TPV, DP) do HUB selecionado no filtro.
-//
-//   Regra:
-//   • Supervisor → sempre o próprio userId (só vê/edita os seus dados).
-//   • Gerente / Admin Regional / super admin com HUB selecionado no filtro
-//     → busca o supervisor vinculado a esse HUB e retorna o userId dele.
-//     Se não houver supervisor cadastrado para o HUB, cai de volta para o
-//     próprio currentUser.id (evita tela em branco).
-//   • Gerente / Admin Regional sem HUB selecionado → próprio userId.
+// _getPsvOwnerUserId() — userId para LEITURA dos dados PSV
+// _psvIsReadOnly()     — true quando gerente/regional vê dados de outro usuário
+// _getHubIdForPsv()    — hubId ativo para TPV e DP
 // ─────────────────────────────────────────────────────────────────────────────
 function _getPsvOwnerUserId(){
   const u = currentUser;
   if(!u) return 'default';
-  // Supervisores sempre operam sobre si mesmos
+  // Supervisores operam exclusivamente sobre os próprios dados
   if(u.role === 'supervisor') return String(u.id);
-  // Gerentes/regionais: verifica se há HUB selecionado no filtro
+  // Gerentes/regionais: verifica HUB selecionado no filtro PSV
   const psvTmId = parseInt(document.getElementById('psv-df-time')?.value) || null;
   if(psvTmId){
     const sup = (DB.users || []).find(x => x.role === 'supervisor' && x.timeId === psvTmId);
     if(sup) return String(sup.id);
+    // HUB selecionado mas sem supervisor vinculado → usa próprio userId (evita tela em branco)
   }
-  // Sem HUB selecionado → retorna próprio userId
+  // Sem HUB filtrado → gerente vê e edita os próprios dados
   return String(u.id);
+}
+
+// Retorna true quando o usuário está visualizando dados de OUTRO usuário
+// (ex: Gerente com HUB filtrado → vendo o plano do Supervisor desse HUB).
+// Nesse modo o Plano de Ação fica em modo somente-leitura.
+function _psvIsReadOnly(){
+  const u = currentUser;
+  if(!u || u.role === 'supervisor') return false;
+  return _getPsvOwnerUserId() !== String(u.id);
 }
 
 function _getHubIdForPsv(){
@@ -10425,15 +10454,38 @@ function _autoResizeAll(){
 }
 function _renderPlanTable(){
   const tbody=document.getElementById('psv-plan-body'); if(!tbody) return;
-  if(!_psvPlan.length) _psvPlan=[{indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}];
+  const readOnly=_psvIsReadOnly();
+  // ── Banner de modo leitura ──────────────────────────────────────────────
+  let banner=document.getElementById('psv-plan-readonly-banner');
+  if(!banner){
+    banner=document.createElement('div');
+    banner.id='psv-plan-readonly-banner';
+    banner.style.cssText='background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:9px 14px;font-size:11.5px;color:#92400e;margin-bottom:10px;display:none;align-items:center;gap:8px';
+    banner.innerHTML='👁️ <strong>Modo Visualização</strong> — você está vendo o plano de outro usuário. Limpe o filtro de HUB para editar o seu próprio plano.';
+    const tbl=tbody.closest('table');
+    tbl?.parentElement?.insertBefore(banner,tbl);
+  }
+  banner.style.display=readOnly?'flex':'none';
+  // ── Desabilita botões de ação em modo leitura ───────────────────────────
+  const saveBtn=document.getElementById('psv-plan-save-btn')||document.querySelector('[onclick="psvSavePlan()"]');
+  if(saveBtn){saveBtn.disabled=readOnly;saveBtn.style.opacity=readOnly?'0.45':'1';saveBtn.title=readOnly?'Limpe o filtro de HUB para editar o seu próprio plano':'Salvar Plano de Ação (Ctrl+S)';}
+  const addBtn=document.querySelector('[onclick="psvAddRow()"]');
+  if(addBtn){addBtn.disabled=readOnly;addBtn.style.opacity=readOnly?'0.45':'1';}
+  // ── Garante pelo menos uma linha ────────────────────────────────────────
+  if(!_psvPlan.length) _psvPlan=[{rowId:_genRowId(),indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}];
   const cols=['indicador','problema','causa','acoes','periodo','resultado'];
-  tbody.innerHTML=_psvPlan.map((row,i)=>`<tr>${cols.map(c=>`<td class="ptd"><textarea class="ptd-input" rows="1" oninput="psvPlanUpdate(${i},'${c}',this.value);this.style.height='auto';this.style.height=this.scrollHeight+'px'">${row[c]||''}</textarea></td>`).join('')}<td class="ptd" style="vertical-align:middle;text-align:center"><button onclick="psvDelRow(${i})" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px">✕</button></td></tr>`).join('');
-  // Auto-resize after render
-  setTimeout(_autoResizeAll, 0);
+  if(readOnly){
+    // Modo somente-leitura: <td> estático sem textarea
+    tbody.innerHTML=_psvPlan.map(row=>`<tr>${cols.map(c=>`<td class="ptd" style="font-size:12px;padding:8px 10px;color:var(--td)">${(row[c]||'').replace(/\n/g,'<br>')}</td>`).join('')}<td class="ptd" style="text-align:center;color:var(--tl)">—</td></tr>`).join('');
+  } else {
+    // Modo editável: comportamento original
+    tbody.innerHTML=_psvPlan.map((row,i)=>`<tr>${cols.map(c=>`<td class="ptd"><textarea class="ptd-input" rows="1" oninput="psvPlanUpdate(${i},'${c}',this.value);this.style.height='auto';this.style.height=this.scrollHeight+'px'">${row[c]||''}</textarea></td>`).join('')}<td class="ptd" style="vertical-align:middle;text-align:center"><button onclick="psvDelRow(${i})" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px">✕</button></td></tr>`).join('');
+    setTimeout(_autoResizeAll,0);
+  }
 }
-function psvPlanUpdate(i,col,val){ if(_psvPlan[i]) _psvPlan[i][col]=val; }
-function psvAddRow(){ _psvPlan.push({indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}); _renderPlanTable(); }
-function psvDelRow(i){ _psvPlan.splice(i,1); if(!_psvPlan.length) _psvPlan=[{indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}]; _renderPlanTable(); }
+function psvPlanUpdate(i,col,val){ if(_psvIsReadOnly()) return; if(_psvPlan[i]) _psvPlan[i][col]=val; }
+function psvAddRow(){ if(_psvIsReadOnly()) return; _psvPlan.push({rowId:_genRowId(),indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}); _renderPlanTable(); }
+function psvDelRow(i){ if(_psvIsReadOnly()) return; _psvPlan.splice(i,1); if(!_psvPlan.length) _psvPlan=[{rowId:_genRowId(),indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}]; _renderPlanTable(); }
 </script>
 <!-- ══ MODAL ALTERAR HUB (inline — via lista de HUBs) ══ -->
 <div class="modal-ov" id="hub-inline-edit-modal" onclick="if(event.target===this)closeHubInlineEditModal()">
@@ -10591,24 +10643,30 @@ function saveHubEdit(){
 }
 
 // ══ PLANO DE AÇÃO — SAVE / LOAD ══
-// CORREÇÃO: salva em DB.psvData (sincronizado com a nuvem) em vez de
-// apenas no localStorage (que era local ao dispositivo e nunca ia ao Sheets).
-// ── _planKey: legado (compatibilidade com psvData) ──
+// ── _planKey: legado (compatibilidade retroativa com psvData antigo) ──
 function _planKey(){ return 'plan_'+(currentUser?.id||'default'); }
 
 // ── Plano de Ação — DB.psvPlano (tabela no Sheets) ──────────────────────────
-// Filtrado por userId + ymKey: cada usuário vê apenas o seu plano, por mês
+// PONTO 1: Cada save usa o userId do usuário logado → entradas de diferentes
+//          usuários para o mesmo HUB coexistem sem se sobrescrever.
+// PONTO 3: Cada linha recebe um rowId estável → merge robusto via _mergePsvPlano.
 
 function _writePlanToTable(){
   if(!DB.psvPlano) DB.psvPlano = [];
-  // Escrita: sempre usa o userId do usuário logado (isolamento de dados)
+  // Escrita: SEMPRE userId do usuário LOGADO (isolamento total)
   const uid = String(currentUser?.id || 'default');
   const ym  = String(currentYM);
-  // Remove entradas antigas do usuário+mês (substitui com dados atuais)
+  // Remove APENAS as linhas deste usuário+mês; outras entradas são preservadas
   DB.psvPlano = DB.psvPlano.filter(r => !(String(r.userId)===uid && String(r.ymKey)===ym));
   _psvPlan.forEach((row, i) => {
-    if(!row.indicador && !row.problema && !row.causa && !row.acoes) return; // ignora linhas vazias
+    // Ignora linhas completamente vazias
+    const isEmpty = !row.indicador && !row.problema && !row.causa
+                 && !row.acoes && !row.periodo && !row.resultado;
+    if(isEmpty) return;
+    // Garante rowId estável (essencial para o merge do Ponto 3)
+    if(!row.rowId) row.rowId = _genRowId();
     DB.psvPlano.push({
+      rowId    : String(row.rowId),
       userId   : uid,
       ymKey    : ym,
       indicador: String(row.indicador || `Item ${i+1}`),
@@ -10624,51 +10682,64 @@ function _writePlanToTable(){
 function psvLoadPlan(){
   try{
     if(!DB.psvPlano) DB.psvPlano = [];
-    // Leitura: usa o userId do supervisor dono do HUB (visão hierárquica)
+    // PONTO 2: Leitura usa o userId do "dono" do HUB (supervisor ou próprio user)
     const uid = _getPsvOwnerUserId();
     const ym  = String(currentYM);
-    // Usa String() em ambos os lados — Sheets pode devolver ymKey como número
+    // String() em ambos os lados — Sheets pode devolver ymKey como número
     const rows = DB.psvPlano.filter(r => String(r.userId)===uid && String(r.ymKey)===ym);
     if(rows.length){
       _psvPlan = rows.map(r=>({
-        indicador: String(r.indicador||''), problema: String(r.problema||''),
-        causa: String(r.causa||''),         acoes: String(r.acoes||''),
-        periodo: String(r.periodo||''),     resultado: String(r.resultado||''),
+        rowId    : String(r.rowId     || ''),   // preserva rowId para o merge
+        indicador: String(r.indicador || ''),
+        problema : String(r.problema  || ''),
+        causa    : String(r.causa     || ''),
+        acoes    : String(r.acoes     || ''),
+        periodo  : String(r.periodo   || ''),
+        resultado: String(r.resultado || ''),
       }));
       return;
     }
-    // Fallback legado: psvData blob → migra para tabela automaticamente
-    // (só aplica se for o próprio usuário — não migra dados de terceiros)
-    if(uid === String(currentUser?.id || 'default') && DB.psvData){
-      const fromDB = DB.psvData[_planKey()];
-      if(Array.isArray(fromDB) && fromDB.length){
-        _psvPlan = fromDB;
-        _writePlanToTable();
-        saveDB();
-        return;
+    // ── Migração de legados (apenas para o próprio usuário; nunca migra dados de terceiros) ──
+    const isSelf = uid === String(currentUser?.id || 'default');
+    if(isSelf){
+      // Legado v1: DB.psvData blob
+      if(DB.psvData){
+        const fromDB = DB.psvData[_planKey()];
+        if(Array.isArray(fromDB) && fromDB.length){
+          _psvPlan = fromDB.map(r=>({...r, rowId: r.rowId||_genRowId()}));
+          _writePlanToTable();
+          saveDB();
+          return;
+        }
       }
-    }
-    // Fallback: localStorage legado → migra automaticamente (apenas para o próprio usuário)
-    if(uid === String(currentUser?.id || 'default')){
+      // Legado v0: localStorage
       const lsKey = 'psv_plan_'+(currentUser?.id||'default');
       const raw = localStorage.getItem(lsKey);
       if(raw){
-        const d = JSON.parse(raw);
-        if(Array.isArray(d) && d.length){
-          _psvPlan = d;
-          _writePlanToTable();
-          saveDB();
-          localStorage.removeItem(lsKey);
-        }
+        try{
+          const d = JSON.parse(raw);
+          if(Array.isArray(d) && d.length){
+            _psvPlan = d.map(r=>({...r, rowId: r.rowId||_genRowId()}));
+            _writePlanToTable();
+            saveDB();
+            localStorage.removeItem(lsKey);
+            return;
+          }
+        }catch(e){}
       }
     }
-    // Se nenhum dado encontrado, garante pelo menos uma linha em branco
-    if(!_psvPlan.length) _psvPlan = [{indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}];
+    // Fallback: pelo menos uma linha em branco
+    if(!_psvPlan.length) _psvPlan=[{rowId:_genRowId(),indicador:'',problema:'',causa:'',acoes:'',periodo:'',resultado:''}];
   }catch(e){ console.error('psvLoadPlan error:', e); }
 }
 
 function psvSavePlan(){
   try{
+    // PONTO 2: Bloqueia salvamento quando visualizando dados de outro usuário
+    if(_psvIsReadOnly()){
+      toast('⚠️ Você está visualizando o plano de outro usuário. Limpe o filtro de HUB para editar o seu próprio plano.','⚠️');
+      return;
+    }
     _writePlanToTable();
     DB._savedAt = Date.now();
     try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
