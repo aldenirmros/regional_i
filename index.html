@@ -6003,8 +6003,8 @@ function saveSellerMeta(sid){
   if(!DB.sellerMetas) DB.sellerMetas={};
   if(!DB.sellerMetas[currentYM]) DB.sellerMetas[currentYM]={};
   DB.sellerMetas[currentYM][sid]=v;
-  DB._savedAt=Date.now();
-  try{ localStorage.setItem('bi_v5',JSON.stringify(DB)); }catch(e){}
+  // Clear global meta override so per-seller metas are used
+  delete DB.metas[currentYM];
   saveDB(); renderDash(); renderSellers();
   const s=DB.sellers.find(x=>x.id===sid);
   toast(`Compromisso de ${s?.name} → ${v} vendas`);
@@ -6203,6 +6203,11 @@ function parseCellDate(v){
 
 function importExcel(e){
   const file = e.target.files[0]; if(!file) return;
+
+  // ── 1. Bloqueia cloudPull IMEDIATAMENTE (antes de qualquer leitura assíncrona) ──
+  // Bloqueia por 20 s; será renovado/liberado ao final conforme o resultado.
+  window._blockPull = Date.now();
+
   const reader = new FileReader();
   reader.onload = ev => {
     try{
@@ -6212,7 +6217,7 @@ function importExcel(e){
 
       let ok = 0, skip = 0;
 
-      // Restringe import ao escopo do usuário logado (supervisor → só seu HUB)
+      // ── 2. Restringe import ao escopo do usuário logado via getScopedSellers ──
       const scopedSellersList = getScopedSellers(true); // inclui inativos do escopo
       const scopedNomeMap = new Map(scopedSellersList.map(s=>[s.name.trim().toUpperCase(), s]));
 
@@ -6264,9 +6269,10 @@ function importExcel(e){
               const dateStr = colDates[ci];
               const d = new Date(dateStr + 'T12:00:00');
               if(isNaN(d.getTime())) continue;
+              // ── 3. ymKey gerado corretamente a partir da data da venda ──
               const ymKey = ym(d.getFullYear(), d.getMonth());
               if(!DB.vendas[ymKey]) DB.vendas[ymKey] = [];
-              // Deduplicação: não importa se já existe venda com mesmo sellerId+date+tipo+qty
+              // ── 4. Deduplicação: sellerId + date + type + qty ──
               const already = DB.vendas[ymKey].some(v=>v.sellerId===seller.id&&v.date===dateStr&&v.type===tipo&&v.qty===qty);
               if(already){ skip++; continue; }
               DB.vendas[ymKey].push({
@@ -6305,9 +6311,10 @@ function importExcel(e){
             const qty  = parseInt(qtyRaw) || 1;
             const tipo = tipoRaw.toLowerCase().includes('ativ') ? 'ativacao' : 'conquista';
             const d    = new Date(dateStr + 'T12:00:00');
+            // ── 3. ymKey gerado corretamente a partir da data da venda ──
             const ymKey = ym(d.getFullYear(), d.getMonth());
             if(!DB.vendas[ymKey]) DB.vendas[ymKey] = [];
-            // Deduplicação: evita importar a mesma venda duas vezes
+            // ── 4. Deduplicação: sellerId + date + type + qty ──
             const already = DB.vendas[ymKey].some(v=>v.sellerId===seller.id&&v.date===dateStr&&v.type===tipo&&v.qty===qty);
             if(already){ skip++; return; }
             DB.vendas[ymKey].push({
@@ -6319,18 +6326,21 @@ function importExcel(e){
         }
       });
 
-      saveDB();
-      // Bloqueia cloudPull por 5min para não sobrescrever os dados recém-importados
+      // ── 3. Persiste localmente e garante que _savedAt está atualizado ──
+      DB._savedAt = Date.now();
+      try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
+
+      // ── 5. Dispara _syncEnqueue imediatamente e só libera o bloqueio após o push ──
+      // Renova o bloqueio por 20 s a partir deste ponto exato
       window._blockPull = Date.now();
-      window._importPending = true; // flag: há dados importados aguardando push
-      // Cancela o debounce e empurra para a nuvem imediatamente
       clearTimeout(saveDB._t);
-      // Pull-before-push: garante que as vendas de outros usuários são preservadas
-      cloudSyncVendas().finally(() => {
-        // Mantém o block ativo por mais 30s após o push (GAS pode demorar)
-        window._blockPull = Date.now() - 270000; // reinicia: ainda bloqueia por ~30s
+      _syncEnqueue().finally(() => {
+        // Mantém o bloqueio por mais 15 s após o push concluir (GAS pode ser lento)
+        window._blockPull = Date.now() - 5000; // restam ~15 s de bloqueio
         window._importPending = false;
       });
+      window._importPending = true;
+
       renderLancar(); renderDash();
       if(ok > 0){
         toast(`✅ ${ok} registro(s) importado(s)${skip?` · ${skip} ignorado(s)`:''}`);
@@ -6340,6 +6350,8 @@ function importExcel(e){
       }
     } catch(err){
       console.error('[import error]', err);
+      // Em caso de erro, libera o bloqueio imediatamente para não travar o pull
+      window._blockPull = null;
       toast('❌ Erro ao ler o arquivo: ' + err.message, '❌');
     }
     e.target.value='';
