@@ -6003,8 +6003,8 @@ function saveSellerMeta(sid){
   if(!DB.sellerMetas) DB.sellerMetas={};
   if(!DB.sellerMetas[currentYM]) DB.sellerMetas[currentYM]={};
   DB.sellerMetas[currentYM][sid]=v;
-  // Clear global meta override so per-seller metas are used
-  delete DB.metas[currentYM];
+  DB._savedAt=Date.now();
+  try{ localStorage.setItem('bi_v5',JSON.stringify(DB)); }catch(e){}
   saveDB(); renderDash(); renderSellers();
   const s=DB.sellers.find(x=>x.id===sid);
   toast(`Compromisso de ${s?.name} → ${v} vendas`);
