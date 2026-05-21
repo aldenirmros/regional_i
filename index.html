@@ -206,11 +206,11 @@ select.sel:focus{border-color:var(--blue);}
 }
 .atv-lbl{font-size:11.5px;font-weight:800;color:var(--teal);font-family:var(--mono);min-width:40px;text-align:right;}
 /* Input manual de ativação */
-.atv-input-wrap{display:flex;align-items:center;gap:6px;margin-top:2px;}
-.atv-input{width:72px;background:rgba(13,148,136,.08);border:2px solid rgba(13,148,136,.3);border-radius:8px;padding:4px 8px;font-family:var(--mono);font-size:22px;font-weight:800;color:var(--teal);outline:none;text-align:center;transition:border-color .14s,background .14s;-moz-appearance:textfield;}
+.atv-input-wrap{display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:nowrap;min-width:0;overflow:visible;}
+.atv-input{min-width:0;flex:1;max-width:80px;background:rgba(13,148,136,.08);border:2px solid rgba(13,148,136,.3);border-radius:8px;padding:4px 6px;font-family:var(--mono);font-size:22px;font-weight:800;color:var(--teal);outline:none;text-align:center;transition:border-color .14s,background .14s;-moz-appearance:textfield;}
 .atv-input::-webkit-outer-spin-button,.atv-input::-webkit-inner-spin-button{-webkit-appearance:none;}
 .atv-input:focus{border-color:var(--teal);background:rgba(13,148,136,.13);}
-.atv-save-btn{background:var(--teal);color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .12s;white-space:nowrap;}
+.atv-save-btn{flex-shrink:0;background:var(--teal);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .12s;white-space:nowrap;}
 .atv-save-btn:hover{background:var(--teal-l);}
 /* cloud status */
 .cloud-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all .15s;user-select:none;flex-shrink:0;white-space:nowrap;}
@@ -477,11 +477,15 @@ select.sel:focus{border-color:var(--blue);}
   .rg-grid{grid-template-columns:1fr!important;}
 
   /* ── OVERVIEW TABLE ── */
-  .ov-table-wrap{overflow-x:auto;}
-  .ov-table-wrap .dt{min-width:500px;}
+  .ov-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .ov-table-wrap .dt{min-width:900px;}
   .ov-kpi-row{grid-template-columns:repeat(2,1fr);}
   .ov-filter{flex-direction:column;gap:8px;align-items:stretch;}
   .ov-filter select{width:100%;}
+  /* ativação card: garante que o botão não some */
+  .kc .atv-input-wrap{gap:5px;}
+  .kc .atv-input{font-size:18px;max-width:70px;}
+  .kc .atv-save-btn{font-size:10px;padding:5px 8px;}
 
   /* ── MODAIS: ocupa quase a tela toda ── */
   .modal-ov{align-items:flex-end;}
@@ -541,6 +545,10 @@ select.sel:focus{border-color:var(--blue);}
   /* Tabelas: scroll mais fácil */
   .dt th{font-size:9px;padding:7px 10px;}
   .dt td{font-size:11.5px;padding:9px 10px;}
+
+  /* ativação: compacta ainda mais no card */
+  .kc .atv-input{font-size:16px;max-width:60px;}
+  .kc .atv-save-btn{font-size:9.5px;padding:4px 7px;}
 }
 
 
@@ -2552,8 +2560,8 @@ canvas { display:block; max-width:100%; }
       <div class="card-head">
         <div class="card-title"><div class="ctd" style="background:var(--blue)"></div>Resultado por Time — <span id="ov-period" style="color:var(--tl);font-weight:400">—</span></div>
       </div>
-      <div style="overflow-x:auto">
-        <table class="dt ov-tbl">
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%">
+        <table class="dt ov-tbl" style="min-width:900px">
           <thead><tr>
             <th style="width:2%"></th>
             <th style="width:5%">HUB</th>
