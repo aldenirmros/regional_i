@@ -7394,11 +7394,17 @@ function tablesToDB(tables) {
     periodo  : String(r.periodo  || ''),
     resultado: String(r.resultado|| ''),
   })).filter(r => r.userId && r.ymKey);
-  // Dedup "última vence": Map.set sobrescreve iterando da esquerda → direita = última linha do Sheets prevalece
+  // Dedup estável: usa rowId como chave primária quando disponível.
+  // CORREÇÃO BUG: antes usava userId|ymKey|indicador como chave → colapsava
+  // todas as linhas com mesmo indicador (ou em branco) para uma só — era a
+  // causa raiz da perda silenciosa de linhas do Plano de Ação.
   {
     const _lastMap = new Map();
+    let _noidCtr = 0;
     db.psvPlano.forEach(r => {
-      const k = `${r.userId}|${r.ymKey}|${r.indicador}`;
+      const k = (r.rowId && String(r.rowId).trim() !== '')
+        ? String(r.rowId)
+        : `_noid_${r.userId}_${r.ymKey}_${_noidCtr++}`;
       _lastMap.set(k, r);
     });
     db.psvPlano = [..._lastMap.values()];
@@ -7620,6 +7626,30 @@ async function cloudPull(mergeLocal = false){
       // Local tem alterações mais recentes que a nuvem: mescla preservando local
       DB = _deepMerge(rec, DB);
     } else {
+      // CORREÇÃO BUG: mesmo no reload completo, preserva dados PSV locais do
+      // usuário para evitar perda de edições ainda não sincronizadas.
+
+      // psvPlano — substitui bloco local por userId+ymKey (igual a _mergePsvPlano)
+      if(Array.isArray(DB.psvPlano) && DB.psvPlano.length) {
+        rec.psvPlano = _mergePsvPlano(rec.psvPlano || [], DB.psvPlano);
+      }
+
+      // psvTpv — local vence para cada userId+ymKey+hubId+mk
+      if(Array.isArray(DB.psvTpv) && DB.psvTpv.length) {
+        const _tpvMap = new Map();
+        (rec.psvTpv  ||[]).forEach(r => { _tpvMap.set(r.userId+"|"+ r.ymKey+"|"+r.hubId+"|"+r.mk, r); });
+        (DB.psvTpv   ||[]).forEach(r => { _tpvMap.set(r.userId+"|"+ r.ymKey+"|"+r.hubId+"|"+r.mk, r); });
+        rec.psvTpv = [..._tpvMap.values()];
+      }
+
+      // psvDp — local vence para cada userId+ymKey+hubId+tipo+safra
+      if(Array.isArray(DB.psvDp) && DB.psvDp.length) {
+        const _dpMap = new Map();
+        (rec.psvDp ||[]).forEach(r => { _dpMap.set(r.userId+"|"+r.ymKey+"|"+r.hubId+"|"+r.tipo+"|"+r.safra, r); });
+        (DB.psvDp  ||[]).forEach(r => { _dpMap.set(r.userId+"|"+r.ymKey+"|"+r.hubId+"|"+r.tipo+"|"+r.safra, r); });
+        rec.psvDp = [..._dpMap.values()];
+      }
+
       DB = rec;
     }
     try{ localStorage.setItem('bi_v5', JSON.stringify(DB)); }catch(e){}
@@ -10828,18 +10858,23 @@ function _writePlanToTable(){
   const ym  = String(currentYM);
   // Remove APENAS as linhas deste usuário+mês; outras entradas são preservadas
   DB.psvPlano = DB.psvPlano.filter(r => !(String(r.userId)===uid && String(r.ymKey)===ym));
-  _psvPlan.forEach((row, i) => {
-    // Ignora linhas completamente vazias
+  // Contador separado para índice visível (exclui linhas puladas)
+  let _savedIdx = 0;
+  _psvPlan.forEach((row) => {
+    // Ignora linhas completamente vazias (sem nenhum conteúdo)
     const isEmpty = !row.indicador && !row.problema && !row.causa
                  && !row.acoes && !row.periodo && !row.resultado;
     if(isEmpty) return;
-    // Garante rowId estável (essencial para o merge do Ponto 3)
+    // Garante rowId estável (essencial para o merge — não muda ao deletar outras linhas)
     if(!row.rowId) row.rowId = _genRowId();
+    _savedIdx++;
     DB.psvPlano.push({
       rowId    : String(row.rowId),
       userId   : uid,
       ymKey    : ym,
-      indicador: String(row.indicador || `Item ${i+1}`),
+      // Mantém indicador original — não substitui por "Item N" para evitar
+      // que indicadores em branco apareçam preenchidos após o reload do banco
+      indicador: String(row.indicador || ''),
       problema : String(row.problema  || ''),
       causa    : String(row.causa     || ''),
       acoes    : String(row.acoes     || ''),
