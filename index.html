@@ -1213,12 +1213,14 @@ select.sel:focus{border-color:var(--blue);}
 .ov-table-wrap{background:var(--white);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden;}
 /* ── OVERVIEW TABLE — base ── */
 .ov-tbl{table-layout:fixed;width:100%;}
-.ov-kpi-row{display:grid;grid-template-columns:repeat(5,1fr) 1.7fr 1.7fr;gap:14px;margin-bottom:20px;}
+/* 5 KPIs ligeiramente menores · Visão% compacto · TPV Médio espaçoso */
+.ov-kpi-row{display:grid;grid-template-columns:repeat(5,0.78fr) 1.1fr 2.4fr;gap:12px;margin-bottom:20px;}
 /* ── TPV Médio card inputs ── */
-.tpv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0 8px;width:100%;}
-.tpv-col-head{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--purple);text-align:center;padding-bottom:4px;border-bottom:1px solid rgba(124,58,237,.2);margin-bottom:6px;}
-.tpv-row-lbl{font-size:9.5px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.5px;padding:3px 0 2px;grid-column:1/-1;}
-.tpv-inp{width:100%;background:rgba(124,58,237,.06);border:1.5px solid rgba(124,58,237,.22);border-radius:7px;padding:4px 5px;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--purple);outline:none;text-align:center;transition:border-color .14s,background .14s;}
+/* 4 colunas: rótulo (auto) + M0 + M1 + M2 */
+.tpv-grid{display:grid;grid-template-columns:auto repeat(3,1fr);gap:6px 10px;width:100%;align-items:center;}
+.tpv-col-head{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--purple);text-align:center;padding-bottom:4px;border-bottom:1px solid rgba(124,58,237,.2);}
+.tpv-row-lbl{font-size:10px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;padding-right:4px;}
+.tpv-inp{width:100%;min-width:0;background:rgba(124,58,237,.06);border:1.5px solid rgba(124,58,237,.22);border-radius:7px;padding:5px 4px;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--purple);outline:none;text-align:center;transition:border-color .14s,background .14s;box-sizing:border-box;}
 .tpv-inp:focus{border-color:var(--purple);background:rgba(124,58,237,.12);}
 .tpv-inp.tpv-proj{background:rgba(37,99,235,.05);border-color:rgba(37,99,235,.2);color:var(--blue);}
 .tpv-inp.tpv-proj:focus{border-color:var(--blue);background:rgba(37,99,235,.10);}
@@ -1409,42 +1411,9 @@ canvas { display:block; max-width:100%; }
 .ranking-dia-total{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .ranking-dia-total-lbl{font-size:11px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.5px;}
 .ranking-dia-total-val{font-size:15px;font-weight:800;font-family:var(--mono);color:var(--td);}
-
-.ranking-sem-wrap{margin-top:14px;}
-.ranking-sem-card{background:var(--white);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden;}
-.ranking-sem-header{padding:14px 18px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
-.ranking-sem-title{font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px;color:var(--td);}
-.ranking-sem-title .rst-icon{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:16px;}
-.ranking-sem-nav{display:flex;align-items:center;gap:6px;}
-.ranking-sem-range{font-size:12px;font-weight:700;color:var(--td);background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:5px 10px;min-width:140px;text-align:center;}
-.ranking-sem-btn{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:5px 9px;font-size:12px;font-weight:700;cursor:pointer;color:var(--td);transition:all .14s;line-height:1;}
-.ranking-sem-btn:hover{border-color:var(--blue);color:var(--blue);}
-.ranking-sem-body{padding:14px 18px 16px;}
-.ranking-sem-empty{text-align:center;padding:28px 0;color:var(--tl);font-size:13px;}
-.ranking-sem-grid{display:flex;flex-direction:column;gap:9px;}
-.rsi{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:10px;padding:10px 14px;border:1px solid var(--border);transition:all .15s var(--ease);cursor:default;}
-.rsi:hover{box-shadow:var(--shm);transform:translateY(-1px);border-color:rgba(37,99,235,.25);}
-.rsi-pos{font-size:12px;font-weight:800;color:var(--tl);min-width:20px;text-align:center;font-family:var(--mono);}
-.rsi-pos.gold{color:#b45309;}.rsi-pos.silver{color:#64748b;}.rsi-pos.bronze{color:#92400e;}
-.rsi-avatar{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;}
-.rsi-avatar img{width:100%;height:100%;object-fit:cover;border-radius:9px;}
-.rsi-info{flex:1;min-width:0;}
-.rsi-name{font-size:13px;font-weight:700;color:var(--td);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.rsi-bar-wrap{display:flex;align-items:center;gap:7px;margin-top:4px;}
-.rsi-bar{flex:1;height:4px;background:var(--border);border-radius:99px;overflow:hidden;}
-.rsi-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--blue-l));transition:width .7s var(--ease);}
-.rsi-qty{font-size:18px;font-weight:800;font-family:var(--mono);color:var(--blue);min-width:36px;text-align:right;}
-.rsi-qty-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);text-align:right;line-height:1;}
-.rsi-qty-col{display:flex;flex-direction:column;align-items:flex-end;}
-.rsi:nth-child(1){background:linear-gradient(90deg,rgba(251,191,36,.08),var(--bg));border-color:rgba(251,191,36,.3);}
-.rsi:nth-child(2){background:linear-gradient(90deg,rgba(148,163,184,.07),var(--bg));border-color:rgba(148,163,184,.25);}
-.rsi:nth-child(3){background:linear-gradient(90deg,rgba(37,99,235,.06),var(--bg));border-color:rgba(37,99,235,.2);}
-.ranking-sem-total{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.ranking-sem-total-lbl{font-size:11px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.5px;}
-.ranking-sem-total-val{font-size:15px;font-weight:800;font-family:var(--mono);color:var(--td);}
 @media(max-width:480px){
-  .ranking-dia-header,.ranking-sem-header{flex-direction:column;align-items:flex-start;}
-  .rdi-qty,.rsi-qty{font-size:15px;}
+  .ranking-dia-header{flex-direction:column;align-items:flex-start;}
+  .rdi-qty{font-size:15px;}
 }
 
 /* ── CELULAR PEQUENO ≤480px ── */
@@ -1871,26 +1840,6 @@ canvas { display:block; max-width:100%; }
         </div>
         <div class="ranking-dia-body">
           <div id="ranking-dia-content"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- RANKING DA SEMANA -->
-    <div class="ranking-sem-wrap" id="dash-ranking-sem-wrap">
-      <div class="ranking-sem-card">
-        <div class="ranking-sem-header">
-          <div class="ranking-sem-title">
-            <div class="rst-icon">📊</div>
-            Ranking da Semana
-          </div>
-          <div class="ranking-sem-nav">
-            <button class="ranking-sem-btn" onclick="rankingSemNav(-1)" title="Semana anterior">‹</button>
-            <span class="ranking-sem-range" id="ranking-sem-range">—</span>
-            <button class="ranking-sem-btn" onclick="rankingSemNav(+1)" title="Próxima semana">›</button>
-          </div>
-        </div>
-        <div class="ranking-sem-body">
-          <div id="ranking-sem-content"></div>
         </div>
       </div>
     </div>
@@ -2539,76 +2488,75 @@ canvas { display:block; max-width:100%; }
       </div>
 
       <!-- ── CARD GRÁFICO VISÃO % ── -->
-      <div class="kc" style="border-left:4px solid var(--purple);padding:14px 16px;display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="kc" style="border-left:4px solid var(--purple);padding:12px 14px;display:flex;flex-direction:column;align-items:center;gap:8px">
         <div class="kc-lbl" style="width:100%;text-align:left">📊 Visão Geral %</div>
-        <div style="display:flex;align-items:center;gap:14px;width:100%">
-          <!-- Donut -->
-          <div style="position:relative;flex-shrink:0;width:100px;height:100px">
-            <canvas id="ov-donut-chart" width="100" height="100"></canvas>
-            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
-              <span id="ov-chart-pct" style="font-size:16px;font-weight:900;font-family:var(--mono);color:var(--td);line-height:1">—</span>
-              <span style="font-size:8px;color:var(--tl);font-weight:700;letter-spacing:.5px;text-transform:uppercase">meta</span>
-            </div>
+        <!-- Donut centralizado -->
+        <div style="position:relative;flex-shrink:0;width:80px;height:80px">
+          <canvas id="ov-donut-chart" width="80" height="80"></canvas>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+            <span id="ov-chart-pct" style="font-size:14px;font-weight:900;font-family:var(--mono);color:var(--td);line-height:1">—</span>
+            <span style="font-size:7px;color:var(--tl);font-weight:700;letter-spacing:.5px;text-transform:uppercase">meta</span>
           </div>
-          <!-- Legendas -->
-          <div style="flex:1;display:flex;flex-direction:column;gap:7px">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
-              <div style="display:flex;align-items:center;gap:5px">
-                <div style="width:8px;height:8px;border-radius:50%;background:#059669;flex-shrink:0"></div>
-                <span style="font-size:10px;color:var(--tm);font-weight:600">Entregue</span>
-              </div>
-              <span id="ov-pct-meta" style="font-size:13px;font-weight:800;font-family:var(--mono);color:#059669">—</span>
+        </div>
+        <!-- Legendas abaixo do gráfico -->
+        <div style="width:100%;display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:4px">
+              <div style="width:7px;height:7px;border-radius:50%;background:#059669;flex-shrink:0"></div>
+              <span style="font-size:10px;color:var(--tm);font-weight:600">Entregue</span>
             </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
-              <div style="display:flex;align-items:center;gap:5px">
-                <div style="width:8px;height:8px;border-radius:50%;background:#dc2626;flex-shrink:0"></div>
-                <span style="font-size:10px;color:var(--tm);font-weight:600">GAP</span>
-              </div>
-              <span id="ov-pct-gap" style="font-size:13px;font-weight:800;font-family:var(--mono);color:#dc2626">—</span>
+            <span id="ov-pct-meta" style="font-size:12px;font-weight:800;font-family:var(--mono);color:#059669">—</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:4px">
+              <div style="width:7px;height:7px;border-radius:50%;background:#dc2626;flex-shrink:0"></div>
+              <span style="font-size:10px;color:var(--tm);font-weight:600">GAP</span>
             </div>
-            <div style="border-top:1px solid var(--border);padding-top:6px;display:flex;align-items:center;justify-content:space-between;gap:6px">
-              <div style="display:flex;align-items:center;gap:5px">
-                <div style="width:8px;height:8px;border-radius:50%;background:var(--teal);flex-shrink:0"></div>
-                <span style="font-size:10px;color:var(--tm);font-weight:600">Ativação</span>
-              </div>
-              <span id="ov-pct-atv" style="font-size:13px;font-weight:800;font-family:var(--mono);color:var(--teal)">—</span>
+            <span id="ov-pct-gap" style="font-size:12px;font-weight:800;font-family:var(--mono);color:#dc2626">—</span>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:5px;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:4px">
+              <div style="width:7px;height:7px;border-radius:50%;background:var(--teal);flex-shrink:0"></div>
+              <span style="font-size:10px;color:var(--tm);font-weight:600">Ativação</span>
             </div>
+            <span id="ov-pct-atv" style="font-size:12px;font-weight:800;font-family:var(--mono);color:var(--teal)">—</span>
           </div>
         </div>
       </div>
 
       <!-- ── CARD TPV MÉDIO ── -->
-      <div class="kc" style="border-left:4px solid var(--purple);padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+      <div class="kc" style="border-left:4px solid var(--purple);padding:12px 14px;display:flex;flex-direction:column;gap:8px">
         <div class="kc-lbl" style="width:100%;text-align:left">💰 TPV Médio</div>
-        <!-- Cabeçalho das colunas M1, M2, M3 -->
+        <!-- Cabeçalho: célula vazia + M0 + M1 + M2 -->
         <div class="tpv-grid">
+          <div></div>
           <div class="tpv-col-head">M0</div>
           <div class="tpv-col-head">M1</div>
           <div class="tpv-col-head">M2</div>
         </div>
         <!-- Linha: TPV Médio Real -->
-        <div class="tpv-grid" style="gap:4px 8px">
+        <div class="tpv-grid">
           <div class="tpv-row-lbl">Real</div>
-          <input class="tpv-inp" id="tpv-real-M1" type="text" inputmode="numeric" placeholder="R$ 0,00"
+          <input class="tpv-inp" id="tpv-real-M1" type="text" inputmode="numeric" placeholder="R$ 0"
             onblur="saveTpvMedio(this,'tpv_real_M1')"
             onkeydown="if(event.key==='Enter'){this.blur();}">
-          <input class="tpv-inp" id="tpv-real-M2" type="text" inputmode="numeric" placeholder="R$ 0,00"
+          <input class="tpv-inp" id="tpv-real-M2" type="text" inputmode="numeric" placeholder="R$ 0"
             onblur="saveTpvMedio(this,'tpv_real_M2')"
             onkeydown="if(event.key==='Enter'){this.blur();}">
-          <input class="tpv-inp" id="tpv-real-M3" type="text" inputmode="numeric" placeholder="R$ 0,00"
+          <input class="tpv-inp" id="tpv-real-M3" type="text" inputmode="numeric" placeholder="R$ 0"
             onblur="saveTpvMedio(this,'tpv_real_M3')"
             onkeydown="if(event.key==='Enter'){this.blur();}">
         </div>
         <!-- Linha: TPV Médio Projetado -->
-        <div class="tpv-grid" style="gap:4px 8px">
+        <div class="tpv-grid">
           <div class="tpv-row-lbl">Projetado</div>
-          <input class="tpv-inp tpv-proj" id="tpv-proj-M1" type="text" inputmode="numeric" placeholder="R$ 0,00"
+          <input class="tpv-inp tpv-proj" id="tpv-proj-M1" type="text" inputmode="numeric" placeholder="R$ 0"
             onblur="saveTpvMedio(this,'tpv_proj_M1')"
             onkeydown="if(event.key==='Enter'){this.blur();}">
-          <input class="tpv-inp tpv-proj" id="tpv-proj-M2" type="text" inputmode="numeric" placeholder="R$ 0,00"
+          <input class="tpv-inp tpv-proj" id="tpv-proj-M2" type="text" inputmode="numeric" placeholder="R$ 0"
             onblur="saveTpvMedio(this,'tpv_proj_M2')"
             onkeydown="if(event.key==='Enter'){this.blur();}">
-          <input class="tpv-inp tpv-proj" id="tpv-proj-M3" type="text" inputmode="numeric" placeholder="R$ 0,00"
+          <input class="tpv-inp tpv-proj" id="tpv-proj-M3" type="text" inputmode="numeric" placeholder="R$ 0"
             onblur="saveTpvMedio(this,'tpv_proj_M3')"
             onkeydown="if(event.key==='Enter'){this.blur();}">
         </div>
@@ -4461,8 +4409,6 @@ function renderDash(){
   renderMapaSemanal(ymKey, scopedSellers, 'dash-mapa-semanal');
   // RANKING DO DIA
   renderRankingDia();
-  // RANKING DA SEMANA
-  renderRankingSem();
   renderPSVIfActive();
 }
 
@@ -4558,110 +4504,6 @@ function renderRankingDia(){
     <span class="ranking-dia-total-val">${totalDia} vendas</span>
   </div>`;
 
-  content.innerHTML = html;
-}
-
-// ══ RANKING DA SEMANA ══
-let _rankingSemOffset = 0;
-
-function _weekRange(date, offset){
-  const d = new Date(date);
-  d.setHours(0,0,0,0);
-  const dow = d.getDay();
-  const diffToMon = dow === 0 ? -6 : 1 - dow;
-  d.setDate(d.getDate() + diffToMon + offset * 7);
-  const start = new Date(d);
-  const end   = new Date(d);
-  end.setDate(end.getDate() + 6);
-  return { start, end };
-}
-
-function rankingSemNav(delta){
-  _rankingSemOffset += delta;
-  if(_rankingSemOffset > 0) _rankingSemOffset = 0;
-  renderRankingSem();
-}
-
-function renderRankingSem(){
-  const content = document.getElementById('ranking-sem-content');
-  const rangeEl = document.getElementById('ranking-sem-range');
-  if(!content || !rangeEl) return;
-
-  const { start, end } = _weekRange(today(), _rankingSemOffset);
-
-  const weekDates = [];
-  const cur = new Date(start);
-  while(cur <= end){
-    weekDates.push(fmtD(cur));
-    cur.setDate(cur.getDate() + 1);
-  }
-
-  const fmt = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
-  rangeEl.textContent = `${fmt(start)} – ${fmt(end)}`;
-
-  const scopedSellers = getScopedSellers();
-  if(!scopedSellers.length){
-    content.innerHTML = '<div class="ranking-sem-empty">Nenhum HC encontrado no escopo atual.</div>';
-    return;
-  }
-
-  const weekSet   = new Set(weekDates);
-  const vendorMap = {};
-  Object.values(DB.vendas || {}).forEach(vendas => {
-    vendas.forEach(v => {
-      if(weekSet.has(v.date)){
-        const sid = v.sellerId;
-        vendorMap[sid] = (vendorMap[sid] || 0) + (Number(v.qty) || 0);
-      }
-    });
-  });
-
-  const ranked = scopedSellers
-    .map(s => ({ ...s, qty: vendorMap[s.id] || 0 }))
-    .sort((a, b) => b.qty - a.qty);
-
-  const totalSem = ranked.reduce((a, s) => a + s.qty, 0);
-  const maxQty   = ranked.length > 0 ? ranked[0].qty : 1;
-
-  if(totalSem === 0){
-    content.innerHTML = `<div class="ranking-sem-empty">Nenhuma venda registrada na semana de <strong>${fmt(start)}</strong> a <strong>${fmt(end)}</strong>.</div>`;
-    return;
-  }
-
-  const medalhas   = ['🥇','🥈','🥉'];
-  const posClasses = ['gold','silver','bronze'];
-
-  let html = '<div class="ranking-sem-grid">';
-  ranked.forEach((s, i) => {
-    if(s.qty === 0 && i > 2) return;
-    const pct     = maxQty > 0 ? (s.qty / maxQty * 100).toFixed(1) : 0;
-    const initial = (s.name || '?').charAt(0).toUpperCase();
-    const posLabel = i < 3 ? medalhas[i] : (i + 1);
-    const posCls   = i < 3 ? posClasses[i] : '';
-    const avatarContent = s.photo
-      ? `<img src="${s.photo}" alt="${s.name}" onerror="this.style.display='none';this.parentNode.textContent='${initial}'">`
-      : initial;
-    html += `
-    <div class="rsi">
-      <div class="rsi-pos ${posCls}">${posLabel}</div>
-      <div class="rsi-avatar" style="background:${s.color||'#2563eb'}">${avatarContent}</div>
-      <div class="rsi-info">
-        <div class="rsi-name">${s.name}</div>
-        <div class="rsi-bar-wrap">
-          <div class="rsi-bar"><div class="rsi-bar-fill" style="width:${s.qty > 0 ? pct : 0}%"></div></div>
-        </div>
-      </div>
-      <div class="rsi-qty-col">
-        <div class="rsi-qty">${s.qty}</div>
-        <div class="rsi-qty-lbl">vendas</div>
-      </div>
-    </div>`;
-  });
-  html += '</div>';
-  html += `<div class="ranking-sem-total">
-    <span class="ranking-sem-total-lbl">Total da semana (${fmt(start)} – ${fmt(end)})</span>
-    <span class="ranking-sem-total-val">${totalSem} vendas</span>
-  </div>`;
   content.innerHTML = html;
 }
 
@@ -6277,6 +6119,7 @@ function saveAtivacao(){
 
 // ── Ativação manual na guia PSV (espelho do dashboard) ──
 function savePsvAtivacao(){
+  if(_psvIsReadOnly()){ toast('⚠️ Modo visualização — limpe o filtro de HUB para editar o seu próprio plano.','⚠️'); return; }
   const el  = document.getElementById('psv-atv-input');
   if(!el) return;
   const val = el.value.trim();
@@ -9184,6 +9027,7 @@ function _upsertTpvRow(ymKey, hubId, mk, field, value){
 }
 
 function savePsvTpv(input, mk, ymKey){
+  if(_psvIsReadOnly()){ toast('⚠️ Modo visualização — limpe o filtro de HUB para editar.','⚠️'); return; }
   formatTpvInput(input);
   const raw = input.value.replace(/\./g,'').replace(',','.');
   const v = parseFloat(raw)||0;
@@ -9200,6 +9044,7 @@ function savePsvTpv(input, mk, ymKey){
 }
 
 function savePsvTpvProj(input, mk, ymKey){
+  if(_psvIsReadOnly()){ toast('⚠️ Modo visualização — limpe o filtro de HUB para editar.','⚠️'); return; }
   formatTpvInput(input);
   const raw = input.value.replace(/\./g,'').replace(',','.');
   const v = parseFloat(raw)||0;
@@ -9243,6 +9088,7 @@ function dpSetPhoto(e, type, mk){
 
 // Salva tudo do DP no DB ao clicar em "Salvar"
 function saveDpAll(){
+  if(_psvIsReadOnly()){ toast('⚠️ Modo visualização — limpe o filtro de HUB para editar o plano do supervisor.','⚠️'); return; }
   const ymKey  = String(currentYM);
   const hubId  = _getHubIdForPsv();  // já retorna string
   // Escrita: sempre usa o userId do usuário logado (isolamento de dados)
@@ -10239,9 +10085,70 @@ function _doRenderPSV(){
   psvLoadPlan();
   _renderPlanTable();
   setTimeout(_restoreDpFields, 0);
+  // PONTO 3 — aplica modo leitura APÓS renderização (inclui TPV, DP e Ativação)
+  setTimeout(function(){ _setPsvReadOnlyUI(_psvIsReadOnly()); }, 50);
 }
 // Auto-atualiza PSV se a página estiver aberta
 function renderPSVIfActive(){ if(document.getElementById('page-psv')?.classList.contains('active')) renderPSV(); }
+
+// ── _setPsvReadOnlyUI ─────────────────────────────────────────────────────────
+// Desabilita (ou habilita) todos os inputs editáveis da seção PSV quando o
+// usuário está no modo gerente visualizando dados de outro supervisor.
+// Campos afetados: TPV real, TPV projetado, Ativação, Detrator/Promotor.
+// O Plano de Ação já tem seu próprio mecanismo em _renderPlanTable().
+// ─────────────────────────────────────────────────────────────────────────────
+function _setPsvReadOnlyUI(readOnly){
+  // --- TPV real (M0, M1, M2) ---
+  ['M0','M1','M2'].forEach(function(mk){
+    const tpv  = document.getElementById('psv-tpv-'+mk);
+    const proj = document.getElementById('psv-tpvproj-'+mk);
+    if(tpv){
+      tpv.disabled = readOnly;
+      tpv.style.opacity = readOnly ? '0.55' : '1';
+      tpv.style.cursor  = readOnly ? 'not-allowed' : '';
+      tpv.title = readOnly ? 'Limpe o filtro de HUB para editar' : '';
+    }
+    if(proj){
+      proj.disabled = readOnly;
+      proj.style.opacity = readOnly ? '0.55' : '1';
+      proj.style.cursor  = readOnly ? 'not-allowed' : '';
+      proj.title = readOnly ? 'Limpe o filtro de HUB para editar' : '';
+    }
+  });
+
+  // --- Ativação manual PSV ---
+  const atvInput = document.getElementById('psv-atv-input');
+  if(atvInput){
+    atvInput.disabled = readOnly;
+    atvInput.style.opacity = readOnly ? '0.55' : '1';
+    atvInput.style.cursor  = readOnly ? 'not-allowed' : '';
+  }
+  const atvSaveBtn = document.querySelector('[onclick="savePsvAtivacao()"]');
+  if(atvSaveBtn){
+    atvSaveBtn.disabled = readOnly;
+    atvSaveBtn.style.opacity = readOnly ? '0.45' : '1';
+  }
+
+  // --- Detrator / Promotor (todos os campos M0, M1, M2) ---
+  ['M0','M1','M2'].forEach(function(mk){
+    ['prom','det'].forEach(function(tipo){
+      ['dp-name-'+tipo+'-'+mk, 'dp-val-'+tipo+'-'+mk, 'dp-sel-'+tipo+'-'+mk].forEach(function(id){
+        const el = document.getElementById(id);
+        if(el){
+          el.disabled = readOnly;
+          el.style.opacity = readOnly ? '0.55' : '1';
+          el.style.cursor  = readOnly ? 'not-allowed' : '';
+        }
+      });
+    });
+  });
+  const dpSave = document.getElementById('dp-save-btn');
+  if(dpSave){
+    dpSave.disabled = readOnly;
+    dpSave.style.opacity = readOnly ? '0.45' : '1';
+    dpSave.title = readOnly ? 'Limpe o filtro de HUB para editar' : '';
+  }
+}
 
 // ── Filtro PSV (mesmas regras do dashboard) ──
 function _renderPSVFilter(){
