@@ -1409,6 +1409,19 @@ canvas { display:block; max-width:100%; }
 .rdi:nth-child(2){background:linear-gradient(90deg,rgba(148,163,184,.07),var(--bg));border-color:rgba(148,163,184,.25);}
 .rdi:nth-child(3){background:linear-gradient(90deg,rgba(180,83,9,.07),var(--bg));border-color:rgba(180,83,9,.22);}
 .ranking-dia-total{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.ranking-sem-nav{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;font-weight:700;color:var(--tl);transition:all .15s var(--ease);line-height:1;padding:0;}
+.ranking-sem-nav:hover{border-color:var(--green);color:var(--green);background:rgba(5,150,105,.07);}
+.ranking-sem-range{font-size:11.5px;font-weight:700;color:var(--td);min-width:178px;text-align:center;padding:0 4px;}
+.ranking-sem-days{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;}
+.ranking-sem-day-pill{font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--border);color:var(--tl);letter-spacing:.3px;}
+.ranking-sem-day-pill.has-vendas{background:rgba(5,150,105,.1);border-color:rgba(5,150,105,.3);color:var(--green);}
+.rdi-sem .rdi-bar-fill{background:linear-gradient(90deg,var(--green),var(--green-l));}
+.rdi-sem:nth-child(1){background:linear-gradient(90deg,rgba(251,191,36,.08),var(--bg));border-color:rgba(251,191,36,.3);}
+.rdi-sem:nth-child(2){background:linear-gradient(90deg,rgba(148,163,184,.07),var(--bg));border-color:rgba(148,163,184,.25);}
+.rdi-sem:nth-child(3){background:linear-gradient(90deg,rgba(5,150,105,.07),var(--bg));border-color:rgba(5,150,105,.22);}
+.rdi-sem:nth-child(1):hover,.rdi-sem:nth-child(2):hover,.rdi-sem:nth-child(3):hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(15,23,42,.11)!important;}
+.ranking-sem-total-lbl{font-size:11px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.5px;}
+.ranking-sem-total-val{font-size:15px;font-weight:800;font-family:var(--mono);color:var(--green);}
 .ranking-dia-total-lbl{font-size:11px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.5px;}
 .ranking-dia-total-val{font-size:15px;font-weight:800;font-family:var(--mono);color:var(--td);}
 @media(max-width:480px){
@@ -1840,6 +1853,26 @@ canvas { display:block; max-width:100%; }
         </div>
         <div class="ranking-dia-body">
           <div id="ranking-dia-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RANKING DA SEMANA -->
+    <div class="ranking-dia-wrap" id="dash-ranking-sem-wrap">
+      <div class="ranking-dia-card">
+        <div class="ranking-dia-header">
+          <div class="ranking-dia-title">
+            <div class="rdt-icon" style="background:linear-gradient(135deg,var(--green),var(--green-l))">📅</div>
+            Ranking da Semana
+          </div>
+          <div class="ranking-dia-date-wrap" style="align-items:center;gap:6px;">
+            <button class="ranking-sem-nav" onclick="rankSemNav(-1)" title="Semana anterior">‹</button>
+            <span id="ranking-sem-range" class="ranking-sem-range">—</span>
+            <button class="ranking-sem-nav" onclick="rankSemNav(1)" title="Próxima semana">›</button>
+          </div>
+        </div>
+        <div class="ranking-dia-body">
+          <div id="ranking-sem-content"></div>
         </div>
       </div>
     </div>
@@ -4409,6 +4442,8 @@ function renderDash(){
   renderMapaSemanal(ymKey, scopedSellers, 'dash-mapa-semanal');
   // RANKING DO DIA
   renderRankingDia();
+  // RANKING DA SEMANA
+  renderRankingSemanal();
   renderPSVIfActive();
 }
 
@@ -4502,6 +4537,134 @@ function renderRankingDia(){
   html += `<div class="ranking-dia-total">
     <span class="ranking-dia-total-lbl">Total do dia (${dateLabel})</span>
     <span class="ranking-dia-total-val">${totalDia} vendas</span>
+  </div>`;
+
+  content.innerHTML = html;
+}
+
+// ══ RANKING DA SEMANA (Seg–Sáb) ══
+// Offset global de semanas a partir da semana corrente (0 = semana atual)
+let _rankSemOffset = 0;
+
+// Retorna a Segunda-feira da semana à qual `date` pertence
+function _getMonday(date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dow = d.getDay(); // 0=Dom, 1=Seg, …, 6=Sáb
+  const diff = dow === 0 ? -6 : 1 - dow; // recua até a segunda
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+// Navega semanas: delta = -1 (anterior) ou +1 (próxima)
+function rankSemNav(delta) {
+  _rankSemOffset += delta;
+  renderRankingSemanal();
+}
+
+function renderRankingSemanal() {
+  const content = document.getElementById('ranking-sem-content');
+  const rangeEl = document.getElementById('ranking-sem-range');
+  if (!content || !rangeEl) return;
+
+  // Calcula Segunda e Sábado da semana alvo
+  const base = today();
+  base.setDate(base.getDate() + _rankSemOffset * 7);
+  const seg = _getMonday(base);
+  const sab = new Date(seg.getFullYear(), seg.getMonth(), seg.getDate() + 5);
+
+  // Gera array de datas YYYY-MM-DD da semana (Seg a Sáb)
+  const diasSemana = [];
+  const diasNomes = ['Seg','Ter','Qua','Qui','Sex','Sáb'];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(seg.getFullYear(), seg.getMonth(), seg.getDate() + i);
+    const yyyy = d.getFullYear();
+    const mm   = String(d.getMonth() + 1).padStart(2, '0');
+    const dd   = String(d.getDate()).padStart(2, '0');
+    diasSemana.push({ dateStr: `${yyyy}-${mm}-${dd}`, label: diasNomes[i], d });
+  }
+
+  // Label da semana no header
+  const fmtDate = (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  rangeEl.textContent = `Seg ${fmtDate(seg)} – Sáb ${fmtDate(sab)}/${sab.getFullYear()}`;
+
+  // Escopo de vendedores
+  const scopedSellers = getScopedSellers();
+  if (!scopedSellers.length) {
+    content.innerHTML = '<div class="ranking-dia-empty">Nenhum HC encontrado no escopo atual.</div>';
+    return;
+  }
+
+  // Agrupa vendas por sellerId nas datas da semana
+  const vendorMap = {}; // sellerId → qty total
+  const diaMap    = {}; // dateStr → qty total (para pills de dias)
+  const dateSet   = new Set(diasSemana.map(d => d.dateStr));
+
+  Object.values(DB.vendas || {}).forEach(arr => {
+    (arr || []).forEach(v => {
+      if (!dateSet.has(v.date)) return;
+      const sid = v.sellerId;
+      const qty = Number(v.qty) || 0;
+      vendorMap[sid] = (vendorMap[sid] || 0) + qty;
+      diaMap[v.date] = (diaMap[v.date] || 0) + qty;
+    });
+  });
+
+  const ranked = scopedSellers
+    .map(s => ({ ...s, qty: vendorMap[s.id] || 0 }))
+    .sort((a, b) => b.qty - a.qty);
+
+  const totalSem = ranked.reduce((a, s) => a + s.qty, 0);
+
+  // Pills dos dias da semana
+  let pillsHtml = '<div class="ranking-sem-days">';
+  diasSemana.forEach(({ dateStr, label }) => {
+    const hasV = (diaMap[dateStr] || 0) > 0;
+    const cnt  = diaMap[dateStr] ? ` · ${diaMap[dateStr]}` : '';
+    pillsHtml += `<span class="ranking-sem-day-pill ${hasV ? 'has-vendas' : ''}">${label}${cnt}</span>`;
+  });
+  pillsHtml += '</div>';
+
+  if (totalSem === 0) {
+    content.innerHTML = pillsHtml + '<div class="ranking-dia-empty">Nenhuma venda registrada nesta semana para os HC do escopo.</div>';
+    return;
+  }
+
+  const medalhas    = ['🥇','🥈','🥉'];
+  const posClasses  = ['gold','silver','bronze'];
+  const maxQty = ranked[0].qty || 1;
+
+  let html = pillsHtml + '<div class="ranking-dia-grid">';
+  ranked.forEach((s, i) => {
+    if (s.qty === 0 && i > 2) return;
+    const pct      = maxQty > 0 ? (s.qty / maxQty * 100).toFixed(1) : 0;
+    const initial  = (s.name || '?').charAt(0).toUpperCase();
+    const posLabel = i < 3 ? medalhas[i] : (i + 1);
+    const posCls   = i < 3 ? posClasses[i] : '';
+    const avatarContent = s.photo
+      ? `<img src="${s.photo}" alt="${s.name}" onerror="this.style.display='none';this.parentNode.textContent='${initial}'">`
+      : initial;
+
+    html += `
+    <div class="rdi rdi-sem">
+      <div class="rdi-pos ${posCls}">${posLabel}</div>
+      <div class="rdi-avatar" style="background:${s.color||'#64748b'}">${avatarContent}</div>
+      <div class="rdi-info">
+        <div class="rdi-name">${s.name}</div>
+        <div class="rdi-bar-wrap">
+          <div class="rdi-bar"><div class="rdi-bar-fill" style="width:${s.qty > 0 ? pct : 0}%"></div></div>
+        </div>
+      </div>
+      <div class="rdi-qty-col">
+        <div class="rdi-qty" style="color:var(--green)">${s.qty}</div>
+        <div class="rdi-qty-lbl">vendas</div>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+
+  html += `<div class="ranking-dia-total">
+    <span class="ranking-sem-total-lbl">Total da semana (${fmtDate(seg)}–${fmtDate(sab)})</span>
+    <span class="ranking-sem-total-val">${totalSem} vendas</span>
   </div>`;
 
   content.innerHTML = html;
