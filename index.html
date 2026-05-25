@@ -4886,6 +4886,7 @@ function setDefaultDate(){
 }
 
 function addVenda(){
+  window._blockPull = Date.now(); // trava pull por 15 s durante escrita de venda
   const sid=parseInt(document.getElementById('qe-seller').value);
   const date=document.getElementById('qe-date').value;
   const qty=parseInt(document.getElementById('qe-qty').value)||1;
@@ -5392,6 +5393,7 @@ function renderTimesList(){
 }
 
 function saveHubMeta(timeId){
+  window._blockPull = Date.now(); // trava pull por 15 s durante escrita de meta
   const u = currentUser;
   // Somente gerente e regional podem alterar meta do HUB
   if(u?.role==='supervisor'){ toast('Apenas Gerente ou Regional pode alterar a meta do HUB','⚠️'); return; }
@@ -6174,6 +6176,7 @@ function resetDescontoDias(){
 }
 
 function saveSellerMeta(sid){
+  window._blockPull = Date.now(); // trava pull por 15 s durante escrita de meta
   const el=document.getElementById('smeta-'+sid);
   if(!el) return;
   const v=parseInt(el.value);
@@ -6793,9 +6796,12 @@ function saveDB() {
     setCloudUI('err','Sem conexão');
     return;
   }
-  // ── 5. Agenda sync com nuvem — debounce 350ms para batching de edições rápidas ──
+  // ── 5. Trava global: bloqueia cloudPull por 15 s enquanto o push está pendente ──
+  window._blockPull = Date.now();
+  // ── 6. Agenda sync com nuvem — debounce 1000ms para batching de edições rápidas ──
+  //       (aumentado de 350 ms para reduzir conflitos de escrita concorrente no GAS)
   clearTimeout(saveDB._t);
-  saveDB._t = setTimeout(_syncEnqueue, 350);
+  saveDB._t = setTimeout(_syncEnqueue, 1000);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -7117,9 +7123,38 @@ function _deepMerge(cloud, local) {
     return mergeDict(cld, loc);
   }
 
-  r.hubMetas          = mergeDictCloudWins(r.hubMetas,          local.hubMetas);
-  r.sellerMetas       = mergeDictCloudWins(r.sellerMetas,        local.sellerMetas);
-  r.mValues           = mergeDictCloudWins(r.mValues,            local.mValues);
+  // ── mergeDictFieldByField: merge campo a campo para dicionários de metas/config ──
+  // Regra: o valor LOCAL não-nulo SEMPRE preserva a intenção do usuário que está editando.
+  // Apenas campos que o local não possui (null/undefined) são preenchidos pela nuvem.
+  // Isso evita que o cloudPull sobrescreva a meta que o Supervisor A acabou de digitar
+  // com o valor antigo que ainda estava na nuvem antes de seu push chegar.
+  function mergeDictFieldByField(cld, loc) {
+    const out = JSON.parse(JSON.stringify(cld || {}));
+    Object.keys(loc || {}).forEach(k1 => {
+      const v = loc[k1];
+      if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+        // Nível 2: {ymKey: {id: val}}
+        if (!out[k1]) out[k1] = {};
+        Object.keys(v).forEach(k2 => {
+          // Local não-nulo vence sempre — é a intenção atual do usuário
+          if (v[k2] !== null && v[k2] !== undefined) {
+            out[k1][k2] = v[k2];
+          } else if (out[k1][k2] === undefined) {
+            // Preenche apenas se cloud também não tiver
+            out[k1][k2] = v[k2];
+          }
+        });
+      } else if (v !== null && v !== undefined) {
+        // Nível 1: {ymKey: val} — local vence se não-nulo
+        out[k1] = v;
+      }
+    });
+    return out;
+  }
+
+  r.hubMetas          = mergeDictFieldByField(r.hubMetas,    local.hubMetas);
+  r.sellerMetas       = mergeDictFieldByField(r.sellerMetas, local.sellerMetas);
+  r.mValues           = mergeDictFieldByField(r.mValues,     local.mValues);
 
   // ── ativacaoManual: merge de 3 níveis {ymKey: {userId: val}} — union de usuários ──
   // Garante que os dados de diferentes usuários sejam somados, não substituídos
@@ -7154,25 +7189,20 @@ function _deepMerge(cloud, local) {
   if (local.psvData && Object.keys(local.psvData).length)
     r.psvData         = mergeDictCloudWins(r.psvData,            local.psvData);
 
-  // ── diasConfig: merge por chave completa (ymKey ou u{id}_ymKey) — local vence em totalFeriados ──
+  // ── diasConfig: merge por chave completa — local vence em TODOS os campos
+  //    (não apenas totalFeriados). O usuário que está editando define os dias úteis
+  //    da sua região; o pull não deve apagar isso antes do push chegar ao servidor.
   {
     const cld = r.diasConfig     || {};
     const loc = local.diasConfig || {};
     const merged = JSON.parse(JSON.stringify(cld));
     Object.keys(loc).forEach(fullKey => {
       if (!merged[fullKey]) merged[fullKey] = {};
-      const cldCfg = cld[fullKey] || {};
       const locCfg = loc[fullKey] || {};
-      // total / passed: local vence (ou cloud se cloudIsNewer)
-      if(!cloudIsNewer){
-        if(locCfg.total  != null) merged[fullKey].total  = locCfg.total;
-        if(locCfg.passed != null) merged[fullKey].passed = locCfg.passed;
-      } else {
-        if(merged[fullKey].total  == null && locCfg.total  != null) merged[fullKey].total  = locCfg.total;
-        if(merged[fullKey].passed == null && locCfg.passed != null) merged[fullKey].passed = locCfg.passed;
-      }
-      // totalFeriados: local sempre vence (é uma entrada do usuário local, individual por usuário)
-      if(locCfg.totalFeriados != null) merged[fullKey].totalFeriados = locCfg.totalFeriados;
+      // Local não-nulo vence sempre — intenção do usuário ativo
+      if (locCfg.total         != null) merged[fullKey].total         = locCfg.total;
+      if (locCfg.passed        != null) merged[fullKey].passed        = locCfg.passed;
+      if (locCfg.totalFeriados != null) merged[fullKey].totalFeriados = locCfg.totalFeriados;
     });
     r.diasConfig = merged;
   }
@@ -10041,11 +10071,20 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
   async function _pull(){
     if(!currentUser || _syncRunning) return;
 
+    // ── Proteção de Foco: não puxa se usuário está digitando ──
+    if(_userIsTyping()) return;
+
+    // ── Proteção de Debounce: não puxa se há um save pendente ──
+    if(saveDB._t) return;
+
+    // ── Trava Global: bloqueia pull por 15 s após qualquer operação de escrita ──
+    if(window._blockPull && (Date.now() - window._blockPull) < 15000) return;
+
     // Snapshot do timestamp antes do pull para detectar dados novos
     const prevSavedAt = DB._savedAt || 0;
 
     // mergeLocal=true: preserva alterações locais pendentes (ex: feriado recém-adicionado
-    // que ainda não passou pelo debounce de 350 ms do saveDB)
+    // que ainda não passou pelo debounce de 1000 ms do saveDB)
     const r = await cloudPull(true);
     if(!r) return;
 
@@ -10080,8 +10119,9 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
     }
   }
 
-  // a) Polling 5s — ativo somente quando a aba está visível
-  setInterval(()=>{ if(!document.hidden) _pull(); }, 5000);
+  // a) Polling 15 s — aumentado de 5 s para reduzir pressão sobre o GAS
+  //    e evitar race conditions entre pull automático e push em andamento
+  setInterval(()=>{ if(!document.hidden) _pull(); }, 15000);
 
   // b) visibilitychange — Chrome, Firefox, Edge, Samsung Browser
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) _pull(); });
