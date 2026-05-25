@@ -1409,9 +1409,42 @@ canvas { display:block; max-width:100%; }
 .ranking-dia-total{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .ranking-dia-total-lbl{font-size:11px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.5px;}
 .ranking-dia-total-val{font-size:15px;font-weight:800;font-family:var(--mono);color:var(--td);}
+
+.ranking-sem-wrap{margin-top:14px;}
+.ranking-sem-card{background:var(--white);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden;}
+.ranking-sem-header{padding:14px 18px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.ranking-sem-title{font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px;color:var(--td);}
+.ranking-sem-title .rst-icon{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:16px;}
+.ranking-sem-nav{display:flex;align-items:center;gap:6px;}
+.ranking-sem-range{font-size:12px;font-weight:700;color:var(--td);background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:5px 10px;min-width:140px;text-align:center;}
+.ranking-sem-btn{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:5px 9px;font-size:12px;font-weight:700;cursor:pointer;color:var(--td);transition:all .14s;line-height:1;}
+.ranking-sem-btn:hover{border-color:var(--blue);color:var(--blue);}
+.ranking-sem-body{padding:14px 18px 16px;}
+.ranking-sem-empty{text-align:center;padding:28px 0;color:var(--tl);font-size:13px;}
+.ranking-sem-grid{display:flex;flex-direction:column;gap:9px;}
+.rsi{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:10px;padding:10px 14px;border:1px solid var(--border);transition:all .15s var(--ease);cursor:default;}
+.rsi:hover{box-shadow:var(--shm);transform:translateY(-1px);border-color:rgba(37,99,235,.25);}
+.rsi-pos{font-size:12px;font-weight:800;color:var(--tl);min-width:20px;text-align:center;font-family:var(--mono);}
+.rsi-pos.gold{color:#b45309;}.rsi-pos.silver{color:#64748b;}.rsi-pos.bronze{color:#92400e;}
+.rsi-avatar{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;}
+.rsi-avatar img{width:100%;height:100%;object-fit:cover;border-radius:9px;}
+.rsi-info{flex:1;min-width:0;}
+.rsi-name{font-size:13px;font-weight:700;color:var(--td);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rsi-bar-wrap{display:flex;align-items:center;gap:7px;margin-top:4px;}
+.rsi-bar{flex:1;height:4px;background:var(--border);border-radius:99px;overflow:hidden;}
+.rsi-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--blue-l));transition:width .7s var(--ease);}
+.rsi-qty{font-size:18px;font-weight:800;font-family:var(--mono);color:var(--blue);min-width:36px;text-align:right;}
+.rsi-qty-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);text-align:right;line-height:1;}
+.rsi-qty-col{display:flex;flex-direction:column;align-items:flex-end;}
+.rsi:nth-child(1){background:linear-gradient(90deg,rgba(251,191,36,.08),var(--bg));border-color:rgba(251,191,36,.3);}
+.rsi:nth-child(2){background:linear-gradient(90deg,rgba(148,163,184,.07),var(--bg));border-color:rgba(148,163,184,.25);}
+.rsi:nth-child(3){background:linear-gradient(90deg,rgba(37,99,235,.06),var(--bg));border-color:rgba(37,99,235,.2);}
+.ranking-sem-total{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.ranking-sem-total-lbl{font-size:11px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.5px;}
+.ranking-sem-total-val{font-size:15px;font-weight:800;font-family:var(--mono);color:var(--td);}
 @media(max-width:480px){
-  .ranking-dia-header{flex-direction:column;align-items:flex-start;}
-  .rdi-qty{font-size:15px;}
+  .ranking-dia-header,.ranking-sem-header{flex-direction:column;align-items:flex-start;}
+  .rdi-qty,.rsi-qty{font-size:15px;}
 }
 
 /* ── CELULAR PEQUENO ≤480px ── */
@@ -1838,6 +1871,26 @@ canvas { display:block; max-width:100%; }
         </div>
         <div class="ranking-dia-body">
           <div id="ranking-dia-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RANKING DA SEMANA -->
+    <div class="ranking-sem-wrap" id="dash-ranking-sem-wrap">
+      <div class="ranking-sem-card">
+        <div class="ranking-sem-header">
+          <div class="ranking-sem-title">
+            <div class="rst-icon">📊</div>
+            Ranking da Semana
+          </div>
+          <div class="ranking-sem-nav">
+            <button class="ranking-sem-btn" onclick="rankingSemNav(-1)" title="Semana anterior">‹</button>
+            <span class="ranking-sem-range" id="ranking-sem-range">—</span>
+            <button class="ranking-sem-btn" onclick="rankingSemNav(+1)" title="Próxima semana">›</button>
+          </div>
+        </div>
+        <div class="ranking-sem-body">
+          <div id="ranking-sem-content"></div>
         </div>
       </div>
     </div>
@@ -4408,6 +4461,8 @@ function renderDash(){
   renderMapaSemanal(ymKey, scopedSellers, 'dash-mapa-semanal');
   // RANKING DO DIA
   renderRankingDia();
+  // RANKING DA SEMANA
+  renderRankingSem();
   renderPSVIfActive();
 }
 
@@ -4503,6 +4558,110 @@ function renderRankingDia(){
     <span class="ranking-dia-total-val">${totalDia} vendas</span>
   </div>`;
 
+  content.innerHTML = html;
+}
+
+// ══ RANKING DA SEMANA ══
+let _rankingSemOffset = 0;
+
+function _weekRange(date, offset){
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  const dow = d.getDay();
+  const diffToMon = dow === 0 ? -6 : 1 - dow;
+  d.setDate(d.getDate() + diffToMon + offset * 7);
+  const start = new Date(d);
+  const end   = new Date(d);
+  end.setDate(end.getDate() + 6);
+  return { start, end };
+}
+
+function rankingSemNav(delta){
+  _rankingSemOffset += delta;
+  if(_rankingSemOffset > 0) _rankingSemOffset = 0;
+  renderRankingSem();
+}
+
+function renderRankingSem(){
+  const content = document.getElementById('ranking-sem-content');
+  const rangeEl = document.getElementById('ranking-sem-range');
+  if(!content || !rangeEl) return;
+
+  const { start, end } = _weekRange(today(), _rankingSemOffset);
+
+  const weekDates = [];
+  const cur = new Date(start);
+  while(cur <= end){
+    weekDates.push(fmtD(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  const fmt = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  rangeEl.textContent = `${fmt(start)} – ${fmt(end)}`;
+
+  const scopedSellers = getScopedSellers();
+  if(!scopedSellers.length){
+    content.innerHTML = '<div class="ranking-sem-empty">Nenhum HC encontrado no escopo atual.</div>';
+    return;
+  }
+
+  const weekSet   = new Set(weekDates);
+  const vendorMap = {};
+  Object.values(DB.vendas || {}).forEach(vendas => {
+    vendas.forEach(v => {
+      if(weekSet.has(v.date)){
+        const sid = v.sellerId;
+        vendorMap[sid] = (vendorMap[sid] || 0) + (Number(v.qty) || 0);
+      }
+    });
+  });
+
+  const ranked = scopedSellers
+    .map(s => ({ ...s, qty: vendorMap[s.id] || 0 }))
+    .sort((a, b) => b.qty - a.qty);
+
+  const totalSem = ranked.reduce((a, s) => a + s.qty, 0);
+  const maxQty   = ranked.length > 0 ? ranked[0].qty : 1;
+
+  if(totalSem === 0){
+    content.innerHTML = `<div class="ranking-sem-empty">Nenhuma venda registrada na semana de <strong>${fmt(start)}</strong> a <strong>${fmt(end)}</strong>.</div>`;
+    return;
+  }
+
+  const medalhas   = ['🥇','🥈','🥉'];
+  const posClasses = ['gold','silver','bronze'];
+
+  let html = '<div class="ranking-sem-grid">';
+  ranked.forEach((s, i) => {
+    if(s.qty === 0 && i > 2) return;
+    const pct     = maxQty > 0 ? (s.qty / maxQty * 100).toFixed(1) : 0;
+    const initial = (s.name || '?').charAt(0).toUpperCase();
+    const posLabel = i < 3 ? medalhas[i] : (i + 1);
+    const posCls   = i < 3 ? posClasses[i] : '';
+    const avatarContent = s.photo
+      ? `<img src="${s.photo}" alt="${s.name}" onerror="this.style.display='none';this.parentNode.textContent='${initial}'">`
+      : initial;
+    html += `
+    <div class="rsi">
+      <div class="rsi-pos ${posCls}">${posLabel}</div>
+      <div class="rsi-avatar" style="background:${s.color||'#2563eb'}">${avatarContent}</div>
+      <div class="rsi-info">
+        <div class="rsi-name">${s.name}</div>
+        <div class="rsi-bar-wrap">
+          <div class="rsi-bar"><div class="rsi-bar-fill" style="width:${s.qty > 0 ? pct : 0}%"></div></div>
+        </div>
+      </div>
+      <div class="rsi-qty-col">
+        <div class="rsi-qty">${s.qty}</div>
+        <div class="rsi-qty-lbl">vendas</div>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  html += `<div class="ranking-sem-total">
+    <span class="ranking-sem-total-lbl">Total da semana (${fmt(start)} – ${fmt(end)})</span>
+    <span class="ranking-sem-total-val">${totalSem} vendas</span>
+  </div>`;
   content.innerHTML = html;
 }
 
