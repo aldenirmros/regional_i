@@ -2646,10 +2646,16 @@ canvas { display:block; max-width:100%; }
         <h2 style="font-size:22px;font-weight:800;color:var(--td);margin:0">📊 PSV — Apresentação de Resultados</h2>
         <div id="psv-sub" style="font-size:12px;color:var(--tl);margin-top:3px">—</div>
       </div>
-      <button class="btn btn-g" onclick="openHubEditModal()" style="font-size:12px">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        Alterar HUB
-      </button>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button onclick="psvPlay()" style="display:inline-flex;align-items:center;gap:7px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);padding:9px 18px;font-family:var(--font);font-size:12.5px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,.35);transition:all .18s" onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Apresentar
+        </button>
+        <button class="btn btn-g" onclick="openHubEditModal()" style="font-size:12px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Alterar HUB
+        </button>
+      </div>
     </div>
 
     <!-- Filtro PSV -->
@@ -2742,6 +2748,56 @@ canvas { display:block; max-width:100%; }
           <tbody id="psv-plan-body"></tbody>
         </table>
         </div><!-- /psv-plan-wrap -->
+      </div>
+    </div>
+
+
+    <!-- 6. GOOGLE AGENDA -->
+    <div class="card" style="margin-bottom:24px">
+      <div class="card-head" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div class="card-title">
+          <div class="ctd" style="background:var(--blue)"></div>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--blue)"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Google Agenda
+        </div>
+        <!-- Campo de integração por usuário -->
+        <div id="agenda-config-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <input id="agenda-url-input"
+            type="url"
+            placeholder="Cole aqui o link do Google Agenda  (calendar.google.com/calendar/embed?src=…)"
+            style="width:420px;max-width:100%;border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 11px;font-family:var(--font);font-size:12px;color:var(--td);background:var(--bg);outline:none;transition:border-color .15s"
+            onfocus="this.style.borderColor='var(--blue)'"
+            onblur="this.style.borderColor='var(--border)'"
+            onkeydown="if(event.key==='Enter') psvSalvarAgenda()">
+          <button class="btn" onclick="psvSalvarAgenda()" style="font-size:11.5px;padding:6px 14px;gap:5px;flex-shrink:0">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Conectar
+          </button>
+          <button class="btn btn-g" onclick="psvLimparAgenda()" title="Remover agenda" style="font-size:11.5px;padding:6px 10px;flex-shrink:0">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <!-- Área do iframe / placeholder -->
+      <div id="agenda-frame-wrap" style="height:550px;position:relative">
+        <!-- Estado vazio -->
+        <div id="agenda-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;color:var(--tl)">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="opacity:.35"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div style="text-align:center;line-height:1.6">
+            <div style="font-size:13px;font-weight:700;color:var(--tm);margin-bottom:4px">Nenhuma agenda conectada</div>
+            <div style="font-size:12px">Cole o link do Google Agenda no campo acima e clique em <strong>Conectar</strong>.</div>
+            <div style="font-size:11px;margin-top:8px;color:var(--tl)">
+              No Google Agenda: ⚙️ Configurações → <em>nome do calendário</em> → Integrar calendário → copiar o <strong>Endereço HTML</strong>.
+            </div>
+          </div>
+        </div>
+        <!-- iframe carregado via JS -->
+        <iframe id="agenda-iframe"
+          src=""
+          style="display:none;width:100%;height:100%;border:none"
+          frameborder="0"
+          allowfullscreen>
+        </iframe>
       </div>
     </div>
 
@@ -4886,7 +4942,6 @@ function setDefaultDate(){
 }
 
 function addVenda(){
-  window._blockPull = Date.now(); // trava pull por 15 s durante escrita de venda
   const sid=parseInt(document.getElementById('qe-seller').value);
   const date=document.getElementById('qe-date').value;
   const qty=parseInt(document.getElementById('qe-qty').value)||1;
@@ -5393,7 +5448,6 @@ function renderTimesList(){
 }
 
 function saveHubMeta(timeId){
-  window._blockPull = Date.now(); // trava pull por 15 s durante escrita de meta
   const u = currentUser;
   // Somente gerente e regional podem alterar meta do HUB
   if(u?.role==='supervisor'){ toast('Apenas Gerente ou Regional pode alterar a meta do HUB','⚠️'); return; }
@@ -6176,7 +6230,6 @@ function resetDescontoDias(){
 }
 
 function saveSellerMeta(sid){
-  window._blockPull = Date.now(); // trava pull por 15 s durante escrita de meta
   const el=document.getElementById('smeta-'+sid);
   if(!el) return;
   const v=parseInt(el.value);
@@ -6796,12 +6849,9 @@ function saveDB() {
     setCloudUI('err','Sem conexão');
     return;
   }
-  // ── 5. Trava global: bloqueia cloudPull por 15 s enquanto o push está pendente ──
-  window._blockPull = Date.now();
-  // ── 6. Agenda sync com nuvem — debounce 1000ms para batching de edições rápidas ──
-  //       (aumentado de 350 ms para reduzir conflitos de escrita concorrente no GAS)
+  // ── 5. Agenda sync com nuvem — debounce 350ms para batching de edições rápidas ──
   clearTimeout(saveDB._t);
-  saveDB._t = setTimeout(_syncEnqueue, 1000);
+  saveDB._t = setTimeout(_syncEnqueue, 350);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -7123,38 +7173,9 @@ function _deepMerge(cloud, local) {
     return mergeDict(cld, loc);
   }
 
-  // ── mergeDictFieldByField: merge campo a campo para dicionários de metas/config ──
-  // Regra: o valor LOCAL não-nulo SEMPRE preserva a intenção do usuário que está editando.
-  // Apenas campos que o local não possui (null/undefined) são preenchidos pela nuvem.
-  // Isso evita que o cloudPull sobrescreva a meta que o Supervisor A acabou de digitar
-  // com o valor antigo que ainda estava na nuvem antes de seu push chegar.
-  function mergeDictFieldByField(cld, loc) {
-    const out = JSON.parse(JSON.stringify(cld || {}));
-    Object.keys(loc || {}).forEach(k1 => {
-      const v = loc[k1];
-      if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
-        // Nível 2: {ymKey: {id: val}}
-        if (!out[k1]) out[k1] = {};
-        Object.keys(v).forEach(k2 => {
-          // Local não-nulo vence sempre — é a intenção atual do usuário
-          if (v[k2] !== null && v[k2] !== undefined) {
-            out[k1][k2] = v[k2];
-          } else if (out[k1][k2] === undefined) {
-            // Preenche apenas se cloud também não tiver
-            out[k1][k2] = v[k2];
-          }
-        });
-      } else if (v !== null && v !== undefined) {
-        // Nível 1: {ymKey: val} — local vence se não-nulo
-        out[k1] = v;
-      }
-    });
-    return out;
-  }
-
-  r.hubMetas          = mergeDictFieldByField(r.hubMetas,    local.hubMetas);
-  r.sellerMetas       = mergeDictFieldByField(r.sellerMetas, local.sellerMetas);
-  r.mValues           = mergeDictFieldByField(r.mValues,     local.mValues);
+  r.hubMetas          = mergeDictCloudWins(r.hubMetas,          local.hubMetas);
+  r.sellerMetas       = mergeDictCloudWins(r.sellerMetas,        local.sellerMetas);
+  r.mValues           = mergeDictCloudWins(r.mValues,            local.mValues);
 
   // ── ativacaoManual: merge de 3 níveis {ymKey: {userId: val}} — union de usuários ──
   // Garante que os dados de diferentes usuários sejam somados, não substituídos
@@ -7189,20 +7210,25 @@ function _deepMerge(cloud, local) {
   if (local.psvData && Object.keys(local.psvData).length)
     r.psvData         = mergeDictCloudWins(r.psvData,            local.psvData);
 
-  // ── diasConfig: merge por chave completa — local vence em TODOS os campos
-  //    (não apenas totalFeriados). O usuário que está editando define os dias úteis
-  //    da sua região; o pull não deve apagar isso antes do push chegar ao servidor.
+  // ── diasConfig: merge por chave completa (ymKey ou u{id}_ymKey) — local vence em totalFeriados ──
   {
     const cld = r.diasConfig     || {};
     const loc = local.diasConfig || {};
     const merged = JSON.parse(JSON.stringify(cld));
     Object.keys(loc).forEach(fullKey => {
       if (!merged[fullKey]) merged[fullKey] = {};
+      const cldCfg = cld[fullKey] || {};
       const locCfg = loc[fullKey] || {};
-      // Local não-nulo vence sempre — intenção do usuário ativo
-      if (locCfg.total         != null) merged[fullKey].total         = locCfg.total;
-      if (locCfg.passed        != null) merged[fullKey].passed        = locCfg.passed;
-      if (locCfg.totalFeriados != null) merged[fullKey].totalFeriados = locCfg.totalFeriados;
+      // total / passed: local vence (ou cloud se cloudIsNewer)
+      if(!cloudIsNewer){
+        if(locCfg.total  != null) merged[fullKey].total  = locCfg.total;
+        if(locCfg.passed != null) merged[fullKey].passed = locCfg.passed;
+      } else {
+        if(merged[fullKey].total  == null && locCfg.total  != null) merged[fullKey].total  = locCfg.total;
+        if(merged[fullKey].passed == null && locCfg.passed != null) merged[fullKey].passed = locCfg.passed;
+      }
+      // totalFeriados: local sempre vence (é uma entrada do usuário local, individual por usuário)
+      if(locCfg.totalFeriados != null) merged[fullKey].totalFeriados = locCfg.totalFeriados;
     });
     r.diasConfig = merged;
   }
@@ -8480,6 +8506,9 @@ function doLogout(){
 
 function applySession(){
   if(!currentUser) return;
+  // Restaura agendaUrl do localStorage antes de qualquer render
+  // (garante que o campo esteja disponível mesmo antes do pull terminar)
+  _psvRestaurarAgendaLocal();
   const u=currentUser;
   const isSuperUser = u.superAdmin===true || u.username==='aldenir';
   const colorMap={gerente:'#7c3aed',regional:'#2563eb',supervisor:'#059669'};
@@ -10071,20 +10100,11 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
   async function _pull(){
     if(!currentUser || _syncRunning) return;
 
-    // ── Proteção de Foco: não puxa se usuário está digitando ──
-    if(_userIsTyping()) return;
-
-    // ── Proteção de Debounce: não puxa se há um save pendente ──
-    if(saveDB._t) return;
-
-    // ── Trava Global: bloqueia pull por 15 s após qualquer operação de escrita ──
-    if(window._blockPull && (Date.now() - window._blockPull) < 15000) return;
-
     // Snapshot do timestamp antes do pull para detectar dados novos
     const prevSavedAt = DB._savedAt || 0;
 
     // mergeLocal=true: preserva alterações locais pendentes (ex: feriado recém-adicionado
-    // que ainda não passou pelo debounce de 1000 ms do saveDB)
+    // que ainda não passou pelo debounce de 350 ms do saveDB)
     const r = await cloudPull(true);
     if(!r) return;
 
@@ -10119,9 +10139,8 @@ document.getElementById('m-popup-input').addEventListener('keydown', e=>{
     }
   }
 
-  // a) Polling 15 s — aumentado de 5 s para reduzir pressão sobre o GAS
-  //    e evitar race conditions entre pull automático e push em andamento
-  setInterval(()=>{ if(!document.hidden) _pull(); }, 15000);
+  // a) Polling 5s — ativo somente quando a aba está visível
+  setInterval(()=>{ if(!document.hidden) _pull(); }, 5000);
 
   // b) visibilitychange — Chrome, Firefox, Edge, Samsung Browser
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) _pull(); });
@@ -10316,6 +10335,7 @@ function _doRenderPSV(){
   renderMapaSemanal(ymKey, sellers, 'psv-mapa-semanal');
   _renderDPGrid();
   psvLoadPlan();
+  psvCarregarAgenda(); // carrega agenda do usuário logado
   _renderPlanTable();
   setTimeout(_restoreDpFields, 0);
   // PONTO 3 — aplica modo leitura APÓS renderização (inclui TPV, DP e Ativação)
@@ -11172,6 +11192,541 @@ document.addEventListener('keydown', function(e){
 });
 
 // (Os listeners online/offline estão centralizados na IIFE de inicialização acima)
+
+// ════════════════════════════════════════════════════════════════
+//  GOOGLE AGENDA PSV — integração por usuário
+//  A URL é salva em DB.users[currentUser].agendaUrl e persistida
+//  com saveDB() — exatamente como os demais campos do sistema.
+// ════════════════════════════════════════════════════════════════
+
+// ── Carrega a agenda do usuário logado ──────────────────────────
+// Fonte de verdade: DB.users (vem do Sheets) → currentUser → sessionStorage
+// Essa ordem garante que o valor do Sheets sempre prevalece sobre a sessão.
+function psvCarregarAgenda() {
+  var u   = currentUser;
+  if (!u) return;
+
+  // 1. Tenta pegar de DB.users (fonte mais atualizada — vinda do Sheets)
+  var dbUser = (DB.users || []).find(function(x) { return String(x.id) === String(u.id); });
+  var url    = (dbUser && dbUser.agendaUrl)
+               ? dbUser.agendaUrl
+               : (u.agendaUrl || '');         // fallback: objeto em memória
+
+  // 2. Sincroniza currentUser e sessão com o valor encontrado
+  if (url !== u.agendaUrl) {
+    currentUser.agendaUrl = url;
+    setSession(currentUser);
+  }
+
+  var inp = document.getElementById('agenda-url-input');
+  if (inp) inp.value = url;
+  _psvAplicarAgenda(url);
+}
+
+// ── Salva a URL digitada pelo usuário ───────────────────────────
+// Grava em 4 camadas para garantia máxima de persistência:
+//   1. DB.users[user]  →  serializado pelo saveDB() → Sheets via push
+//   2. currentUser     →  objeto em memória
+//   3. sessionStorage  →  sobrevive a F5 / fechar aba
+//   4. localStorage    →  sobrevive a fechar o navegador (mesmo que GAS esteja offline)
+function psvSalvarAgenda() {
+  var inp = document.getElementById('agenda-url-input');
+  if (!inp) return;
+  var url = (inp.value || '').trim();
+
+  // Validação mínima — aceita vazio (para limpar) ou URL do Google Agenda
+  if (url && !url.includes('calendar.google.com')) {
+    toast('Link inválido. Use o endereço do Google Agenda.', '⚠️');
+    inp.focus();
+    return;
+  }
+
+  var u = currentUser;
+  if (!u) return;
+
+  // 1. DB.users (fonte principal — vai para o Sheets no próximo push)
+  var dbUser = (DB.users || []).find(function(x) { return String(x.id) === String(u.id); });
+  if (dbUser) dbUser.agendaUrl = url;
+
+  // 2. currentUser em memória
+  currentUser.agendaUrl = url;
+
+  // 3. sessionStorage (sobrevive a F5)
+  setSession(currentUser);
+
+  // 4. localStorage por userId (sobrevive a fechar o browser)
+  //    Chave separada por userId → cada usuário tem o seu slot
+  try {
+    var lsKey = 'bi_agenda_' + String(u.id);
+    if (url) localStorage.setItem(lsKey, url);
+    else     localStorage.removeItem(lsKey);
+  } catch(e) {}
+
+  // Dispara sync com o Sheets
+  saveDB();
+
+  _psvAplicarAgenda(url);
+  if (url) toast('Agenda conectada! Será mantida neste dispositivo. 📅');
+  else     toast('Agenda removida.', '🗑️');
+}
+
+// ── Remove a agenda ──────────────────────────────────────────────
+function psvLimparAgenda() {
+  var inp = document.getElementById('agenda-url-input');
+  if (inp) inp.value = '';
+  psvSalvarAgenda();
+}
+
+// ── Aplica a URL ao iframe ou mostra o estado vazio ──────────────
+function _psvAplicarAgenda(url) {
+  var iframe = document.getElementById('agenda-iframe');
+  var empty  = document.getElementById('agenda-empty');
+  if (!iframe || !empty) return;
+  if (url) {
+    iframe.src           = url;
+    iframe.style.display = 'block';
+    empty.style.display  = 'none';
+  } else {
+    iframe.src           = '';
+    iframe.style.display = 'none';
+    empty.style.display  = 'flex';
+  }
+}
+
+// ── Restaura agenda do localStorage se DB.users ainda não tem ────
+// Chamada uma vez na inicialização (antes do primeiro pull terminar)
+// para evitar que o campo fique vazio durante o carregamento inicial.
+function _psvRestaurarAgendaLocal() {
+  var u = currentUser;
+  if (!u) return;
+  try {
+    var lsKey = 'bi_agenda_' + String(u.id);
+    var local = localStorage.getItem(lsKey);
+    if (local && !currentUser.agendaUrl) {
+      currentUser.agendaUrl = local;
+      setSession(currentUser);
+      // Também grava em DB.users para o próximo saveDB() carregar certo
+      var dbUser = (DB.users || []).find(function(x){ return String(x.id) === String(u.id); });
+      if (dbUser && !dbUser.agendaUrl) dbUser.agendaUrl = local;
+    }
+  } catch(e) {}
+}
+
+
+
+// ════════════════════════════════════════════════════════════════
+//  MOTOR DA APRESENTAÇÃO PSV
+//  Clona conteúdo real do DOM — mesmas classes, mesmas cores.
+// ════════════════════════════════════════════════════════════════
+
+var _psvP = { cur: 0, tot: 4, ch: {},
+  nomes: ['KPIs + Gráficos','Desempenho por HC','Mapa + Detrator & Promotor','Plano de Ação'] };
+
+// ── ABRIR ────────────────────────────────────────────────────────
+function psvPlay() {
+  // Se a PSV ainda não está ativa, navega até ela e tenta novamente
+  if (!document.getElementById('page-psv').classList.contains('active')) {
+    goPage('psv', document.getElementById('nav-psv'));
+    setTimeout(psvPlay, 700);
+    return;
+  }
+
+  var ov = document.getElementById('psv-pres');
+  ov.style.display = 'flex';
+  _psvP.cur = 0;
+
+  // Fullscreen
+  try {
+    var el = document.documentElement;
+    (el.requestFullscreen || el.webkitRequestFullscreen || function(){}).call(el);
+  } catch(e){}
+
+  // Sincroniza subtítulo
+  var s = document.getElementById('psvp-sub');
+  if (s) s.textContent = (document.getElementById('psv-sub') || {}).textContent || '—';
+
+  // Popula cada slide com o conteúdo atual da PSV
+  _psvPKpis();       // Slide 0 (KPIs row)
+  // Slide 0: charts criados ao ativar (donut + line)
+  _psvPMapa();       // Slide 2
+  _psvPDp();         // Slide 2
+  _psvPPlano();      // Slide 3
+  // Agenda: decidida DEPOIS do plano para medir altura real
+  setTimeout(_psvPAgenda, 60);
+
+  // Ativa slide 0
+  _psvPGo(0, true);
+
+  document.addEventListener('keydown', _psvPKey);
+  document.addEventListener('fullscreenchange', _psvPFsChg);
+  document.addEventListener('webkitfullscreenchange', _psvPFsChg);
+}
+
+// ── FECHAR ───────────────────────────────────────────────────────
+function psvStop() {
+  document.getElementById('psv-pres').style.display = 'none';
+  Object.keys(_psvP.ch).forEach(function(k){ try{_psvP.ch[k].destroy();}catch(e){} });
+  _psvP.ch = {};
+  try{
+    if(document.fullscreenElement||document.webkitFullscreenElement)
+      (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document);
+  }catch(e){}
+  document.removeEventListener('keydown', _psvPKey);
+  document.removeEventListener('fullscreenchange', _psvPFsChg);
+  document.removeEventListener('webkitfullscreenchange', _psvPFsChg);
+}
+
+// ── NAVEGAR ──────────────────────────────────────────────────────
+function psvNav(d) {
+  var n = _psvP.cur + d;
+  if (n < 0 || n >= _psvP.tot) return;
+  _psvPGo(n, false, d < 0);
+}
+
+function _psvPGo(idx, init, back) {
+  var slides = document.querySelectorAll('.psvp-slide');
+
+  if (!init) {
+    var cur = document.getElementById('psvp-s' + _psvP.cur);
+    if (cur) {
+      cur.classList.remove('psvp-on');
+      if (!back) cur.classList.add('psvp-out-left');
+      setTimeout(function(){ if(cur){cur.classList.remove('psvp-out-left');} }, 320);
+    }
+  } else {
+    slides.forEach(function(s){ s.classList.remove('psvp-on','psvp-out-left'); });
+  }
+
+  _psvP.cur = idx;
+  var nxt = document.getElementById('psvp-s' + idx);
+  if (nxt) {
+    if (!init) {
+      nxt.style.transform = back ? 'translateX(-40px)' : 'translateX(40px)';
+      nxt.style.opacity = '0';
+      nxt.getBoundingClientRect(); // reflow
+    }
+    nxt.classList.add('psvp-on');
+    nxt.style.transform = '';
+    nxt.style.opacity   = '';
+  }
+
+  // Charts recriados quando o slide aparece (canvas precisa ter tamanho)
+  if (idx === 0) setTimeout(_psvPDonut,   60);
+  if (idx === 0) setTimeout(_psvPLine,    60);
+  if (idx === 1) setTimeout(_psvPPhotos,  20);
+  if (idx === 1) setTimeout(_psvPSellers, 80);
+  if (idx === 3) setTimeout(_psvPAgenda,  40); // reavalia ao entrar no slide do plano
+
+  _psvPNav();
+}
+
+// ── UI DE NAVEGAÇÃO ──────────────────────────────────────────────
+function _psvPNav() {
+  var ant  = document.getElementById('psvp-ant');
+  var prox = document.getElementById('psvp-prox');
+  var cnt  = document.getElementById('psvp-cnt');
+  var nom  = document.getElementById('psvp-nomes');
+  if (ant)  ant.disabled  = (_psvP.cur === 0);
+  if (prox) prox.disabled = (_psvP.cur === _psvP.tot - 1);
+  if (cnt)  cnt.textContent = (_psvP.cur + 1) + ' / ' + _psvP.tot;
+  if (nom)  nom.textContent = _psvP.nomes[_psvP.cur];
+  // Reconstrói dots sempre que tot ou nomes mudam
+  _psvPDots();
+}
+
+function _psvPDots() {
+  var el = document.getElementById('psvp-dots');
+  if (!el) return;
+  el.innerHTML = '';
+  _psvP.nomes.forEach(function(n, i){
+    var d = document.createElement('div');
+    d.className = 'psvp-dot' + (i === _psvP.cur ? ' on' : '');
+    d.title = n;
+    d.onclick = (function(ii){ return function(){ _psvPGo(ii, false, ii < _psvP.cur); }; })(i);
+    el.appendChild(d);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SLIDE 0 — KPIs
+//  Clona o psv-top-row inteiro: mesmas classes .kc, mesmas cores
+// ════════════════════════════════════════════════════════════════
+function _psvPKpis() {
+  var dest = document.getElementById('psvp-kpi-wrap');
+  if (!dest) return;
+  var src = document.getElementById('psv-top-row');
+  if (!src || !src.children.length) {
+    dest.innerHTML = '<div style="padding:40px;color:var(--tl);text-align:center">Dados da PSV não carregados ainda.</div>';
+    return;
+  }
+  // Clona o grid completo com todas as classes e estilos intactos
+  dest.innerHTML = src.innerHTML;
+  dest.style.gridTemplateColumns = src.style.gridTemplateColumns || '1.6fr repeat(6,1fr) 1.8fr';
+  // Desabilita inputs (modo apresentação = leitura)
+  dest.querySelectorAll('input, select').forEach(function(el){ el.disabled = true; el.style.pointerEvents='none'; });
+  dest.querySelectorAll('button').forEach(function(el){ el.style.display='none'; });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SLIDE 1 — Gráfico Donut (Realizado vs Meta)
+//  Lê os dados do chart original _psvCharts.donut
+// ════════════════════════════════════════════════════════════════
+function _psvPDonut() {
+  var canvas = document.getElementById('psvp-donut');
+  if (!canvas) return;
+  if (_psvP.ch.donut) { try{_psvP.ch.donut.destroy();}catch(e){} }
+
+  var src = _psvCharts && _psvCharts.donut;
+  var real = 0, gap = 0, fill = '#059669';
+  if (src && src.data && src.data.datasets && src.data.datasets[0]) {
+    var ds = src.data.datasets[0];
+    real = ds.data[0] || 0;
+    gap  = ds.data[1] || 0;
+    fill = (ds.backgroundColor && ds.backgroundColor[0]) || '#059669';
+  }
+  var pct = (real+gap) > 0 ? Math.round(real/(real+gap)*100) : 0;
+
+  var plug = { id:'psvpDonut', afterDraw: function(c){
+    var ctx = c.ctx, ca = c.chartArea;
+    var cx = (ca.left+ca.right)/2, cy = (ca.top+ca.bottom)/2;
+    ctx.save();
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='800 52px "JetBrains Mono",monospace'; ctx.fillStyle=fill;
+    ctx.fillText(pct+'%', cx, cy-14);
+    ctx.font='500 16px Outfit,sans-serif'; ctx.fillStyle='#94a3b8';
+    ctx.fillText('de meta', cx, cy+24);
+    ctx.restore();
+  }};
+
+  _psvP.ch.donut = new Chart(canvas.getContext('2d'), {
+    type:'doughnut',
+    data:{ datasets:[{ data:[real,gap], backgroundColor:[fill,'#e2e8f0'], borderWidth:0 }] },
+    options:{ cutout:'72%', responsive:true, maintainAspectRatio:false,
+      animation:{ duration:700, animateRotate:true },
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:function(c){return ' '+['Realizado','Restante'][c.dataIndex]+': '+c.raw;}}} }
+    },
+    plugins:[plug]
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SLIDE 1 — Gráfico de Linha (Vendas por Dia)
+//  Usa _psvLineParams + makeLineConfig — idêntico ao original
+// ════════════════════════════════════════════════════════════════
+function _psvPLine() {
+  var canvas = document.getElementById('psvp-line');
+  if (!canvas) return;
+  if (_psvP.ch.line) { try{_psvP.ch.line.destroy();}catch(e){} }
+  var p = _psvLineParams;
+  if (!p) return;
+  var cfg = makeLineConfig(p.labels, p.data, p.colors);
+  _psvP.ch.line = new Chart(canvas.getContext('2d'), cfg);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SLIDE 2 — Fotos dos vendedores (clona psv-photos-row)
+// ════════════════════════════════════════════════════════════════
+function _psvPPhotos() {
+  var dest = document.getElementById('psvp-photos');
+  var src  = document.getElementById('psv-photos-row');
+  if (!dest || !src) return;
+  dest.innerHTML = src.innerHTML;
+  // remove file inputs e clicks para não abrir dialogo
+  dest.querySelectorAll('input[type=file]').forEach(function(el){ el.remove(); });
+  dest.querySelectorAll('[onclick]').forEach(function(el){ el.removeAttribute('onclick'); el.style.cursor='default'; });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SLIDE 2 — Gráfico de Vendedores (bar + line + labels)
+//  Usa _psvSellersParams — idêntico ao psvMaximize('sellers',...)
+// ════════════════════════════════════════════════════════════════
+function _psvPSellers() {
+  var canvas = document.getElementById('psvp-sellers');
+  if (!canvas) return;
+  if (_psvP.ch.sellers) { try{_psvP.ch.sellers.destroy();}catch(e){} }
+  var p = _psvSellersParams;
+  if (!p) return;
+  var vendas=p.vendas, compr=p.compr, proj=p.proj;
+
+  var bp = { id:'psvpBP', afterDatasetsDraw: function(chart){
+    var ctx=chart.ctx;
+    function dl(x,y,v,c){
+      if(!v) return;
+      ctx.save(); ctx.fillStyle=c; ctx.font='700 12px "JetBrains Mono",monospace';
+      ctx.textAlign='center'; ctx.textBaseline='bottom';
+      ctx.fillText(v,x,y-4); ctx.restore();
+    }
+    chart.getDatasetMeta(0).data.forEach(function(b,i){ dl(b.x,b.y,vendas[i],'#334155'); });
+    chart.getDatasetMeta(1).data.forEach(function(pt,i){ dl(pt.x,pt.y,compr[i],'#f97316'); });
+    chart.getDatasetMeta(2).data.forEach(function(pt,i){ dl(pt.x,pt.y,proj[i],'#7c3aed'); });
+  }};
+
+  _psvP.ch.sellers = new Chart(canvas.getContext('2d'), {
+    type:'bar',
+    data:{ labels:p.labels, datasets:[
+      { type:'bar',  label:'Vendas',      data:vendas, backgroundColor:p.colors.map(function(c){return c+'cc';}), borderRadius:6, barPercentage:.55, yAxisID:'y' },
+      { type:'line', label:'Compromisso', data:compr, borderColor:'#f97316', backgroundColor:'rgba(249,115,22,.08)', borderWidth:2.5, pointRadius:6, pointBackgroundColor:'#f97316', pointBorderColor:'#fff', pointBorderWidth:2, tension:.3, fill:false, yAxisID:'y' },
+      { type:'line', label:'Projeção',    data:proj,  borderColor:'#7c3aed', backgroundColor:'rgba(124,58,237,.06)', borderWidth:2, borderDash:[5,4], pointRadius:6, pointBackgroundColor:'#7c3aed', pointBorderColor:'#fff', pointBorderWidth:2, tension:.3, fill:false, yAxisID:'y' }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:28}},
+      plugins:{ legend:{labels:{font:{family:'Outfit',size:12},color:'#475569'},position:'bottom'},
+        tooltip:{mode:'index',intersect:false} },
+      scales:{ x:{grid:{display:false},ticks:{font:{family:'Outfit',size:11},color:'#94a3b8'}},
+               y:{grid:{color:'#f1f5f9'},ticks:{font:{family:'JetBrains Mono',size:11},color:'#94a3b8'},beginAtZero:true} }
+    },
+    plugins:[bp]
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SLIDE 3 — Mapa Semanal  (clone do DOM)
+// ════════════════════════════════════════════════════════════════
+function _psvPMapa() {
+  var dest = document.getElementById('psvp-mapa');
+  var src  = document.getElementById('psv-mapa-semanal');
+  if (!dest || !src) return;
+  dest.innerHTML = src.innerHTML || '<div style="padding:32px;color:var(--tl);text-align:center">Mapa semanal vazio.</div>';
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SLIDE 4 — Detrator & Promotor  (clone do DOM)
+//  Converte inputs em spans para exibição
+// ════════════════════════════════════════════════════════════════
+function _psvPDp() {
+  var dest = document.getElementById('psvp-dp-inner');
+  var src  = document.getElementById('psv-dp-grid');
+  if (!dest || !src) return;
+  if (!src.innerHTML.trim()) {
+    dest.innerHTML = '<div style="padding:32px;color:var(--tl);text-align:center;grid-column:1/-1">Sem dados de Detrator & Promotor.</div>';
+    return;
+  }
+  dest.innerHTML = src.innerHTML;
+  // Converte inputs/selects em spans legíveis
+  dest.querySelectorAll('input, select').forEach(function(el){
+    var span = document.createElement('span');
+    span.textContent = el.value || el.placeholder || '—';
+    span.style.cssText = el.style.cssText + ';pointer-events:none;display:block;';
+    el.parentNode.replaceChild(span, el);
+  });
+  // Esconde file inputs e fotos clicáveis
+  dest.querySelectorAll('input[type=file]').forEach(function(el){ el.remove(); });
+  dest.querySelectorAll('[onclick]').forEach(function(el){ el.removeAttribute('onclick'); el.style.cursor='default'; });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SLIDE 5 — Plano de Ação  (clone da tabela)
+//  Inputs → spans, botões removidos
+// ════════════════════════════════════════════════════════════════
+function _psvPPlano() {
+  var dest = document.getElementById('psvp-plano');
+  var src  = document.getElementById('psv-plan-table');
+  if (!dest) return;
+  if (!src) { dest.innerHTML='<div style="padding:32px;color:var(--tl);text-align:center">Plano de ação vazio.</div>'; return; }
+  var clone = src.cloneNode(true);
+  clone.querySelectorAll('textarea, input').forEach(function(el){
+    var span = document.createElement('div');
+    span.textContent = el.value || el.textContent || '—';
+    span.style.cssText = 'font-family:var(--font);font-size:13px;color:var(--td);line-height:1.5;padding:2px 0;';
+    el.parentNode.replaceChild(span, el);
+  });
+  clone.querySelectorAll('button').forEach(function(el){ el.remove(); });
+  var wrap = document.createElement('div');
+  wrap.style.overflowX = 'auto';
+  wrap.appendChild(clone);
+  dest.innerHTML = '';
+  dest.appendChild(wrap);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  GOOGLE AGENDA NA APRESENTAÇÃO
+//  Lógica: mede plano + agenda juntos.
+//  Se couberem na tela sem cortar → slide 3 unificado (tot=4).
+//  Se não couberem → slide 3 só plano + slide 4 só agenda (tot=5).
+// ════════════════════════════════════════════════════════════════
+function _psvPAgenda() {
+  var u   = currentUser;
+  var url = u && u.agendaUrl ? u.agendaUrl.trim() : '';
+
+  var s4      = document.getElementById('psvp-s4');
+  var inline  = document.getElementById('psvp-agenda-inline');
+  var frameA  = document.getElementById('psvp-agenda-frame-a'); // dentro do slide 3
+  var frameB  = document.getElementById('psvp-agenda-frame-b'); // dentro do slide 4
+  var tituloS3 = document.getElementById('psvp-s3-titulo');
+
+  // Sem agenda configurada: esconde slide 4, tot=4
+  if (!url) {
+    if (inline)  inline.style.display   = 'none';
+    if (s4)      s4.style.display       = 'none';
+    _psvP.tot   = 4;
+    _psvP.nomes = ['KPIs + Gráficos','Desempenho por HC','Mapa + Detrator & Promotor','Plano de Ação'];
+    if (tituloS3) tituloS3.textContent  = 'Plano de Ação';
+    _psvPNav();
+    return;
+  }
+
+  // Monta o iframe uma vez (reutilizamos o mesmo src nos dois containers)
+  function makeIframe(agendaUrl) {
+    var ifr = document.createElement('iframe');
+    ifr.src             = agendaUrl;
+    ifr.frameBorder     = '0';
+    ifr.allowFullscreen = true;
+    ifr.style.cssText   = 'width:100%;height:100%;border:none;display:block;min-height:420px';
+    return ifr;
+  }
+
+  // Altura útil do stage (tela cheia menos topbar, nav e padding)
+  var stage       = document.getElementById('psvp-stage');
+  var stageH      = stage ? stage.clientHeight : window.innerHeight - 120;
+  var PADDING_V   = 48 + 14; // padding top+bottom do slide (24+16) + gap
+  var AGENDA_H    = 420;     // altura mínima razoável para o iframe
+
+  // Altura real da tabela do plano após ser renderizada
+  var planoDest = document.getElementById('psvp-plano');
+  var planoH    = planoDest ? planoDest.scrollHeight : 0;
+
+  // Cabeçalho do slide (hdr ≈ 36px) + hdr da agenda inline (≈ 36px) + gap entre eles
+  var HDR_H = 36 + 36 + 14 + 14; // dois headers + dois gaps
+
+  var totalNecessario = PADDING_V + HDR_H + planoH + AGENDA_H;
+  var cabe            = totalNecessario <= stageH * 0.96; // margem de 4%
+
+  if (cabe) {
+    // ── Modo unificado: plano + agenda no slide 3 ─────────────────
+    if (frameA) { frameA.innerHTML = ''; frameA.style.height = AGENDA_H + 'px'; frameA.appendChild(makeIframe(url)); }
+    if (inline)  inline.style.display  = 'flex';
+    if (s4)      s4.style.display      = 'none';
+    _psvP.tot   = 4;
+    _psvP.nomes = ['KPIs + Gráficos','Desempenho por HC','Mapa + Detrator & Promotor','Plano de Ação + Agenda'];
+    if (tituloS3) tituloS3.textContent = 'Plano de Ação + Google Agenda';
+  } else {
+    // ── Modo separado: plano no slide 3, agenda no slide 4 ────────
+    if (inline)  inline.style.display  = 'none';
+    if (frameA)  frameA.innerHTML      = '';
+    if (frameB) { frameB.innerHTML = ''; frameB.appendChild(makeIframe(url)); }
+    if (s4)      s4.style.display      = 'flex';
+    _psvP.tot   = 5;
+    _psvP.nomes = ['KPIs + Gráficos','Desempenho por HC','Mapa + Detrator & Promotor','Plano de Ação','Google Agenda'];
+    if (tituloS3) tituloS3.textContent = 'Plano de Ação';
+  }
+
+  _psvPNav(); // atualiza contador e dots
+}
+
+// ════════════════════════════════════════════════════════════════
+//  Teclado & Fullscreen
+// ════════════════════════════════════════════════════════════════
+function _psvPKey(e) {
+  if (document.getElementById('psv-pres').style.display === 'none') return;
+  if (e.key==='Escape')                              psvStop();
+  if (e.key==='ArrowRight'||e.key==='ArrowDown')     psvNav(1);
+  if (e.key==='ArrowLeft' ||e.key==='ArrowUp')       psvNav(-1);
+}
+function _psvPFsChg() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    if (document.getElementById('psv-pres').style.display !== 'none') psvStop();
+  }
+}
+
 </script>
 
 <!-- ══ FOOTER ══ -->
@@ -11184,6 +11739,163 @@ document.addEventListener('keydown', function(e){
   #app-footer{left:0;bottom:60px;}
   .page{padding-bottom:104px!important;}
 }
+</style>
+
+
+<!-- ════════════════════════════════════════════════════
+     APRESENTAÇÃO PSV  ·  z-index 900
+════════════════════════════════════════════════════ -->
+<div id="psv-pres" style="display:none;position:fixed;inset:0;z-index:900;background:var(--bg);flex-direction:column;overflow:hidden;font-family:var(--font)">
+
+  <!-- topbar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;background:var(--white);border-bottom:1px solid var(--border);box-shadow:var(--sh);flex-shrink:0;gap:16px">
+    <div style="display:flex;align-items:center;gap:12px;min-width:0">
+      <span style="font-size:18px">📊</span>
+      <div>
+        <div id="psvp-titulo" style="font-size:14px;font-weight:800;color:var(--td)">PSV — Apresentação de Resultados</div>
+        <div id="psvp-sub" style="font-size:11px;color:var(--tl)">—</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div id="psvp-dots" style="display:flex;align-items:center;gap:6px"></div>
+      <button onclick="psvStop()" style="display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--border);color:var(--tm);border-radius:var(--rs);padding:6px 14px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Sair (Esc)
+      </button>
+    </div>
+  </div>
+
+  <!-- stage -->
+  <div id="psvp-stage" style="flex:1;position:relative;overflow:hidden">
+
+    <!-- SLIDE 0 · KPIs + Realizado vs Meta + Vendas por Dia -->
+    <div class="psvp-slide" id="psvp-s0" style="position:absolute;inset:0;padding:24px 28px 16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px">
+      <div class="psvp-hdr">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        KPIs &amp; Indicadores de Performance
+      </div>
+      <!-- KPIs row -->
+      <div id="psvp-kpi-wrap" style="display:grid;grid-template-columns:1.6fr repeat(6,1fr) 1.8fr;gap:8px;align-items:stretch;flex-shrink:0"></div>
+      <!-- Gráficos Donut + Linha abaixo dos KPIs -->
+      <div style="display:grid;grid-template-columns:260px 1fr;gap:14px;flex:1;min-height:0">
+        <div class="card" style="display:flex;flex-direction:column;min-height:0">
+          <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--green)"></div>Realizado vs Meta</div></div>
+          <div style="flex:1;padding:10px;min-height:0;position:relative"><canvas id="psvp-donut"></canvas></div>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column;min-height:0">
+          <div class="card-head"><div class="card-title"><div class="ctd" style="background:var(--blue)"></div>Vendas por Dia</div></div>
+          <div style="flex:1;padding:10px;min-height:0;position:relative"><canvas id="psvp-line"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 1 · Desempenho individual por vendedor -->
+    <div class="psvp-slide" id="psvp-s1" style="position:absolute;inset:0;padding:24px 28px 16px;overflow:hidden;display:flex;flex-direction:column;gap:14px">
+      <div class="psvp-hdr">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Desempenho individual por vendedor
+      </div>
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0">
+        <div class="card-head"><div class="card-title"><div class="ctd" style="background:#d97706"></div>Vendas &amp; Compromisso por HC</div></div>
+        <div id="psvp-photos" style="display:flex;padding:10px 20px 0;gap:0;border-bottom:1px solid var(--border);flex-shrink:0"></div>
+        <div style="flex:1;padding:14px 20px;min-height:0;position:relative"><canvas id="psvp-sellers"></canvas></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2 · Mapa Semanal + Detrator & Promotor -->
+    <div class="psvp-slide" id="psvp-s2" style="position:absolute;inset:0;padding:24px 28px 16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px">
+      <div class="psvp-hdr">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Mapa Semanal de Vendas &amp; Detrator / Promotor
+      </div>
+      <div id="psvp-mapa" class="card" style="overflow-x:auto;flex-shrink:0"></div>
+      <div class="card" style="overflow:hidden;flex-shrink:0">
+        <div class="card-head"><div class="card-title"><div class="ctd" style="background:#7c3aed"></div>Detrator &amp; Promotor por Safra</div></div>
+        <div id="psvp-dp-inner" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:1px solid var(--border)"></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3 · Plano de Ação (+ Agenda se couber) -->
+    <div class="psvp-slide" id="psvp-s3" style="position:absolute;inset:0;padding:24px 28px 16px;overflow-y:auto;display:flex;flex-direction:column;gap:14px">
+      <div class="psvp-hdr">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span id="psvp-s3-titulo">Plano de Ação</span>
+      </div>
+      <div id="psvp-plano" class="card" style="overflow-x:auto;flex-shrink:0"></div>
+      <!-- Agenda inline — exibida aqui se couber, senão movida para slide 4 -->
+      <div id="psvp-agenda-inline" style="display:none;flex-direction:column;gap:10px;flex-shrink:0">
+        <div class="psvp-hdr" style="margin-top:4px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Google Agenda
+        </div>
+        <div id="psvp-agenda-frame-a" class="card" style="overflow:hidden;padding:0"></div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4 · Google Agenda (criado dinamicamente se agenda não couber no slide 3) -->
+    <div class="psvp-slide" id="psvp-s4" style="position:absolute;inset:0;padding:24px 28px 16px;overflow:hidden;display:flex;flex-direction:column;gap:14px">
+      <div class="psvp-hdr">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Google Agenda
+      </div>
+      <div id="psvp-agenda-frame-b" class="card" style="flex:1;overflow:hidden;padding:0;min-height:0"></div>
+    </div>
+
+  </div><!-- /stage -->
+
+  <!-- nav bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 28px;background:var(--white);border-top:1px solid var(--border);flex-shrink:0">
+    <button id="psvp-ant" onclick="psvNav(-1)" disabled
+      style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border-radius:var(--rs);font-family:var(--font);font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--tm);transition:all .14s">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Anterior
+    </button>
+    <div style="display:flex;align-items:center;gap:16px">
+      <span id="psvp-nomes" style="font-size:12px;font-weight:700;color:var(--tl)"></span>
+      <span id="psvp-cnt" style="font-size:11px;font-weight:700;color:var(--tl);font-family:var(--mono)">1 / 6</span>
+    </div>
+    <button id="psvp-prox" onclick="psvNav(1)"
+      style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border-radius:var(--rs);font-family:var(--font);font-size:12.5px;font-weight:700;cursor:pointer;border:none;background:var(--blue);color:#fff;transition:all .14s">
+      Próximo<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+
+</div><!-- /psvp -->
+
+<style>
+/* ── Slides: invisíveis por padrão, ativos com classe ── */
+.psvp-slide{
+  opacity:0;
+  transform:translateX(40px);
+  transition:opacity .3s ease, transform .3s ease;
+  pointer-events:none;
+}
+.psvp-slide.psvp-on{
+  opacity:1 !important;
+  transform:none !important;
+  pointer-events:auto !important;
+}
+.psvp-slide.psvp-out-left{
+  opacity:0 !important;
+  transform:translateX(-40px) !important;
+  pointer-events:none !important;
+}
+/* ── Cabeçalho de slide ── */
+.psvp-hdr{
+  display:flex;align-items:center;gap:9px;
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  color:var(--blue);padding-bottom:10px;border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+/* ── dots ── */
+.psvp-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--border);
+  cursor:pointer;transition:all .18s;flex-shrink:0;
+}
+.psvp-dot.on{background:var(--blue);transform:scale(1.4);}
+/* ── btn nav hover ── */
+#psvp-ant:hover:not(:disabled){background:var(--bg);}
+#psvp-prox:hover{opacity:.88;}
+#psvp-ant:disabled,#psvp-prox:disabled{opacity:.35;cursor:not-allowed;}
 </style>
 
 </body>
