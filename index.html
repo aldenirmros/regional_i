@@ -67,7 +67,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--td);display:flex;m
 .main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;overflow-x:hidden;max-width:calc(100vw - var(--sw));min-width:0;}
 
 /* ── TOPBAR ── */
-.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 12px;height:52px;display:flex;align-items:center;flex-wrap:nowrap;gap:6px;position:sticky;top:0;z-index:90;box-shadow:0 1px 0 var(--border);overflow:hidden;}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 12px;height:52px;display:flex;align-items:center;flex-wrap:nowrap;gap:6px;position:sticky;top:0;z-index:90;box-shadow:0 1px 0 var(--border);overflow:visible;}
 .topbar-brand{display:flex;align-items:center;flex-shrink:0;}
 .topbar-brand h1{font-size:13px;font-weight:700;letter-spacing:-.2px;color:var(--td);white-space:nowrap;}
 .topbar-brand p{display:none;}
@@ -277,7 +277,7 @@ select.sel:focus{border-color:var(--blue);}
 .cal-btn{display:flex;align-items:center;gap:6px;background:var(--white);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 12px;font-family:var(--font);font-size:12px;font-weight:600;color:var(--td);cursor:pointer;transition:all .14s;position:relative;white-space:nowrap;}
 .cal-btn:hover{border-color:var(--blue);color:var(--blue);}
 .cal-btn svg{flex-shrink:0;}
-.cal-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.14);z-index:300;width:320px;overflow:hidden;display:none;animation:fi .15s var(--ease);}
+.cal-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.14);z-index:500;width:320px;overflow:hidden;display:none;animation:fi .15s var(--ease);}
 .cal-dropdown.open{display:block;}
 .cal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--border);}
 .cal-month-label{font-size:14px;font-weight:800;}
@@ -1423,6 +1423,22 @@ canvas { display:block; max-width:100%; }
 .ranking-sem-days{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;}
 .ranking-sem-day-pill{font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--border);color:var(--tl);letter-spacing:.3px;}
 .ranking-sem-day-pill.has-vendas{background:rgba(5,150,105,.1);border-color:rgba(5,150,105,.3);color:var(--green);}
+/* Botões de calibração de dia */
+.rsem-cal-btn{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:6px 8px;cursor:pointer;transition:all .14s;min-width:48px;}
+.rsem-cal-btn:hover{border-color:var(--blue);background:rgba(37,99,235,.06);}
+.rsem-cal-btn.rsem-cal-today{border-color:var(--blue-l);background:rgba(37,99,235,.07);}
+.rsem-cal-btn.rsem-cal-sel{border-color:var(--green);background:rgba(5,150,105,.10);}
+.rsem-cal-dow{font-size:10px;font-weight:700;color:var(--td);}
+.rsem-cal-date{font-size:11px;font-weight:800;color:var(--tm);font-family:var(--mono);}
+.rsem-cal-tag{font-size:8.5px;font-weight:700;background:var(--blue-g);color:var(--blue);border-radius:4px;padding:1px 4px;letter-spacing:.3px;}
+.rsem-cal-btn.rsem-cal-sel .rsem-cal-dow,.rsem-cal-btn.rsem-cal-sel .rsem-cal-date{color:var(--green);}
+/* Preview pills da semana calibrada */
+.rsem-prev-pill{display:inline-flex;flex-direction:column;align-items:center;gap:1px;font-size:9.5px;font-weight:700;padding:4px 7px;border-radius:var(--rs);background:var(--bg);border:1px solid var(--border);color:var(--tl);}
+.rsem-prev-pill b{font-size:10.5px;font-weight:800;color:var(--td);font-family:var(--mono);}
+.rsem-prev-seg{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.25);color:var(--blue);}
+.rsem-prev-seg b{color:var(--blue);}
+.rsem-prev-sab{background:rgba(5,150,105,.08);border-color:rgba(5,150,105,.25);color:var(--green);}
+.rsem-prev-sab b{color:var(--green);}
 .rdi-sem .rdi-bar-fill{background:linear-gradient(90deg,var(--green),var(--green-l));}
 .rdi-sem:nth-child(1){background:linear-gradient(90deg,rgba(251,191,36,.08),var(--bg));border-color:rgba(251,191,36,.3);}
 .rdi-sem:nth-child(2){background:linear-gradient(90deg,rgba(148,163,184,.07),var(--bg));border-color:rgba(148,163,184,.25);}
@@ -1877,12 +1893,33 @@ canvas { display:block; max-width:100%; }
             <div class="rdt-icon" style="background:linear-gradient(135deg,var(--green),var(--green-l))">📅</div>
             Ranking da Semana
           </div>
-          <div class="ranking-dia-date-wrap" style="align-items:center;gap:6px;">
+          <div class="ranking-dia-date-wrap" style="align-items:center;gap:6px;flex-wrap:wrap;">
             <button class="ranking-sem-nav" onclick="rankSemNav(-1)" title="Semana anterior">‹</button>
             <span id="ranking-sem-range" class="ranking-sem-range">—</span>
             <button class="ranking-sem-nav" onclick="rankSemNav(1)" title="Próxima semana">›</button>
+            <input
+              type="date"
+              id="ranking-sem-datepicker"
+              title="Ir para semana desta data"
+              onchange="rankSemGoToDate(this.value)"
+              style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:3px 7px;font-family:var(--font);font-size:11px;font-weight:600;color:var(--td);outline:none;cursor:pointer;transition:border-color .14s;"
+              onfocus="this.style.borderColor='var(--green)'"
+              onblur="this.style.borderColor='var(--border)'"
+            >
+            <button class="ranking-sem-nav" onclick="rankSemToggleCalibrar()" title="Corrigir dias da semana" style="font-size:13px;">⚙</button>
           </div>
         </div>
+
+        <!-- Painel de calibração de dias da semana -->
+        <div id="rank-sem-calibrar" style="display:none;padding:10px 14px 12px;border-bottom:1px solid var(--border);background:rgba(37,99,235,.03);">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--tl);margin-bottom:8px;">
+            ⚙ Calibrar dias — clique no dia que é <b style="color:var(--blue)">hoje</b> de fato:
+          </div>
+          <div id="rank-sem-cal-days" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;"></div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--tl);margin-bottom:6px;">Semana exibida com a calibração atual:</div>
+          <div id="rank-sem-cal-preview" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+        </div>
+
         <div class="ranking-dia-body">
           <div id="ranking-sem-content"></div>
         </div>
@@ -4680,14 +4717,84 @@ function renderRankingDia(){
 // ══ RANKING DA SEMANA (Seg–Sáb) ══
 // Offset global de semanas a partir da semana corrente (0 = semana atual)
 let _rankSemOffset = 0;
+// Correção manual de dia da semana: 0 = sem ajuste, +1/-1 = desloca N dias
+// Persiste em localStorage para não precisar reconfigurar a cada visita
+let _rankDowCorrection = (function(){
+  try { return parseInt(localStorage.getItem('_rankDowCorrection') || '0', 10) || 0; } catch(e){ return 0; }
+})();
 
-// Retorna a Segunda-feira da semana à qual `date` pertence
+function _pad2(n){ return String(n).padStart(2,'0'); }
+
+// Retorna a Segunda-feira da semana de `date`.
+// Usa hora fixa 12:00 (evita bugs de DST) e nunca muta o objeto original.
+// _rankDowCorrection permite corrigir se getDay() estiver retornando dia errado.
 function _getMonday(date) {
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const dow = d.getDay(); // 0=Dom, 1=Seg, …, 6=Sáb
-  const diff = dow === 0 ? -6 : 1 - dow; // recua até a segunda
-  d.setDate(d.getDate() + diff);
-  return d;
+  const d   = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+  const raw = d.getDay(); // 0=Dom … 6=Sáb
+  const dow = ((raw + _rankDowCorrection) % 7 + 7) % 7; // aplica correção, garante ≥0
+  const diff = dow === 0 ? -6 : 1 - dow;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff, 12, 0, 0);
+}
+
+// Abre/fecha o painel de calibração de dias
+function rankSemToggleCalibrar() {
+  const panel = document.getElementById('rank-sem-calibrar');
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) _rankSemRenderCalibrar();
+}
+
+// Renderiza o seletor de dia de hoje dentro do painel de calibração
+function _rankSemRenderCalibrar() {
+  const wrap = document.getElementById('rank-sem-cal-days');
+  if (!wrap) return;
+  const DOW_NAMES = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const now = new Date();
+  const rawDow = now.getDay();
+  const correctedDow = ((rawDow + _rankDowCorrection) % 7 + 7) % 7;
+
+  // Mostra os 7 dias centrados em hoje para o usuário escolher qual é hoje de fato
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const offset = i - rawDow; // dias em relação a hoje
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, 12);
+    const dow = d.getDay();
+    const isCorrected = dow === correctedDow && offset === 0;
+    const isToday = offset === 0;
+    const dateStr = `${_pad2(d.getDate())}/${_pad2(d.getMonth()+1)}`;
+    html += `<button
+      class="rsem-cal-btn${isToday ? ' rsem-cal-today' : ''}${isCorrected ? ' rsem-cal-sel' : ''}"
+      onclick="rankSemSetDowCorrection(${offset})"
+      title="Definir que hoje é ${DOW_NAMES[dow]}">
+      <span class="rsem-cal-dow">${DOW_NAMES[dow]}</span>
+      <span class="rsem-cal-date">${dateStr}</span>
+      ${isToday ? '<span class="rsem-cal-tag">auto</span>' : ''}
+    </button>`;
+  }
+  wrap.innerHTML = html;
+
+  // Mostra a semana que será exibida com a correção atual
+  const previewWrap = document.getElementById('rank-sem-cal-preview');
+  if (previewWrap) {
+    const baseMon = _getMonday(now);
+    const dias = ['Seg','Ter','Qua','Qui','Sex','Sáb'];
+    let prev = '';
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(baseMon.getFullYear(), baseMon.getMonth(), baseMon.getDate() + i, 12);
+      prev += `<span class="rsem-prev-pill ${i===0?'rsem-prev-seg':i===5?'rsem-prev-sab':''}">${dias[i]}<br><b>${_pad2(d.getDate())}/${_pad2(d.getMonth()+1)}</b></span>`;
+    }
+    previewWrap.innerHTML = prev;
+  }
+}
+
+// Define a correção de dia com base no slot clicado pelo usuário
+// offset = diferença de dias em relação ao dia bruto detectado (ex: -1 = um dia antes)
+function rankSemSetDowCorrection(offset) {
+  _rankDowCorrection = -offset; // inverte: se hoje é "1 dia antes", corrigimos +1
+  try { localStorage.setItem('_rankDowCorrection', String(_rankDowCorrection)); } catch(e){}
+  _rankSemRenderCalibrar();
+  renderRankingSemanal();
 }
 
 // Navega semanas: delta = -1 (anterior) ou +1 (próxima)
@@ -4696,30 +4803,44 @@ function rankSemNav(delta) {
   renderRankingSemanal();
 }
 
+// Salta para a semana que contém a data escolhida no datepicker
+function rankSemGoToDate(dateStr) {
+  if (!dateStr) return;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const target    = new Date(y, m - 1, d, 12, 0, 0);
+  const todayMon  = _getMonday(today());
+  const targetMon = _getMonday(target);
+  const diffMs    = targetMon.getTime() - todayMon.getTime();
+  _rankSemOffset  = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
+  renderRankingSemanal();
+}
+
 function renderRankingSemanal() {
   const content = document.getElementById('ranking-sem-content');
   const rangeEl = document.getElementById('ranking-sem-range');
   if (!content || !rangeEl) return;
 
-  // Calcula Segunda e Sábado da semana alvo
-  const base = today();
-  base.setDate(base.getDate() + _rankSemOffset * 7);
-  const seg = _getMonday(base);
-  const sab = new Date(seg.getFullYear(), seg.getMonth(), seg.getDate() + 5);
+  // Segunda-feira base desta semana + offset de navegação
+  const baseMon = _getMonday(today());
+  const seg = new Date(baseMon.getFullYear(), baseMon.getMonth(), baseMon.getDate() + _rankSemOffset * 7, 12, 0, 0);
+  const sab = new Date(seg.getFullYear(), seg.getMonth(), seg.getDate() + 5, 12, 0, 0);
 
-  // Gera array de datas YYYY-MM-DD da semana (Seg a Sáb)
-  const diasSemana = [];
+  // Array de 6 dias (Seg→Sáb) com dateStr e label
   const diasNomes = ['Seg','Ter','Qua','Qui','Sex','Sáb'];
-  for (let i = 0; i < 6; i++) {
-    const d = new Date(seg.getFullYear(), seg.getMonth(), seg.getDate() + i);
+  const diasSemana = Array.from({length: 6}, (_, i) => {
+    const d    = new Date(seg.getFullYear(), seg.getMonth(), seg.getDate() + i, 12, 0, 0);
     const yyyy = d.getFullYear();
-    const mm   = String(d.getMonth() + 1).padStart(2, '0');
-    const dd   = String(d.getDate()).padStart(2, '0');
-    diasSemana.push({ dateStr: `${yyyy}-${mm}-${dd}`, label: diasNomes[i], d });
-  }
+    const mm   = _pad2(d.getMonth() + 1);
+    const dd   = _pad2(d.getDate());
+    return { dateStr: `${yyyy}-${mm}-${dd}`, label: diasNomes[i], d };
+  });
 
-  // Label da semana no header
-  const fmtDate = (d) => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  // Sincroniza datepicker
+  const dp = document.getElementById('ranking-sem-datepicker');
+  if (dp) dp.value = `${seg.getFullYear()}-${_pad2(seg.getMonth()+1)}-${_pad2(seg.getDate())}`;
+
+  // Label do intervalo
+  const fmtDate = d => `${_pad2(d.getDate())}/${_pad2(d.getMonth()+1)}`;
   rangeEl.textContent = `Seg ${fmtDate(seg)} – Sáb ${fmtDate(sab)}/${sab.getFullYear()}`;
 
   // Escopo de vendedores
@@ -4729,14 +4850,16 @@ function renderRankingSemanal() {
     return;
   }
 
-  // Agrupa vendas por sellerId nas datas da semana
+  // Agrupa vendas por sellerId nas datas da semana — apenas vendedores do escopo atual
   const vendorMap = {}; // sellerId → qty total
   const diaMap    = {}; // dateStr → qty total (para pills de dias)
   const dateSet   = new Set(diasSemana.map(d => d.dateStr));
+  const scopedIds = new Set(scopedSellers.map(s => s.id)); // ← restringe ao escopo/usuário
 
   Object.values(DB.vendas || {}).forEach(arr => {
     (arr || []).forEach(v => {
       if (!dateSet.has(v.date)) return;
+      if (!scopedIds.has(v.sellerId)) return; // ← ignora vendedores fora do escopo
       const sid = v.sellerId;
       const qty = Number(v.qty) || 0;
       vendorMap[sid] = (vendorMap[sid] || 0) + qty;
