@@ -42,6 +42,19 @@
   --badge-warn-bg: #fef3c7; --badge-warn-fg: #78350f; /* laranja — meta 80-99% */
   --badge-err-bg:  #fee2e2; --badge-err-fg:  #7f1d1d; /* vermelho — meta < 80% */
   --badge-off-bg:  #f1f5f9; --badge-off-fg:  #475569; /* cinza — sem dados */
+  /* ── Ranking — medalhas ── */
+  --rank-gold:#b45309; --rank-silver:#64748b; --rank-bronze:#92400e;
+  /* ── Sidebar ── */
+  --sb-icon-on:#ffffff; --sb-indicator:#2563eb;
+  /* ── Botões ── */
+  --btn-primary-bg:#2563eb; --btn-primary-fg:#ffffff;
+  --btn-ghost-border:#e1e7ef; --btn-ghost-fg:#334155;
+  /* ── KPI Cards ── */
+  --kpi-bg:#ffffff;
+  /* ── Topbar ── */
+  --topbar-bg:#ffffff; --topbar-border:#e1e7ef;
+  /* ── Inputs ── */
+  --input-bg:#f0f2f8; --input-border:#e1e7ef; --input-focus:#2563eb;
   /* ── Colunas de acento (herdadas do sistema — altere nas vars acima) ── */
   /* Projeção  → var(--purple) #7c3aed (linha 22) */
   /* Ativacoes → var(--teal)   #0d9488 (linha 23) */
@@ -1399,9 +1412,9 @@ canvas { display:block; max-width:100%; }
 .rdi{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:10px;padding:10px 14px;border:1px solid var(--border);transition:all .15s var(--ease);cursor:default;}
 .rdi:hover{box-shadow:var(--shm);transform:translateY(-1px);border-color:rgba(217,119,6,.25);}
 .rdi-pos{font-size:12px;font-weight:800;color:var(--tl);min-width:20px;text-align:center;font-family:var(--mono);}
-.rdi-pos.gold{color:#b45309;}
-.rdi-pos.silver{color:#64748b;}
-.rdi-pos.bronze{color:#92400e;}
+.rdi-pos.gold{color:var(--rank-gold,#b45309);}
+.rdi-pos.silver{color:var(--rank-silver,#64748b);}
+.rdi-pos.bronze{color:var(--rank-bronze,#92400e);}
 .rdi-avatar{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0;overflow:hidden;position:relative;}
 .rdi-avatar img{width:100%;height:100%;object-fit:cover;border-radius:9px;}
 .rdi-info{flex:1;min-width:0;}
@@ -2734,8 +2747,17 @@ canvas { display:block; max-width:100%; }
 .cores-info{flex:1;min-width:0;}
 .cores-name{font-size:12px;font-weight:700;color:var(--td);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .cores-desc{font-size:10.5px;color:var(--tl);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.cores-hex{font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--tm);background:var(--bg);border:1.5px solid var(--border);border-radius:6px;padding:4px 8px;width:82px;text-align:center;outline:none;transition:border-color .14s;}
+.cores-hex{font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--tm);background:var(--bg);border:1.5px solid var(--border);border-radius:6px;padding:4px 8px;width:82px;text-align:center;outline:none;transition:border-color .14s;flex-shrink:0;}
 .cores-hex:focus{border-color:var(--blue);}
+/* Preview cell */
+.cores-preview-cell{flex-shrink:0;width:52px;display:flex;align-items:center;justify-content:center;}
+.cprev{width:46px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}
+.cprev-swatch{border:1px solid rgba(0,0,0,.1);}
+.cprev-bg{border:1px solid var(--border);}
+.cprev-border{background:var(--white);}
+.cprev-text{background:var(--bg);border-radius:6px;}
+.cprev-card{background:var(--white);border-radius:6px;padding:5px 6px;flex-direction:column;align-items:flex-start;}
+.cprev-sidebar{padding:4px 6px;justify-content:flex-start;}
 /* Preset chips */
 .preset-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:10px;border:2px solid var(--border);background:var(--white);cursor:pointer;transition:all .15s;font-size:12px;font-weight:600;color:var(--td);}
 .preset-chip:hover{border-color:var(--blue);background:var(--blue-g);}
@@ -9338,61 +9360,120 @@ async function exportOverviewJpg(){
 // ══════════════════════════════════════════════════════════
 
 const CORES_DEFAULTS = {
+  /* ── Estrutura ── */
   '--bg':'#f0f2f8','--white':'#ffffff','--sb-bg':'#0b0d17','--border':'#e1e7ef',
+  /* ── Tipografia ── */
   '--td':'#0f172a','--tm':'#334155','--tl':'#94a3b8',
+  /* ── Azul ── */
   '--blue':'#2563eb','--blue-l':'#3b82f6',
+  /* ── Verde ── */
   '--green':'#059669','--green-l':'#10b981',
+  /* ── Laranja ── */
   '--orange':'#d97706','--orange-l':'#f59e0b',
+  /* ── Vermelho ── */
   '--red':'#dc2626',
+  /* ── Roxo / Teal / Cyan ── */
   '--purple':'#7c3aed','--cyan':'#0891b2',
   '--teal':'#0d9488','--teal-l':'#14b8a6',
-  '--ov-tot-bg':'#0f172a','--ov-tot-fg':'#f8fafc',
-  '--ov-real-fg':'#065f46',
+  /* ── Tabela Resultado por Time ── */
+  '--ov-tot-bg':'#0f172a','--ov-tot-fg':'#f8fafc','--ov-real-fg':'#065f46',
+  /* ── Badges de Status ── */
   '--badge-ok-bg':'#d1fae5','--badge-ok-fg':'#065f46',
   '--badge-warn-bg':'#fef3c7','--badge-warn-fg':'#78350f',
   '--badge-err-bg':'#fee2e2','--badge-err-fg':'#7f1d1d',
   '--badge-off-bg':'#f1f5f9','--badge-off-fg':'#475569',
+  /* ── Ranking ── */
+  '--rank-gold':'#f59e0b','--rank-silver':'#94a3b8','--rank-bronze':'#d97706',
+  /* ── Sidebar ── */
+  '--sb-icon-on':'#ffffff','--sb-indicator':'#2563eb',
+  /* ── Botões ── */
+  '--btn-primary-bg':'#2563eb','--btn-primary-fg':'#ffffff',
+  '--btn-ghost-border':'#e1e7ef','--btn-ghost-fg':'#334155',
+  /* ── KPI Cards ── */
+  '--kpi-bg':'#ffffff',
+  /* ── Topbar ── */
+  '--topbar-bg':'#ffffff','--topbar-border':'#e1e7ef',
+  /* ── Inputs & Selects ── */
+  '--input-bg':'#f0f2f8','--input-border':'#e1e7ef','--input-focus':'#2563eb',
+  /* ── Sombras ── */
+  '--shadow-color':'rgba(15,23,42,.06)',
 };
 
 const CORES_GROUPS = [
-  { icon:'🏗️', label:'Estrutura & Layout', vars:[
-    { key:'--bg',     name:'Fundo da página',     desc:'Cor de fundo geral do app' },
-    { key:'--white',  name:'Fundo de cards',       desc:'Cards, topbar, modais, inputs' },
-    { key:'--sb-bg',  name:'Fundo da sidebar',     desc:'Painel de navegação lateral' },
-    { key:'--border', name:'Bordas & divisores',   desc:'Todas as linhas divisoras' },
+  { icon:'🏗️', label:'Estrutura & Fundo', vars:[
+    { key:'--bg',            name:'Fundo da página',       desc:'Cor de fundo geral do app', preview:'bg' },
+    { key:'--white',         name:'Fundo de cards',         desc:'Cards, topbar, modais, inputs', preview:'card' },
+    { key:'--sb-bg',         name:'Fundo da sidebar',       desc:'Painel de navegação lateral', preview:'sidebar' },
+    { key:'--topbar-bg',     name:'Fundo da topbar',        desc:'Barra superior do sistema', preview:'card' },
+    { key:'--border',        name:'Bordas & divisores',     desc:'Todas as linhas divisoras', preview:'border' },
+    { key:'--topbar-border', name:'Borda da topbar',        desc:'Linha inferior da barra superior', preview:'border' },
   ]},
   { icon:'🔤', label:'Tipografia', vars:[
-    { key:'--td', name:'Texto primário',   desc:'Títulos, números, labels fortes' },
-    { key:'--tm', name:'Texto secundário', desc:'Botões, descrições' },
-    { key:'--tl', name:'Texto terciário',  desc:'Hints, subtítulos, ícones inativos' },
+    { key:'--td', name:'Texto primário',   desc:'Títulos, números, labels fortes', preview:'text' },
+    { key:'--tm', name:'Texto secundário', desc:'Botões, descrições, subtítulos', preview:'text' },
+    { key:'--tl', name:'Texto terciário',  desc:'Hints, placeholders, ícones inativos', preview:'text' },
   ]},
-  { icon:'🎨', label:'Cores de Acento', vars:[
-    { key:'--blue',     name:'Azul — primária',      desc:'Botões, links, foco, indicador ativo' },
-    { key:'--blue-l',   name:'Azul claro — hover',   desc:'Hover do botão primário' },
-    { key:'--green',    name:'Verde — sucesso',       desc:'Meta atingida, KPI realizado' },
-    { key:'--green-l',  name:'Verde claro — hover',  desc:'' },
-    { key:'--orange',   name:'Laranja — atenção',    desc:'Próximo da meta, projeção' },
-    { key:'--orange-l', name:'Laranja claro — hover',desc:'' },
-    { key:'--red',      name:'Vermelho — perigo',    desc:'Abaixo da meta, GAP crítico' },
-    { key:'--purple',   name:'Roxo — projeção',      desc:'Coluna Proj., gráficos de tendência' },
-    { key:'--teal',     name:'Teal — ativações',     desc:'KPI Ativações, barra de progresso' },
-    { key:'--teal-l',   name:'Teal claro — hover',   desc:'' },
-    { key:'--cyan',     name:'Cyan — logo',          desc:'Gradiente do logo na sidebar' },
+  { icon:'💙', label:'Cor Primária — Azul', vars:[
+    { key:'--blue',   name:'Azul — base',          desc:'Botões, links, nav ativo, foco', preview:'swatch' },
+    { key:'--blue-l', name:'Azul — hover/claro',   desc:'Hover de botão, ícones secundários', preview:'swatch' },
+  ]},
+  { icon:'💚', label:'Cor Sucesso — Verde', vars:[
+    { key:'--green',   name:'Verde — base',         desc:'Meta atingida, ranking, KPI Realizado', preview:'swatch' },
+    { key:'--green-l', name:'Verde — hover/claro',  desc:'Hover, gradientes de barra', preview:'swatch' },
+  ]},
+  { icon:'🧡', label:'Cor Atenção — Laranja', vars:[
+    { key:'--orange',   name:'Laranja — base',        desc:'Próximo da meta, projeção, avisos', preview:'swatch' },
+    { key:'--orange-l', name:'Laranja — hover/claro', desc:'Hover, gradientes', preview:'swatch' },
+  ]},
+  { icon:'❤️', label:'Cor Perigo — Vermelho', vars:[
+    { key:'--red', name:'Vermelho — base', desc:'Abaixo da meta, GAP crítico, erros', preview:'swatch' },
+  ]},
+  { icon:'💜', label:'Cor Projeção — Roxo', vars:[
+    { key:'--purple', name:'Roxo — projeção',    desc:'Coluna Proj., gráficos de tendência, PSV', preview:'swatch' },
+    { key:'--cyan',   name:'Cyan — logo/acento', desc:'Gradiente do logo na sidebar, destaque', preview:'swatch' },
+  ]},
+  { icon:'🩵', label:'Cor Ativações — Teal', vars:[
+    { key:'--teal',   name:'Teal — base',         desc:'KPI Ativações, barra de progresso, inputs', preview:'swatch' },
+    { key:'--teal-l', name:'Teal — hover/claro',  desc:'Hover de barra de ativação', preview:'swatch' },
+  ]},
+  { icon:'🖱️', label:'Botões', vars:[
+    { key:'--btn-primary-bg', name:'Botão primário — fundo', desc:'Fundo do botão azul padrão', preview:'swatch' },
+    { key:'--btn-primary-fg', name:'Botão primário — texto', desc:'Texto/ícone do botão azul', preview:'text' },
+    { key:'--btn-ghost-border',name:'Botão ghost — borda',   desc:'Borda do botão secundário transparente', preview:'border' },
+    { key:'--btn-ghost-fg',   name:'Botão ghost — texto',    desc:'Texto do botão secundário', preview:'text' },
+  ]},
+  { icon:'📝', label:'Inputs & Selects', vars:[
+    { key:'--input-bg',    name:'Input — fundo',       desc:'Fundo de campos de texto e selects', preview:'bg' },
+    { key:'--input-border',name:'Input — borda',       desc:'Borda padrão dos campos', preview:'border' },
+    { key:'--input-focus', name:'Input — foco',        desc:'Borda ao focar no campo', preview:'swatch' },
   ]},
   { icon:'📊', label:'Tabela — Resultado por Time', vars:[
-    { key:'--ov-tot-bg',  name:'Total Geral — fundo',  desc:'Fundo da linha Total Geral (invertida)' },
-    { key:'--ov-tot-fg',  name:'Total Geral — texto',  desc:'Texto da linha Total Geral' },
-    { key:'--ov-real-fg', name:'Realizado — cor',      desc:'Números da coluna Realizado' },
+    { key:'--ov-tot-bg',  name:'Linha Total — fundo', desc:'Fundo da linha Total Geral (escura invertida)', preview:'swatch' },
+    { key:'--ov-tot-fg',  name:'Linha Total — texto', desc:'Texto e números da linha Total Geral', preview:'text' },
+    { key:'--ov-real-fg', name:'Realizado — cor',     desc:'Números da coluna Realizado', preview:'swatch' },
+  ]},
+  { icon:'🏆', label:'Ranking — Medalhas', vars:[
+    { key:'--rank-gold',   name:'1º lugar — ouro',   desc:'Cor da medalha e destaque do 1º colocado', preview:'swatch' },
+    { key:'--rank-silver', name:'2º lugar — prata',  desc:'Cor da medalha e destaque do 2º colocado', preview:'swatch' },
+    { key:'--rank-bronze', name:'3º lugar — bronze', desc:'Cor da medalha e destaque do 3º colocado', preview:'swatch' },
   ]},
   { icon:'🏷️', label:'Badges de Status', vars:[
-    { key:'--badge-ok-bg',   name:'Badge verde — fundo', desc:'Meta ≥ 100%' },
-    { key:'--badge-ok-fg',   name:'Badge verde — texto', desc:'' },
-    { key:'--badge-warn-bg', name:'Badge laranja — fundo',desc:'Meta entre 80–99%' },
-    { key:'--badge-warn-fg', name:'Badge laranja — texto',desc:'' },
-    { key:'--badge-err-bg',  name:'Badge vermelho — fundo',desc:'Meta < 80%' },
-    { key:'--badge-err-fg',  name:'Badge vermelho — texto',desc:'' },
-    { key:'--badge-off-bg',  name:'Badge cinza — fundo', desc:'Sem dados' },
-    { key:'--badge-off-fg',  name:'Badge cinza — texto',  desc:'' },
+    { key:'--badge-ok-bg',   name:'Badge ✅ — fundo',  desc:'Meta ≥ 100% — verde', preview:'bg' },
+    { key:'--badge-ok-fg',   name:'Badge ✅ — texto',  desc:'Texto do badge verde', preview:'text' },
+    { key:'--badge-warn-bg', name:'Badge ⚠️ — fundo',  desc:'Meta 80–99% — laranja', preview:'bg' },
+    { key:'--badge-warn-fg', name:'Badge ⚠️ — texto',  desc:'Texto do badge laranja', preview:'text' },
+    { key:'--badge-err-bg',  name:'Badge ❌ — fundo',  desc:'Meta < 80% — vermelho', preview:'bg' },
+    { key:'--badge-err-fg',  name:'Badge ❌ — texto',  desc:'Texto do badge vermelho', preview:'text' },
+    { key:'--badge-off-bg',  name:'Badge ○ — fundo',  desc:'Sem dados — cinza', preview:'bg' },
+    { key:'--badge-off-fg',  name:'Badge ○ — texto',  desc:'Texto do badge cinza', preview:'text' },
+  ]},
+  { icon:'🎴', label:'KPI Cards', vars:[
+    { key:'--kpi-bg', name:'Card KPI — fundo', desc:'Fundo dos cartões de indicadores no dashboard', preview:'card' },
+  ]},
+  { icon:'🔲', label:'Sidebar — Navegação', vars:[
+    { key:'--sb-bg',        name:'Sidebar — fundo',          desc:'Cor de fundo do painel lateral', preview:'sidebar' },
+    { key:'--sb-icon-on',   name:'Sidebar — ícone ativo',    desc:'Cor do ícone/texto do item selecionado', preview:'text' },
+    { key:'--sb-indicator', name:'Sidebar — indicador ativo',desc:'Barra lateral do item ativo', preview:'swatch' },
   ]},
 ];
 
@@ -9414,19 +9495,33 @@ const CORES_PRESETS = [
 function coresApply(vars){
   const root = document.documentElement;
   Object.entries(vars).forEach(([k,v])=>{ root.style.setProperty(k,v); });
-  // Atualiza glow vars derivados automaticamente
+
+  // Deriva glow vars automaticamente a partir das bases
   const toRgb = hex => {
     const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : null;
   };
   const derivados = {
-    '--blue':'--blue-g','--green':'--green-g','--orange':'--orange-g','--teal':'--teal-g','--red':'--red-g'
+    '--blue':'--blue-g','--green':'--green-g','--orange':'--orange-g',
+    '--teal':'--teal-g','--red':'--red-g'
   };
   Object.entries(derivados).forEach(([src,dst])=>{
     const val = vars[src] || getComputedStyle(root).getPropertyValue(src).trim();
     const rgb = toRgb(val);
     if(rgb) root.style.setProperty(dst, `rgba(${rgb},.12)`);
   });
+
+  // Aplica variáveis mapeadas para elementos concretos do DOM
+  const domMap = {
+    '--btn-primary-bg': el => el.querySelectorAll('.btn:not(.btn-g):not(.btn-green)').forEach(b=>b.style.background=getComputedStyle(root).getPropertyValue('--btn-primary-bg').trim()),
+    '--topbar-bg':      el => { const tb=document.querySelector('.topbar'); if(tb) tb.style.background=getComputedStyle(root).getPropertyValue('--topbar-bg').trim(); },
+    '--rank-gold':      ()=>{}, '--rank-silver':()=>{}, '--rank-bronze':()=>{},
+    '--sb-indicator':   ()=>{ root.style.setProperty('--blue', getComputedStyle(root).getPropertyValue('--sb-indicator').trim() || vars['--sb-indicator'] || CORES_DEFAULTS['--sb-indicator']); },
+  };
+  // Aplica rank colors via CSS vars (usados nos seletores .rdi-sem:nth-child)
+  if(vars['--rank-gold'])   root.style.setProperty('--rank-gold',   vars['--rank-gold']);
+  if(vars['--rank-silver']) root.style.setProperty('--rank-silver', vars['--rank-silver']);
+  if(vars['--rank-bronze']) root.style.setProperty('--rank-bronze', vars['--rank-bronze']);
 }
 
 function coresGet(key){
@@ -9474,17 +9569,30 @@ function coresInitPage(){
   /* Groups */
   const grid=document.getElementById('cores-grid');
   if(!grid) return;
-  grid.innerHTML=CORES_GROUPS.map(g=>`
+
+  // Deduplica: cada key só aparece uma vez (grupos como Sidebar repetem sb-bg)
+  const seenKeys = new Set();
+
+  grid.innerHTML=CORES_GROUPS.map(g=>{
+    const rows = g.vars.filter(v => {
+      if(seenKeys.has(v.key)) return false;
+      seenKeys.add(v.key);
+      return true;
+    });
+    if(!rows.length) return '';
+    return `
     <div class="cores-card">
       <div class="cores-card-head">
         <span>${g.icon}</span>${g.label}
       </div>
-      ${g.vars.map(v=>{
-        const cur=coresGet(v.key)||CORES_DEFAULTS[v.key]||'#000000';
-        const hex=cur.startsWith('#')?cur:cur;
-        return `<div class="cores-row" id="row-${v.key.replace(/--/g,'').replace(/-/g,'_')}">
-          <div class="cores-swatch" style="background:${hex}" id="swatch-${v.key.replace(/--/g,'').replace(/-/g,'_')}" title="Clique para escolher cor">
-            <input type="color" value="${hex.length===4?hex:hex}"
+      ${rows.map(v=>{
+        const cur = coresGet(v.key) || CORES_DEFAULTS[v.key] || '#cccccc';
+        const hex = cur.trim().startsWith('#') ? cur.trim() : (CORES_DEFAULTS[v.key]||'#cccccc');
+        const rowId = 'row-'+v.key.replace(/--/g,'').replace(/-/g,'_');
+        const preview = _coresPreviewHtml(v.preview||'swatch', hex, v.key);
+        return `<div class="cores-row" id="${rowId}">
+          <div class="cores-swatch" style="background:${hex}" title="Clique para escolher cor">
+            <input type="color" value="${hex}"
               oninput="coresOnPicker(this,'${v.key}')"
               onchange="coresOnPicker(this,'${v.key}')">
           </div>
@@ -9492,24 +9600,48 @@ function coresInitPage(){
             <div class="cores-name">${v.name}</div>
             ${v.desc?`<div class="cores-desc">${v.desc}</div>`:''}
           </div>
+          <div class="cores-preview-cell" id="prev-${rowId}">${preview}</div>
           <input class="cores-hex" type="text" value="${hex}" maxlength="9"
             placeholder="#000000"
             oninput="coresOnHex(this,'${v.key}')"
             onblur="coresOnHexBlur(this,'${v.key}')">
         </div>`;
       }).join('')}
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+
+// Gera um mini-preview contextual para cada tipo de cor
+function _coresPreviewHtml(type, hex, key) {
+  switch(type) {
+    case 'bg':
+      return `<div class="cprev cprev-bg" style="background:${hex}"><span style="font-size:9px;color:#334155;font-weight:700">Aa</span></div>`;
+    case 'card':
+      return `<div class="cprev cprev-card" style="background:${hex};border:1px solid var(--border)"><div style="height:4px;background:var(--blue);border-radius:2px;width:60%;margin-bottom:3px"></div><div style="height:3px;background:#e2e8f0;border-radius:2px;width:80%"></div></div>`;
+    case 'sidebar':
+      return `<div class="cprev cprev-sidebar" style="background:${hex}"><div style="width:3px;height:12px;background:var(--cyan);border-radius:2px;margin-right:4px"></div><div style="width:8px;height:8px;border-radius:2px;background:rgba(255,255,255,.2)"></div></div>`;
+    case 'border':
+      return `<div class="cprev cprev-border"><div style="width:100%;height:100%;border:2px solid ${hex};border-radius:4px"></div></div>`;
+    case 'text':
+      return `<div class="cprev cprev-text"><span style="color:${hex};font-weight:700;font-size:13px">Texto</span></div>`;
+    case 'swatch':
+    default:
+      return `<div class="cprev cprev-swatch" style="background:${hex}"></div>`;
+  }
 }
 
 function coresOnPicker(inp, key){
   const val=inp.value;
   coresApply({[key]:val});
-  /* sync hex input */
   const rowId='row-'+key.replace(/--/g,'').replace(/-/g,'_');
   const row=document.getElementById(rowId);
   if(row){
     row.querySelector('.cores-hex').value=val;
     row.querySelector('.cores-swatch').style.background=val;
+    // Atualiza preview
+    const vDef = CORES_GROUPS.flatMap(g=>g.vars).find(v=>v.key===key);
+    const prevCell = document.getElementById('prev-'+rowId);
+    if(prevCell && vDef) prevCell.innerHTML = _coresPreviewHtml(vDef.preview||'swatch', val, key);
   }
 }
 
@@ -9519,12 +9651,14 @@ function coresOnHex(inp, key){
   if(/^#[0-9a-fA-F]{6}$/.test(val)||/^#[0-9a-fA-F]{3}$/.test(val)){
     coresApply({[key]:val});
     inp.style.color='var(--td)';
-    /* sync picker & swatch */
     const rowId='row-'+key.replace(/--/g,'').replace(/-/g,'_');
     const row=document.getElementById(rowId);
     if(row){
       row.querySelector('input[type=color]').value=val;
       row.querySelector('.cores-swatch').style.background=val;
+      const vDef = CORES_GROUPS.flatMap(g=>g.vars).find(v=>v.key===key);
+      const prevCell = document.getElementById('prev-'+rowId);
+      if(prevCell && vDef) prevCell.innerHTML = _coresPreviewHtml(vDef.preview||'swatch', val, key);
     }
   } else {
     inp.style.color='var(--red)';
