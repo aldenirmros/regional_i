@@ -59,6 +59,54 @@
   /* Projeção  → var(--purple) #7c3aed (linha 22) */
   /* Ativacoes → var(--teal)   #0d9488 (linha 23) */
   /* Ponto titulo → var(--blue) #2563eb (linha 18) */
+
+  /* ┌─────────────────────────────────────────────────────────────────────┐
+     │  🎨 TABELAS — cores de fundo e texto (controladas em Temas & Cores) │
+     └─────────────────────────────────────────────────────────────────────┘ */
+  /* ── Cabeçalho de tabelas ── */
+  --tbl-head-bg: #f8fafc;        /* fundo do <th> em todas as tabelas */
+  --tbl-head-fg: #94a3b8;        /* texto dos cabeçalhos de tabela */
+  /* ── Linha par/ímpar (zebra) ── */
+  --tbl-row-bg:  #ffffff;        /* fundo linha padrão */
+  --tbl-row-alt: #f8fafc;        /* fundo linha alternada (zebra) */
+  --tbl-row-fg:  #0f172a;        /* cor de texto nas células */
+  /* ── Linha hover ── */
+  --tbl-row-hover-bg: rgba(37,99,235,.04); /* fundo ao passar mouse */
+  /* ── Linha selecionada ── */
+  --tbl-row-sel-bg:   rgba(37,99,235,.07); /* fundo linha selecionada */
+  /* ── Totais / rodapé ── */
+  --tbl-foot-bg: linear-gradient(90deg,rgba(37,99,235,.12),rgba(37,99,235,.07)); /* Total row */
+  --tbl-foot-fg: #2563eb;        /* texto linha de total */
+  /* ── Borda interna das tabelas ── */
+  --tbl-inner-border: #e1e7ef;
+
+  /* ┌─────────────────────────────────────────────────────────────────────┐
+     │  🎨 MAPA SEMANAL — cores de célula por desempenho                  │
+     └─────────────────────────────────────────────────────────────────────┘ */
+  --mapa-ok-bg:   #dcfce7; --mapa-ok-fg:   #166534;  /* célula com venda */
+  --mapa-zero-bg: #f1f5f9; --mapa-zero-fg: #94a3b8;  /* célula sem venda */
+  --mapa-cur-bg:  #dbeafe; --mapa-cur-fg:  #1d4ed8;  /* semana atual */
+  --mapa-head-bg: #f8fafc; --mapa-head-fg: #64748b;  /* cabeçalho colunas */
+
+  /* ┌─────────────────────────────────────────────────────────────────────┐
+     │  🎨 SEÇÕES — títulos e separadores de seção                        │
+     └─────────────────────────────────────────────────────────────────────┘ */
+  --sec-title-fg:    #94a3b8;   /* cor do label SEÇÃO */
+  --sec-title-line:  #e1e7ef;   /* linha separadora da seção */
+
+  /* ┌─────────────────────────────────────────────────────────────────────┐
+     │  🎨 CARDS GENÉRICOS — fundo e títulos                              │
+     └─────────────────────────────────────────────────────────────────────┘ */
+  --card-bg:       #ffffff;     /* fundo padrão dos cards */
+  --card-head-bg:  #ffffff;     /* fundo do cabeçalho do card */
+  --card-head-fg:  #0f172a;     /* texto do título do card */
+  --card-border:   #e1e7ef;     /* borda do card */
+
+  /* ┌─────────────────────────────────────────────────────────────────────┐
+     │  🎨 MODAL — fundo e sobreposição                                   │
+     └─────────────────────────────────────────────────────────────────────┘ */
+  --modal-bg:      #ffffff;
+  --modal-overlay: rgba(15,23,42,.45);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{overflow-x:hidden;}
@@ -1827,7 +1875,16 @@ canvas { display:block; max-width:100%; }
       <div class="card">
         <div class="card-head">
           <div class="card-title"><div class="ctd" style="background:var(--blue)"></div>HC — clique para filtrar gráficos</div>
-          <span style="font-size:10.5px;color:var(--tl)" id="tbl-per"></span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:10.5px;color:var(--tl)" id="tbl-per"></span>
+            <button onclick="exportHCtoJPG()" title="Exportar tabela como imagem JPG"
+              style="display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid var(--border);border-radius:var(--rs);padding:4px 10px;font-family:var(--font);font-size:11px;font-weight:600;color:var(--tm);cursor:pointer;transition:all .14s;"
+              onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)';this.style.background='var(--blue-g)'"
+              onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--tm)';this.style.background='transparent'">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              Exportar JPG
+            </button>
+          </div>
         </div>
         <div style="overflow-x:auto">
           <table class="dt">
@@ -2764,6 +2821,51 @@ canvas { display:block; max-width:100%; }
 .preset-chip.active{border-color:var(--blue);background:var(--blue-g);color:var(--blue);}
 .preset-dots{display:flex;gap:3px;}
 .preset-dot{width:10px;height:10px;border-radius:50%;}
+
+/* ── Aplicação das variáveis de tabela nas tabelas reais ── */
+.dt th,.pth,.ov-tbl th,.mapa-th{
+  background:var(--tbl-head-bg) !important;
+  color:var(--tbl-head-fg) !important;
+  border-bottom-color:var(--tbl-inner-border) !important;
+}
+.dt td,.ptd,.ov-tbl td,.mapa-td{
+  color:var(--tbl-row-fg);
+  border-bottom-color:var(--tbl-inner-border) !important;
+}
+.dt tbody tr:nth-child(even) td,
+.ov-tbl tbody tr:not(.ov-tbl-tot):nth-child(even) td{
+  background:var(--tbl-row-alt);
+}
+.dt tbody tr:hover td,
+.ov-tbl tbody tr:not(.ov-tbl-tot):hover td{
+  background:var(--tbl-row-hover-bg);
+}
+.dt tbody tr.seller-row.selected td{
+  background:var(--tbl-row-sel-bg);
+}
+/* Rodapé/total das tabelas genéricas */
+.dt .tr-tot td{
+  color:var(--tbl-foot-fg) !important;
+  border-top-color:var(--tbl-foot-fg) !important;
+  border-bottom-color:var(--tbl-foot-fg) !important;
+}
+/* Mapa semanal */
+.mapa-cell-ok{background:var(--mapa-ok-bg) !important;color:var(--mapa-ok-fg) !important;}
+.mapa-cell-zero{background:var(--mapa-zero-bg) !important;color:var(--mapa-zero-fg) !important;}
+.mapa-week-th.mapa-sem-atual{background:var(--mapa-cur-bg) !important;color:var(--mapa-cur-fg) !important;}
+.mapa-week-th{background:var(--mapa-head-bg) !important;color:var(--mapa-head-fg) !important;}
+/* Seções */
+.sec-title{color:var(--sec-title-fg) !important;}
+.sec-title::after{background:var(--sec-title-line) !important;}
+/* Cards */
+.card{background:var(--card-bg) !important;border-color:var(--card-border) !important;}
+.card-head{background:var(--card-head-bg) !important;border-bottom-color:var(--card-border) !important;}
+.card-title{color:var(--card-head-fg) !important;}
+/* Modal */
+.modal{background:var(--modal-bg) !important;}
+.modal-overlay,.modal-backdrop,[id$="-modal"] > div:first-child{
+  background:var(--modal-overlay) !important;
+}
 </style>
 
 <!-- ══ MAXIMIZE OVERLAY (PSV) ══ -->
@@ -6481,7 +6583,121 @@ const CHART_META = {
   bar:   { title:'Realizado vs Projeção',color:'var(--purple)', dot:'#7c3aed' }
 };
 
-function maximizeChart(type){
+/* ══ EXPORTAR TABELA HC COMO JPG ══════════════════════════════════════════ */
+function exportHCtoJPG(){
+  // Tenta usar html2canvas via CDN se disponível, senão usa abordagem nativa com canvas
+  const doExport = () => {
+    const card = document.querySelector('.dash-layout .card');
+    if(!card){ alert('Tabela não encontrada.'); return; }
+
+    // Clona o card para renderização limpa
+    const clone = card.cloneNode(true);
+    clone.style.cssText = `
+      position:fixed;left:-9999px;top:0;
+      background:#ffffff;border-radius:12px;
+      font-family:'Outfit',sans-serif;font-size:14px;
+      min-width:${card.offsetWidth}px;
+      box-shadow:0 4px 20px rgba(0,0,0,.12);
+      padding:0;overflow:visible;
+    `;
+    document.body.appendChild(clone);
+
+    // Copia estilos computados das células
+    const srcRows = card.querySelectorAll('th,td');
+    const dstRows = clone.querySelectorAll('th,td');
+    srcRows.forEach((src,i)=>{
+      const cs = getComputedStyle(src);
+      if(dstRows[i]){
+        dstRows[i].style.background = cs.backgroundColor;
+        dstRows[i].style.color = cs.color;
+        dstRows[i].style.padding = cs.padding;
+        dstRows[i].style.borderBottom = cs.borderBottom;
+        dstRows[i].style.fontWeight = cs.fontWeight;
+        dstRows[i].style.fontSize = cs.fontSize;
+        dstRows[i].style.whiteSpace = 'nowrap';
+      }
+    });
+
+    // Copia estilo do cabeçalho do card
+    const srcHead = card.querySelector('.card-head');
+    const dstHead = clone.querySelector('.card-head');
+    if(srcHead && dstHead){
+      const cs = getComputedStyle(srcHead);
+      dstHead.style.padding = cs.padding;
+      dstHead.style.borderBottom = cs.borderBottom;
+    }
+    // Esconde botão de exportar no clone
+    clone.querySelectorAll('button').forEach(b=>b.style.display='none');
+
+    if(typeof html2canvas !== 'undefined'){
+      html2canvas(clone, {
+        backgroundColor:'#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      }).then(canvas=>{
+        document.body.removeChild(clone);
+        _hcDownloadJPG(canvas);
+      }).catch(()=>{ document.body.removeChild(clone); _hcFallbackExport(card); });
+    } else {
+      document.body.removeChild(clone);
+      _hcFallbackExport(card);
+    }
+  };
+
+  // Carrega html2canvas se ainda não estiver disponível
+  if(typeof html2canvas === 'undefined'){
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = doExport;
+    s.onerror = () => _hcFallbackExport(document.querySelector('.dash-layout .card'));
+    document.head.appendChild(s);
+  } else {
+    doExport();
+  }
+}
+
+function _hcDownloadJPG(canvas){
+  const link = document.createElement('a');
+  const now   = new Date();
+  const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+  link.download = `HC_Vendas_${stamp}.jpg`;
+  link.href = canvas.toDataURL('image/jpeg', 0.95);
+  link.click();
+}
+
+function _hcFallbackExport(card){
+  // Fallback: gera imagem via SVG foreignObject (funciona sem lib externa)
+  const w = card.offsetWidth  || 700;
+  const h = card.offsetHeight || 400;
+  const xml = new XMLSerializer().serializeToString(card);
+  const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+    <foreignObject width="100%" height="100%">
+      <div xmlns="http://www.w3.org/1999/xhtml"
+           style="background:#fff;font-family:Arial,sans-serif;font-size:13px;width:${w}px;height:${h}px;overflow:hidden">
+        ${xml}
+      </div>
+    </foreignObject>
+  </svg>`;
+  const blob = new Blob([svgStr], {type:'image/svg+xml'});
+  const url  = URL.createObjectURL(blob);
+  const img  = new Image();
+  img.onload = ()=>{
+    const cv = document.createElement('canvas');
+    cv.width  = w * 2; cv.height = h * 2;
+    const ctx = cv.getContext('2d');
+    ctx.scale(2,2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,w,h);
+    ctx.drawImage(img,0,0,w,h);
+    URL.revokeObjectURL(url);
+    _hcDownloadJPG(cv);
+  };
+  img.onerror = ()=>{ URL.revokeObjectURL(url); alert('Não foi possível exportar. Tente outro navegador.'); };
+  img.src = url;
+}
+
+
   const srcMap = { donut: chartDonut, line: chartLine, bar: chartBar };
   const src = srcMap[type];
   if(!src) return;
@@ -9397,6 +9613,27 @@ const CORES_DEFAULTS = {
   '--input-bg':'#f0f2f8','--input-border':'#e1e7ef','--input-focus':'#2563eb',
   /* ── Sombras ── */
   '--shadow-color':'rgba(15,23,42,.06)',
+  /* ── Tabelas — cabeçalho ── */
+  '--tbl-head-bg':'#f8fafc','--tbl-head-fg':'#94a3b8',
+  /* ── Tabelas — linhas ── */
+  '--tbl-row-bg':'#ffffff','--tbl-row-alt':'#f8fafc','--tbl-row-fg':'#0f172a',
+  '--tbl-row-hover-bg':'rgba(37,99,235,.04)',
+  '--tbl-row-sel-bg':'rgba(37,99,235,.07)',
+  /* ── Tabelas — totais ── */
+  '--tbl-foot-fg':'#2563eb',
+  /* ── Tabelas — borda interna ── */
+  '--tbl-inner-border':'#e1e7ef',
+  /* ── Mapa Semanal ── */
+  '--mapa-ok-bg':'#dcfce7','--mapa-ok-fg':'#166534',
+  '--mapa-zero-bg':'#f1f5f9','--mapa-zero-fg':'#94a3b8',
+  '--mapa-cur-bg':'#dbeafe','--mapa-cur-fg':'#1d4ed8',
+  '--mapa-head-bg':'#f8fafc','--mapa-head-fg':'#64748b',
+  /* ── Seções ── */
+  '--sec-title-fg':'#94a3b8','--sec-title-line':'#e1e7ef',
+  /* ── Cards genéricos ── */
+  '--card-bg':'#ffffff','--card-head-bg':'#ffffff','--card-head-fg':'#0f172a','--card-border':'#e1e7ef',
+  /* ── Modal ── */
+  '--modal-bg':'#ffffff','--modal-overlay':'rgba(15,23,42,.45)',
 };
 
 const CORES_GROUPS = [
@@ -9475,6 +9712,48 @@ const CORES_GROUPS = [
     { key:'--sb-icon-on',   name:'Sidebar — ícone ativo',    desc:'Cor do ícone/texto do item selecionado', preview:'text' },
     { key:'--sb-indicator', name:'Sidebar — indicador ativo',desc:'Barra lateral do item ativo', preview:'swatch' },
   ]},
+  { icon:'📋', label:'Tabelas — Cabeçalho', vars:[
+    { key:'--tbl-head-bg', name:'Cabeçalho — fundo',  desc:'Fundo do <th> em todas as tabelas do sistema', preview:'bg' },
+    { key:'--tbl-head-fg', name:'Cabeçalho — texto',  desc:'Cor dos rótulos nos cabeçalhos de tabela', preview:'text' },
+    { key:'--tbl-inner-border', name:'Borda interna', desc:'Linha entre colunas e linhas da tabela', preview:'border' },
+  ]},
+  { icon:'📄', label:'Tabelas — Linhas', vars:[
+    { key:'--tbl-row-bg',       name:'Linha — fundo padrão',   desc:'Cor de fundo das linhas normais', preview:'bg' },
+    { key:'--tbl-row-alt',      name:'Linha — fundo alternado',desc:'Zebra: cor alternada das linhas pares', preview:'bg' },
+    { key:'--tbl-row-fg',       name:'Linha — texto',          desc:'Cor do texto nas células das linhas', preview:'text' },
+    { key:'--tbl-row-hover-bg', name:'Linha — fundo hover',    desc:'Fundo ao passar o mouse sobre a linha', preview:'bg' },
+    { key:'--tbl-row-sel-bg',   name:'Linha — fundo selecionado',desc:'Fundo da linha selecionada/ativa', preview:'bg' },
+  ]},
+  { icon:'🔢', label:'Tabelas — Linha de Total', vars:[
+    { key:'--ov-tot-bg',  name:'Total Geral — fundo', desc:'Fundo da linha Total Geral (cor escura invertida)', preview:'swatch' },
+    { key:'--ov-tot-fg',  name:'Total Geral — texto', desc:'Texto e números da linha Total Geral', preview:'text' },
+    { key:'--tbl-foot-fg',name:'Rodapé/Total — texto',desc:'Cor dos valores na linha de totais das demais tabelas', preview:'text' },
+    { key:'--ov-real-fg', name:'Realizado — cor',     desc:'Números da coluna Realizado em todas as tabelas', preview:'swatch' },
+  ]},
+  { icon:'🗓️', label:'Mapa Semanal de Vendas', vars:[
+    { key:'--mapa-ok-bg',   name:'Célula com venda — fundo', desc:'Dias que tiveram venda registrada', preview:'bg' },
+    { key:'--mapa-ok-fg',   name:'Célula com venda — texto', desc:'Número/texto dos dias com venda', preview:'text' },
+    { key:'--mapa-zero-bg', name:'Célula sem venda — fundo', desc:'Dias sem venda no mapa', preview:'bg' },
+    { key:'--mapa-zero-fg', name:'Célula sem venda — texto', desc:'Texto dos dias sem venda', preview:'text' },
+    { key:'--mapa-cur-bg',  name:'Semana atual — fundo',     desc:'Destaque da semana corrente', preview:'bg' },
+    { key:'--mapa-cur-fg',  name:'Semana atual — texto',     desc:'Texto/número da semana corrente', preview:'text' },
+    { key:'--mapa-head-bg', name:'Cabeçalho de semana — fundo', desc:'Fundo dos rótulos de coluna da semana', preview:'bg' },
+    { key:'--mapa-head-fg', name:'Cabeçalho de semana — texto', desc:'Texto dos rótulos de semana', preview:'text' },
+  ]},
+  { icon:'🏷️', label:'Seções — Títulos', vars:[
+    { key:'--sec-title-fg',   name:'Título de seção — texto',  desc:'Cor do label em letras maiúsculas das seções', preview:'text' },
+    { key:'--sec-title-line', name:'Título de seção — linha',  desc:'Linha divisória ao lado do título de seção', preview:'border' },
+  ]},
+  { icon:'🪟', label:'Cards & Painéis', vars:[
+    { key:'--card-bg',      name:'Card — fundo',           desc:'Fundo dos painéis e cards genéricos', preview:'card' },
+    { key:'--card-head-bg', name:'Card — cabeçalho fundo', desc:'Fundo da área de título dos cards', preview:'bg' },
+    { key:'--card-head-fg', name:'Card — cabeçalho texto', desc:'Cor do título nos cabeçalhos de card', preview:'text' },
+    { key:'--card-border',  name:'Card — borda',           desc:'Borda ao redor dos cards e painéis', preview:'border' },
+  ]},
+  { icon:'💬', label:'Modais & Sobreposições', vars:[
+    { key:'--modal-bg',      name:'Modal — fundo',       desc:'Fundo da janela de modal/diálogo', preview:'card' },
+    { key:'--modal-overlay', name:'Modal — overlay',     desc:'Sobreposição escura atrás do modal', preview:'swatch' },
+  ]},
 ];
 
 const CORES_PRESETS = [
@@ -9522,6 +9801,51 @@ function coresApply(vars){
   if(vars['--rank-gold'])   root.style.setProperty('--rank-gold',   vars['--rank-gold']);
   if(vars['--rank-silver']) root.style.setProperty('--rank-silver', vars['--rank-silver']);
   if(vars['--rank-bronze']) root.style.setProperty('--rank-bronze', vars['--rank-bronze']);
+
+  // Propaga variáveis de tabela para elementos concretos sem var() (hardcoded)
+  // Tabelas: cabeçalhos
+  if(vars['--tbl-head-bg']||vars['--tbl-head-fg']||vars['--tbl-inner-border']){
+    const thBg  = getComputedStyle(root).getPropertyValue('--tbl-head-bg').trim();
+    const thFg  = getComputedStyle(root).getPropertyValue('--tbl-head-fg').trim();
+    const thBrd = getComputedStyle(root).getPropertyValue('--tbl-inner-border').trim();
+    document.querySelectorAll('.dt th,.pth,.ov-tbl th,.mapa-th').forEach(el=>{
+      if(vars['--tbl-head-bg']) el.style.background=thBg;
+      if(vars['--tbl-head-fg']) el.style.color=thFg;
+      if(vars['--tbl-inner-border']){ el.style.borderBottomColor=thBrd; }
+    });
+  }
+  // Tabelas: células
+  if(vars['--tbl-row-fg']||vars['--tbl-inner-border']){
+    const rowFg = getComputedStyle(root).getPropertyValue('--tbl-row-fg').trim();
+    const brd   = getComputedStyle(root).getPropertyValue('--tbl-inner-border').trim();
+    document.querySelectorAll('.dt td,.ptd,.ov-tbl td:not(.tr-tot td)').forEach(el=>{
+      if(vars['--tbl-row-fg']) el.style.color=rowFg;
+      if(vars['--tbl-inner-border']) el.style.borderBottomColor=brd;
+    });
+  }
+  // Totais das tabelas genéricas
+  if(vars['--tbl-foot-fg']){
+    const footFg = getComputedStyle(root).getPropertyValue('--tbl-foot-fg').trim();
+    document.querySelectorAll('.dt .tr-tot td').forEach(el=>{ el.style.color=footFg; });
+  }
+  // Cards
+  if(vars['--card-bg']||vars['--card-border']){
+    const cbg = getComputedStyle(root).getPropertyValue('--card-bg').trim();
+    const cbrd= getComputedStyle(root).getPropertyValue('--card-border').trim();
+    document.querySelectorAll('.card').forEach(el=>{
+      if(vars['--card-bg'])     el.style.background=cbg;
+      if(vars['--card-border']) el.style.borderColor=cbrd;
+    });
+  }
+  if(vars['--card-head-fg']){
+    const chfg = getComputedStyle(root).getPropertyValue('--card-head-fg').trim();
+    document.querySelectorAll('.card-title').forEach(el=>{ el.style.color=chfg; });
+  }
+  // Seções
+  if(vars['--sec-title-fg']||vars['--sec-title-line']){
+    const stFg  = getComputedStyle(root).getPropertyValue('--sec-title-fg').trim();
+    document.querySelectorAll('.sec-title').forEach(el=>{ if(vars['--sec-title-fg']) el.style.color=stFg; });
+  }
 }
 
 function coresGet(key){
