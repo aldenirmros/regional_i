@@ -27,6 +27,25 @@
   --shm:0 4px 20px rgba(15,23,42,.10);
   --font:'Outfit',sans-serif;--mono:'JetBrains Mono',monospace;
   --ease:cubic-bezier(.4,0,.2,1);
+  /* ┌─────────────────────────────────────────────────────────────────────┐
+     │  🎨 RESULTADO POR TIME — CAMADA 1: variáveis :root                  │
+     │  Altere aqui para mudar toda a tabela de uma vez.                   │
+     │  Estas vars também são controladas em Temas & Cores (sidebar).      │
+     └─────────────────────────────────────────────────────────────────────┘ */
+  /* ── Linha "TOTAL GERAL" (fundo escuro invertido) ── */
+  --ov-tot-bg: #0f172a;   /* ← fundo da linha Total Geral */
+  --ov-tot-fg: #f8fafc;   /* ← texto/números da linha Total Geral */
+  /* ── Coluna Realizado ── */
+  --ov-real-fg: #065f46;  /* ← cor dos números da coluna Real. */
+  /* ── Badges de status (% Meta / % Atv / % Proj) ── */
+  --badge-ok-bg:   #d1fae5; --badge-ok-fg:   #065f46; /* verde  — meta >= 100% */
+  --badge-warn-bg: #fef3c7; --badge-warn-fg: #78350f; /* laranja — meta 80-99% */
+  --badge-err-bg:  #fee2e2; --badge-err-fg:  #7f1d1d; /* vermelho — meta < 80% */
+  --badge-off-bg:  #f1f5f9; --badge-off-fg:  #475569; /* cinza — sem dados */
+  /* ── Colunas de acento (herdadas do sistema — altere nas vars acima) ── */
+  /* Projeção  → var(--purple) #7c3aed (linha 22) */
+  /* Ativacoes → var(--teal)   #0d9488 (linha 23) */
+  /* Ponto titulo → var(--blue) #2563eb (linha 18) */
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{overflow-x:hidden;}
@@ -674,33 +693,40 @@ select.sel:focus{border-color:var(--blue);}
 .dt .tr-tot td{background:linear-gradient(90deg,rgba(37,99,235,.12),rgba(37,99,235,.07));font-weight:800;color:var(--blue);border-top:3px solid var(--blue);border-bottom:2px solid rgba(37,99,235,.3);font-size:13px;}
 
 /* ══ OV-TBL — Resultado por Time · Premium Redesign ══════════════════════ */
+/* ┌─────────────────────────────────────────────────────────────────────────┐
+   │  🎨 RESULTADO POR TIME — CAMADA 2: classes CSS                          │
+   │  Cores hardcoded aqui. Use Ctrl+F pelo nome do comentário para achar.   │
+   └─────────────────────────────────────────────────────────────────────────┘ */
 
 /* ── Base table ── */
 .ov-tbl{border-collapse:separate;border-spacing:0;width:100%;}
 .ov-tbl th{
-  padding:13px 11px;font-size:10.5px;letter-spacing:.6px;font-weight:800;
+  padding:12px 11px;font-size:10px;letter-spacing:.8px;font-weight:800;
   white-space:nowrap;text-transform:uppercase;color:var(--tl);
-  border-bottom:2px solid #e2e8f0;background:var(--white);
+  background:#f8fafc;                   /* 🎨 COR: fundo do cabeçalho (th) */
+  border-bottom:2px solid #e2e8f0;      /* 🎨 COR: borda inferior do thead */
 }
 .ov-tbl td{
-  padding:16px 11px;font-size:13px;line-height:1.4;vertical-align:middle;
-  border-bottom:1px solid rgba(226,232,240,.7);
+  padding:15px 11px;font-size:13px;line-height:1.4;vertical-align:middle;
+  border-bottom:1px solid rgba(226,232,240,.55); /* 🎨 COR: divisor entre linhas */
 }
 
 /* ── Monospace numbers ── */
-.ov-tbl .mono{font-family:'JetBrains Mono',var(--mono);font-size:13px;font-variant-numeric:tabular-nums;}
+.ov-tbl .mono{font-family:'JetBrains Mono',var(--mono);font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:-.3px;}
 .ov-tbl .fw7{font-weight:800;}
 
-/* ── HUB name cell — left accent border instead of dot ── */
-.ov-tbl .hub-name-cell{
-  padding-left:0!important;
-}
+/* ── REALIZADO — destaque máximo ── */
+/* 🎨 COR: cor do número na coluna Realizado → altere --ov-real-fg no :root */
+.ov-tbl .mono.fw7.fg-g{font-size:15px!important;font-weight:900!important;color:var(--ov-real-fg)!important;letter-spacing:-.5px;}
+
+/* ── HUB name cell ── */
+.ov-tbl .hub-name-cell{padding-left:0!important;}
 .ov-tbl .hub-name-inner{
   display:flex;flex-direction:column;justify-content:center;
   padding:6px 10px 6px 12px;
-  border-left:4px solid var(--hub-color,#2563eb);
+  border-left:4px solid var(--hub-color,#2563eb); /* 🎨 COR: barra lateral do HUB (vem de DB.times[n].color) */
   border-radius:0 6px 6px 0;
-  background:rgba(0,0,0,.018);
+  background:rgba(0,0,0,.018);                    /* 🎨 COR: fundo sutil da célula HUB */
   min-height:36px;
 }
 .ov-tbl .hub-name-inner .hub-title{
@@ -714,122 +740,87 @@ select.sel:focus{border-color:var(--blue);}
   margin-top:1px;
 }
 
-/* ── % Badge (Meta / Atv / Proj) ── */
-.ov-badge{
-  display:inline-flex;flex-direction:column;align-items:center;
-  gap:3px;min-width:58px;
-}
+/* ══ BADGES — fundo pastel sólido, texto forte, SEM barra de progresso ══ */
+/* 🎨 COR: cores dos badges → altere as vars --badge-* no :root (Camada 1) */
+.ov-badge{display:inline-flex;flex-direction:column;align-items:center;gap:0;min-width:58px;}
 .ov-badge-pill{
   display:inline-flex;align-items:center;justify-content:center;
-  padding:3px 9px;border-radius:99px;
-  font-family:'JetBrains Mono',var(--mono);font-size:12px;font-weight:800;
-  letter-spacing:.3px;white-space:nowrap;
-  border:1.5px solid transparent;
+  padding:4px 11px;border-radius:99px;
+  font-family:'JetBrains Mono',var(--mono);font-size:12.5px;font-weight:800;
+  letter-spacing:.2px;white-space:nowrap;
+  border:none;
   transition:filter .15s;
 }
-/* Versão compacta — usada na coluna % Proj. para não sobrepor colunas vizinhas */
-.ov-badge-pill-sm{font-size:9.5px!important;padding:2px 5px!important;letter-spacing:.1px;}
-.ov-badge-pill.bg-green{background:rgba(5,150,105,.10);color:#065f46;border-color:rgba(5,150,105,.25);}
-.ov-badge-pill.bg-orange{background:rgba(217,119,6,.10);color:#92400e;border-color:rgba(217,119,6,.25);}
-.ov-badge-pill.bg-red{background:rgba(220,38,38,.10);color:#7f1d1d;border-color:rgba(220,38,38,.25);}
-.ov-badge-pill.bg-gray{background:rgba(100,116,139,.09);color:#475569;border-color:rgba(100,116,139,.2);}
+.ov-badge-pill-sm{font-size:10px!important;padding:3px 7px!important;}
+.ov-badge-pill.bg-green {background:var(--badge-ok-bg);  color:var(--badge-ok-fg);}   /* meta >= 100% */
+.ov-badge-pill.bg-orange{background:var(--badge-warn-bg);color:var(--badge-warn-fg);} /* meta 80-99%  */
+.ov-badge-pill.bg-red   {background:var(--badge-err-bg); color:var(--badge-err-fg);}  /* meta < 80%   */
+.ov-badge-pill.bg-gray  {background:var(--badge-off-bg); color:var(--badge-off-fg);}  /* sem dados    */
 
-/* slim progress bar under % Meta badge */
-.ov-badge-bar{width:100%;height:3px;border-radius:99px;background:#e2e8f0;overflow:hidden;max-width:58px;}
-.ov-badge-bar-fill{height:100%;border-radius:99px;transition:width .6s var(--ease);}
-.ov-badge-bar-fill.bg-green{background:var(--green);}
-.ov-badge-bar-fill.bg-orange{background:var(--orange);}
-.ov-badge-bar-fill.bg-red{background:var(--red);}
+/* ── Barras de progresso removidas para limpeza visual ── */
+.ov-badge-bar     {display:none!important;}
+.ov-badge-bar-fill{display:none!important;}
 
 /* ── m-cell (M0/M1/M2 columns) ── */
 .ov-tbl .m-cell{text-align:center;}
 .ov-tbl .m-cell > div{display:inline-flex;align-items:center;justify-content:center;gap:2px;}
-.ov-tbl .m-val{
-  min-width:52px;height:32px;font-size:13px;padding:0 10px;
-  display:inline-flex;align-items:center;justify-content:center;
-}
+.ov-tbl .m-val{min-width:52px;height:32px;font-size:13px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;}
 
-/* ── Elegant editable inputs — transparent bg, border always matches value color ── */
+/* ── Inputs editáveis (M0/M1/M2/CNPJ) — cor muda conforme o valor ── */
+/* 🎨 COR: borda e fundo padrão do input vazio */
 .ov-tbl .m-inline-inp{
   width:52px;font-size:12.5px;padding:5px 6px;height:32px;text-align:center;
-  border:1.5px solid rgba(100,116,139,.25);border-radius:6px;
+  border:1.5px solid rgba(100,116,139,.25);  /* 🎨 COR: borda input vazio */
+  border-radius:6px;
   background:transparent;
   font-family:'JetBrains Mono',var(--mono);font-weight:700;
   outline:none;transition:border-color .16s,background .16s,box-shadow .16s;
 }
-/* Focus: blue ring, light blue tint */
-.ov-tbl .m-inline-inp:focus{
-  box-shadow:0 0 0 3px rgba(37,99,235,.13);
-  background:rgba(37,99,235,.04);
-}
-/* Empty — neutral gray border + muted text */
-.ov-tbl .m-inline-inp.m-empty{
-  color:var(--tl);
-  border-color:rgba(100,116,139,.25);
-  background:rgba(100,116,139,.05);
-}
-.ov-tbl .m-inline-inp.m-empty:focus{
-  border-color:var(--blue);
-  background:rgba(37,99,235,.04);
-}
-/* Red — red border + dark-red text */
-.ov-tbl .m-inline-inp.m-red{
-  color:#991b1b;
-  border-color:rgba(220,38,38,.45);
-  background:rgba(220,38,38,.07);
-}
-.ov-tbl .m-inline-inp.m-red:focus{
-  border-color:rgba(220,38,38,.75);
-  background:rgba(220,38,38,.12);
-  box-shadow:0 0 0 3px rgba(220,38,38,.12);
-}
-/* Yellow/Orange — amber border + dark-amber text */
-.ov-tbl .m-inline-inp.m-yellow{
-  color:#92400e;
-  border-color:rgba(217,119,6,.45);
-  background:rgba(217,119,6,.07);
-}
-.ov-tbl .m-inline-inp.m-yellow:focus{
-  border-color:rgba(217,119,6,.75);
-  background:rgba(217,119,6,.12);
-  box-shadow:0 0 0 3px rgba(217,119,6,.12);
-}
-/* Green — green border + dark-green text */
-.ov-tbl .m-inline-inp.m-green{
-  color:#065f46;
-  border-color:rgba(5,150,105,.45);
-  background:rgba(5,150,105,.07);
-}
-.ov-tbl .m-inline-inp.m-green:focus{
-  border-color:rgba(5,150,105,.75);
-  background:rgba(5,150,105,.12);
-  box-shadow:0 0 0 3px rgba(5,150,105,.12);
-}
+.ov-tbl .m-inline-inp:focus{box-shadow:0 0 0 3px rgba(37,99,235,.13);background:rgba(37,99,235,.04);}
+.ov-tbl .m-inline-inp.m-empty{color:var(--tl);border-color:rgba(100,116,139,.25);background:rgba(100,116,139,.05);}
+.ov-tbl .m-inline-inp.m-empty:focus{border-color:var(--blue);background:rgba(37,99,235,.04);}
+/* 🎨 COR: input vermelho (valor < 30%) */
+.ov-tbl .m-inline-inp.m-red{color:#991b1b;border-color:rgba(220,38,38,.45);background:rgba(220,38,38,.07);}
+.ov-tbl .m-inline-inp.m-red:focus{border-color:rgba(220,38,38,.75);background:rgba(220,38,38,.12);box-shadow:0 0 0 3px rgba(220,38,38,.12);}
+/* 🎨 COR: input amarelo (valor 30-50%) */
+.ov-tbl .m-inline-inp.m-yellow{color:#92400e;border-color:rgba(217,119,6,.45);background:rgba(217,119,6,.07);}
+.ov-tbl .m-inline-inp.m-yellow:focus{border-color:rgba(217,119,6,.75);background:rgba(217,119,6,.12);box-shadow:0 0 0 3px rgba(217,119,6,.12);}
+/* 🎨 COR: input verde (valor > 50%) */
+.ov-tbl .m-inline-inp.m-green{color:#065f46;border-color:rgba(5,150,105,.45);background:rgba(5,150,105,.07);}
+.ov-tbl .m-inline-inp.m-green:focus{border-color:rgba(5,150,105,.75);background:rgba(5,150,105,.12);box-shadow:0 0 0 3px rgba(5,150,105,.12);}
 
 /* ── GAP badge ── */
 .ov-tbl .gb{font-size:12.5px;padding:3px 9px;}
 
-/* ── Total row ── */
+/* ══ TOTAL GERAL — contraste invertido: fundo escuro, texto branco ══ */
+/* 🎨 COR: fundo e texto → altere --ov-tot-bg e --ov-tot-fg no :root (Camada 1) */
 .ov-tbl .tr-tot td{
-  font-size:13.5px;padding:17px 11px;
-  background:rgba(241,245,249,.9)!important;
-  border-top:2px solid #cbd5e1;border-bottom:2px solid #cbd5e1;
+  padding:18px 11px;
+  background:var(--ov-tot-bg)!important;
+  color:var(--ov-tot-fg)!important;
+  border-top:none!important;
+  border-bottom:none!important;
   font-weight:700;
+  font-size:13.5px;
 }
+.ov-tbl .tr-tot td.mono{font-size:15px!important;font-weight:900!important;color:var(--ov-tot-fg)!important;letter-spacing:-.5px;}
+.ov-tbl .tr-tot .gz{color:#6ee7b7!important;} /* 🎨 COR: GAP = zero (check verde) sobre fundo escuro */
+.ov-tbl .tr-tot .gn{color:#fca5a5!important;} /* 🎨 COR: GAP negativo (vermelho claro) sobre fundo escuro */
 
-/* ── Zebra: subtle alternate rows (even = very light slate) ── */
-.ov-tbl tbody tr:nth-child(even) td{background:rgba(241,245,249,.5);}
-/* Preserve tinted m-cell backgrounds on even rows */
+/* ── Zebra ── */
+/* 🎨 COR: fundo das linhas pares (zebra) */
+.ov-tbl tbody tr:nth-child(even) td{background:rgba(248,250,252,.7);}
 .ov-tbl tbody tr:nth-child(even) td[style*="background:rgba(37,99,235"]{background:rgba(37,99,235,.08)!important;}
 .ov-tbl tbody tr:nth-child(even) td[style*="background:rgba(5,150,105"]{background:rgba(5,150,105,.08)!important;}
 .ov-tbl tbody tr:nth-child(even) td[style*="background:rgba(217,119,6"]{background:rgba(217,119,6,.08)!important;}
 .ov-tbl tbody tr:nth-child(even) td[style*="background:rgba(100,116,139"]{background:rgba(100,116,139,.08)!important;}
 
 /* ── Row hover ── */
-.ov-tbl tbody tr:not(.tr-tot):hover td{background:rgba(239,246,255,.85)!important;}
-.ov-tbl tbody tr:not(.tr-tot):hover td[style]{background:rgba(239,246,255,.85)!important;}
+/* 🎨 COR: fundo ao passar o mouse sobre uma linha */
+.ov-tbl tbody tr:not(.tr-tot):hover td{background:rgba(239,246,255,.9)!important;}
+.ov-tbl tbody tr:not(.tr-tot):hover td[style]{background:rgba(239,246,255,.9)!important;}
 
-/* ── Responsive scaling ── */
+/* ── Responsive ── */
 @media(min-width:1400px){
   .ov-tbl th{font-size:11px;padding:14px 12px;}
   .ov-tbl td{font-size:14px;padding:18px 12px;}
@@ -838,6 +829,8 @@ select.sel:focus{border-color:var(--blue);}
   .ov-tbl .m-val{min-width:56px;height:34px;font-size:14px;}
   .ov-tbl .m-inline-inp{width:58px;font-size:13.5px;height:34px;}
   .ov-tbl .tr-tot td{font-size:15px;padding:19px 12px;}
+  .ov-tbl .mono.fw7.fg-g{font-size:16px!important;}
+  .ov-tbl .tr-tot td.mono{font-size:16px!important;}
 }
 @media(max-width:1200px){
   .ov-tbl th{font-size:9.5px;padding:11px 8px;}
@@ -846,6 +839,7 @@ select.sel:focus{border-color:var(--blue);}
   .ov-badge-pill{font-size:11px;padding:2px 7px;}
   .ov-tbl .m-val{min-width:46px;height:29px;font-size:12px;}
   .ov-tbl .m-inline-inp{width:54px;font-size:11.5px;height:29px;}
+  .ov-tbl .mono.fw7.fg-g{font-size:14px!important;}
 }
 @media(max-width:900px){
   .ov-tbl th{font-size:9px;padding:9px 6px;}
@@ -854,6 +848,7 @@ select.sel:focus{border-color:var(--blue);}
   .ov-badge-pill{font-size:10.5px;padding:2px 6px;}
   .ov-tbl .m-val{min-width:40px;height:27px;font-size:11px;}
   .ov-tbl .m-inline-inp{width:52px;font-size:11px;height:27px;}
+  .ov-tbl .mono.fw7.fg-g{font-size:13px!important;}
 }
 /* ── Seller name cell — left accent border instead of dot ── */
 .sc{display:inline-flex;align-items:center;gap:0;font-weight:600;}
@@ -1573,6 +1568,10 @@ canvas { display:block; max-width:100%; }
   <div class="ni" onclick="window.open('https://portal-processos-fortsun.vercel.app','_blank')" title="Portal de Processos" style="cursor:pointer">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
     <div class="tip">Portal de Processos</div>
+  </div>
+  <div class="ni" onclick="goPage('cores',this)" id="nav-cores">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+    <div class="tip">Temas & Cores</div>
   </div>
   <div class="sb-spacer"></div>
   <div class="ni" onclick="openBkModal()" style="margin-bottom:6px">
@@ -2596,12 +2595,22 @@ canvas { display:block; max-width:100%; }
       </div>
     </div>
     <!-- Tabela por Time / Regional -->
-    <div class="ov-table-wrap">
+    <div class="ov-table-wrap" id="ov-result-time-card">
       <div class="card-head">
         <div class="card-title"><div class="ctd" style="background:var(--blue)"></div>Resultado por Time — <span id="ov-period" style="color:var(--tl);font-weight:400">—</span></div>
+        <button class="btn" id="btn-export-overview" onclick="exportOverviewJpg()"
+          style="font-size:11.5px;padding:6px 13px;background:#0f172a;gap:6px;flex-shrink:0"
+          title="Exportar tabela como JPG de alta qualidade">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span class="tb-lbl">Exportar JPG</span>
+        </button>
       </div>
-      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%">
+      <div id="ov-capture-zone" style="overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%">
         <table class="dt ov-tbl" style="min-width:900px">
+          <!-- ┌───────────────────────────────────────────────────────────────────┐
+               │ 🎨 RESULTADO POR TIME — CAMADA 3: cores inline no <thead>         │
+               │ Altere background: e color: dentro de cada style="" abaixo.       │
+               └───────────────────────────────────────────────────────────────────┘ -->
           <thead><tr>
             <th style="width:2%"></th>
             <th style="width:5%">HUB</th>
@@ -2614,9 +2623,13 @@ canvas { display:block; max-width:100%; }
             <th style="width:4%;text-align:center">%Atv</th>
             <th style="width:4%;text-align:center">Proj.</th>
             <th style="width:4%;text-align:center;font-size:10px;white-space:normal;line-height:1.3;padding-left:4px;padding-right:4px">%<br>Proj.</th>
+            <!-- 🎨 COR: cabeçalho CNPJ → background + color abaixo -->
             <th style="width:5.5%;text-align:center;background:rgba(100,116,139,.10);color:#475569;border-radius:4px 4px 0 0">CNPJ</th>
+            <!-- 🎨 COR: cabeçalho M0 / PARCM0 → background + color abaixo (azul) -->
             <th style="width:5.5%;text-align:center;background:rgba(37,99,235,.10);color:#1d4ed8;border-radius:4px 4px 0 0">M0</th>
+            <!-- 🎨 COR: cabeçalho M1 / PARCM1 → background + color abaixo (verde) -->
             <th style="width:5.5%;text-align:center;background:rgba(5,150,105,.10);color:#065f46;border-radius:4px 4px 0 0">M1</th>
+            <!-- 🎨 COR: cabeçalho M2 / PARCM2 → background + color abaixo (laranja) -->
             <th style="width:5.5%;text-align:center;background:rgba(217,119,6,.10);color:#92400e;border-radius:4px 4px 0 0">M2</th>
             <th style="width:5.5%;text-align:center;background:rgba(37,99,235,.10);color:#1d4ed8;border-radius:4px 4px 0 0">PARCM0</th>
             <th style="width:5.5%;text-align:center;background:rgba(5,150,105,.10);color:#065f46;border-radius:4px 4px 0 0">PARCM1</th>
@@ -2627,6 +2640,59 @@ canvas { display:block; max-width:100%; }
       </div>
     </div>
   </div><!-- /overview -->
+
+<!-- ══ PAGE: TEMAS & CORES ══ -->
+<div id="page-cores" class="page">
+  <div class="ov-title-row" style="margin-bottom:6px">
+    <div>
+      <h2 style="font-size:18px;font-weight:800">🎨 Temas &amp; Cores</h2>
+      <div style="font-size:12px;color:var(--tl);margin-top:2px">Personalize a paleta do sistema em tempo real</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-g" onclick="coresReset()" style="font-size:12px;gap:5px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+        Restaurar padrão
+      </button>
+      <button class="btn btn-green" id="btn-salvar-tema" onclick="coresSalvar()" style="font-size:12px;gap:5px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Salvar tema
+      </button>
+      <span id="cores-saved-lbl" style="font-size:11px;color:var(--green);font-weight:700;opacity:0;transition:opacity .4s">✓ Salvo</span>
+    </div>
+  </div>
+
+  <!-- PRESETS -->
+  <div style="margin-bottom:20px">
+    <div class="sec-title">Temas pré-definidos</div>
+    <div id="cores-presets" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+  </div>
+
+  <!-- EDITOR GRID -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px" id="cores-grid"></div>
+</div>
+
+<style>
+/* ── Editor de Cores ── */
+.cores-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
+.cores-card-head{padding:13px 16px;border-bottom:1px solid var(--border);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--tl);display:flex;align-items:center;gap:7px;}
+.cores-row{display:flex;align-items:center;padding:10px 16px;gap:12px;border-bottom:1px solid rgba(226,232,240,.5);transition:background .12s;}
+.cores-row:last-child{border-bottom:none;}
+.cores-row:hover{background:var(--bg);}
+.cores-swatch{width:32px;height:32px;border-radius:8px;border:1px solid rgba(0,0,0,.12);cursor:pointer;flex-shrink:0;position:relative;overflow:hidden;transition:transform .12s,box-shadow .12s;}
+.cores-swatch:hover{transform:scale(1.1);box-shadow:0 2px 8px rgba(0,0,0,.18);}
+.cores-swatch input[type=color]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;}
+.cores-info{flex:1;min-width:0;}
+.cores-name{font-size:12px;font-weight:700;color:var(--td);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cores-desc{font-size:10.5px;color:var(--tl);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cores-hex{font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--tm);background:var(--bg);border:1.5px solid var(--border);border-radius:6px;padding:4px 8px;width:82px;text-align:center;outline:none;transition:border-color .14s;}
+.cores-hex:focus{border-color:var(--blue);}
+/* Preset chips */
+.preset-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:10px;border:2px solid var(--border);background:var(--white);cursor:pointer;transition:all .15s;font-size:12px;font-weight:600;color:var(--td);}
+.preset-chip:hover{border-color:var(--blue);background:var(--blue-g);}
+.preset-chip.active{border-color:var(--blue);background:var(--blue-g);color:var(--blue);}
+.preset-dots{display:flex;gap:3px;}
+.preset-dot{width:10px;height:10px;border-radius:50%;}
+</style>
 
 <!-- ══ MAXIMIZE OVERLAY (PSV) ══ -->
 <div id="psv-maximize-ov" style="display:none;position:fixed;inset:0;background:var(--white);z-index:400;flex-direction:column;padding:20px">
@@ -4188,7 +4254,7 @@ function goPage(name, el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.getElementById('page-'+name)?.classList.add('active');
   if(el) el.classList.add('on');
-  const lb={dash:'Dashboard — Visão Geral',lancar:'Lançar Vendas',sellers:'HC / HUBs',regionais:'Gestão de Regionais',db:'Banco de Dados',overview:'Visão Geral por Regional',psv:'PSV — Apresentação de Resultados'};
+  const lb={dash:'Dashboard — Visão Geral',lancar:'Lançar Vendas',sellers:'HC / HUBs',regionais:'Gestão de Regionais',db:'Banco de Dados',overview:'Visão Geral por Regional',psv:'PSV — Apresentação de Resultados',cores:'Editor de Temas & Cores'};
   const tbSub=document.getElementById('tb-sub'); if(tbSub) tbSub.textContent=lb[name]||'';
   if(name==='dash'){
     // FIX: se DB ainda não tem vendas (DB vazio / antes do cloudPull terminar),
@@ -8838,8 +8904,17 @@ function renderOverview(){
       const atvDisplay = atvV!=null ? atvV : st.atv;
       const atvPDisplay = st.real>0 ? (atvDisplay/st.real*100).toFixed(1)+'%' : '—';
       const mCells = (()=>{
+        // ┌────────────────────────────────────────────────────────────────────┐
+        // │ 🎨 RESULTADO POR TIME — CAMADA 4: cores JS inline (linhas de time) │
+        // │ grpBgs → fundo das células M0/M1/M2 e PARCM0/PARCM1/PARCM2        │
+        // │ Altere os 3 valores rgba() abaixo para mudar as colunas de meses.  │
+        // └────────────────────────────────────────────────────────────────────┘
         // color per group: M0/PM0=blue, M1/PM1=green, M2/PM2=orange
-        const grpBgs = ['rgba(37,99,235,.06)','rgba(5,150,105,.06)','rgba(217,119,6,.06)'];
+        const grpBgs = [
+          'rgba(37,99,235,.06)',   /* 🎨 M0 / PARCM0 — fundo (azul suave)    */
+          'rgba(5,150,105,.06)',   /* 🎨 M1 / PARCM1 — fundo (verde suave)   */
+          'rgba(217,119,6,.06)',   /* 🎨 M2 / PARCM2 — fundo (laranja suave) */
+        ];
         const scoreCells = ['M0','M1','M2'].map((mk,mi)=>{
           const grpBg = grpBgs[mi];
           const v = mData[mk];
@@ -8920,12 +8995,22 @@ function renderOverview(){
   // CNPJ total
   const totCnpjV = totMv['CNPJ'];
   const totCnpjCls = totCnpjV==null?'m-empty':totCnpjV<30?'m-red':totCnpjV<=50?'m-yellow':'m-green';
+  // 🎨 COR: fundo da célula CNPJ na linha Total → rgba() abaixo (cinza suave)
   const totCnpjCell = canEditM
     ? `<td class="m-cell" style="background:rgba(100,116,139,.06)"><div style="display:flex;align-items:center;gap:2px"><input type="number" min="0" max="999" step="0.1" class="m-inline-inp ${totCnpjCls}" value="${totCnpjV!=null?totCnpjV:''}" placeholder="—" title="CNPJ Total" onkeydown="if(event.key==='Enter'){event.preventDefault();saveMPctInline(this,'total','CNPJ','${ymKey}');this.blur();}if(event.key==='Escape')this.blur();" onblur="saveMPctInline(this,'total','CNPJ','${ymKey}')"><span style="font-size:9px;color:var(--tl);font-weight:600">%</span></div></td>`
     : `<td class="m-cell" style="background:rgba(100,116,139,.06)"><span class="m-val ${totCnpjCls}">${totCnpjV!=null?totCnpjV+'%':'—'}</span></td>`;
 
   const totMCells = (()=>{
-    const grpBgs = ['rgba(37,99,235,.06)','rgba(5,150,105,.06)','rgba(217,119,6,.06)'];
+    // ┌────────────────────────────────────────────────────────────────────┐
+    // │ 🎨 RESULTADO POR TIME — CAMADA 4: cores JS inline (linha Total)    │
+    // │ grpBgs → fundo das células M0/M1/M2 na linha TOTAL GERAL           │
+    // │ Mantenha em sincronia com o grpBgs da seção de times acima.        │
+    // └────────────────────────────────────────────────────────────────────┘
+    const grpBgs = [
+      'rgba(37,99,235,.06)',   /* 🎨 M0 / PARCM0 — fundo (azul suave)    */
+      'rgba(5,150,105,.06)',   /* 🎨 M1 / PARCM1 — fundo (verde suave)   */
+      'rgba(217,119,6,.06)',   /* 🎨 M2 / PARCM2 — fundo (laranja suave) */
+    ];
     const scoreCells = ['M0','M1','M2'].map((mk,mi)=>{
       const grpBg = grpBgs[mi];
       const v = totMv[mk];
@@ -8981,6 +9066,340 @@ function renderOverview(){
 
   document.getElementById('ov-tb').innerHTML=tb;
 }
+
+// ══════════════════════════════════════════════════════════
+//  Exportar "Resultado por Time" como JPG · html2canvas
+// ══════════════════════════════════════════════════════════
+
+async function exportOverviewJpg(){
+  const btn  = document.getElementById('btn-export-overview');
+  const zone = document.getElementById('ov-capture-zone');
+  if(!zone){ console.warn('exportOverviewJpg: #ov-capture-zone não encontrado'); return; }
+
+  /* 1. Carrega html2canvas sob demanda */
+  if(typeof html2canvas==='undefined'){
+    try{
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        s.onload=res; s.onerror=()=>rej(new Error('Falha ao carregar html2canvas'));
+        document.head.appendChild(s);
+      });
+    }catch(e){
+      alert('Não foi possível carregar html2canvas.\nVerifique sua conexão e tente novamente.');
+      return;
+    }
+  }
+
+  /* 2. Estado de carregamento no botão */
+  const origHtml=btn.innerHTML;
+  btn.innerHTML='⏳&nbsp;Gerando…';
+  btn.disabled=true;
+  btn.style.opacity='.75';
+
+  /* 3. Congela inputs: substitui cada <input> por um <span> legível
+        (html2canvas não renderiza inputs fielmente) */
+  const snapshots=[];
+  zone.querySelectorAll('input').forEach(inp=>{
+    const cs=getComputedStyle(inp);
+    const span=document.createElement('span');
+    const rawVal=inp.value.trim();
+    span.textContent=rawVal!==''?rawVal+'%':'—';
+    span.style.cssText=[
+      `font-family:${cs.fontFamily}`,
+      `font-size:${cs.fontSize}`,
+      `font-weight:${cs.fontWeight}`,
+      `color:${cs.color}`,
+      `display:inline-flex`,
+      `align-items:center`,
+      `justify-content:center`,
+      `min-width:${cs.width}`,
+      `height:${cs.height}`,
+      `background:${cs.background}`,
+      `border:${cs.border}`,
+      `border-radius:${cs.borderRadius}`,
+      `padding:${cs.padding}`,
+      `letter-spacing:${cs.letterSpacing}`,
+    ].join(';');
+    span.className=inp.className.replace('m-inline-inp','').trim();
+    inp.parentNode.insertBefore(span,inp);
+    inp.style.display='none';
+    snapshots.push({inp,span});
+  });
+
+  /* 4. Captura */
+  try{
+    const canvas=await html2canvas(zone,{
+      scale:2.5,
+      useCORS:true,
+      backgroundColor:'#ffffff',
+      logging:false,
+      removeContainer:true,
+      scrollX:0,
+      scrollY:0,
+      windowWidth:zone.scrollWidth,
+      windowHeight:zone.scrollHeight,
+      onclone(doc){
+        const z=doc.getElementById('ov-capture-zone');
+        if(z){
+          z.style.overflow='visible';
+          z.style.boxShadow='none';
+          z.style.borderRadius='0';
+          z.style.backgroundColor='#ffffff';
+        }
+      },
+    });
+
+    /* 5. Download JPG */
+    const period=(document.getElementById('ov-period')?.textContent||'overview')
+                   .replace(/[^a-zA-Z0-9\-_]/g,'_');
+    const link=document.createElement('a');
+    link.download=`resultado-por-time_${period}.jpg`;
+    link.href=canvas.toDataURL('image/jpeg',0.96);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+  }catch(err){
+    console.error('exportOverviewJpg error:',err);
+    alert('Erro ao gerar a imagem.\n'+err.message);
+  }finally{
+    /* 6. Restaura inputs */
+    snapshots.forEach(({inp,span})=>{ span.remove(); inp.style.display=''; });
+    btn.innerHTML=origHtml;
+    btn.disabled=false;
+    btn.style.opacity='1';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+//  EDITOR DE TEMAS & CORES
+// ══════════════════════════════════════════════════════════
+
+const CORES_DEFAULTS = {
+  '--bg':'#f0f2f8','--white':'#ffffff','--sb-bg':'#0b0d17','--border':'#e1e7ef',
+  '--td':'#0f172a','--tm':'#334155','--tl':'#94a3b8',
+  '--blue':'#2563eb','--blue-l':'#3b82f6',
+  '--green':'#059669','--green-l':'#10b981',
+  '--orange':'#d97706','--orange-l':'#f59e0b',
+  '--red':'#dc2626',
+  '--purple':'#7c3aed','--cyan':'#0891b2',
+  '--teal':'#0d9488','--teal-l':'#14b8a6',
+  '--ov-tot-bg':'#0f172a','--ov-tot-fg':'#f8fafc',
+  '--ov-real-fg':'#065f46',
+  '--badge-ok-bg':'#d1fae5','--badge-ok-fg':'#065f46',
+  '--badge-warn-bg':'#fef3c7','--badge-warn-fg':'#78350f',
+  '--badge-err-bg':'#fee2e2','--badge-err-fg':'#7f1d1d',
+  '--badge-off-bg':'#f1f5f9','--badge-off-fg':'#475569',
+};
+
+const CORES_GROUPS = [
+  { icon:'🏗️', label:'Estrutura & Layout', vars:[
+    { key:'--bg',     name:'Fundo da página',     desc:'Cor de fundo geral do app' },
+    { key:'--white',  name:'Fundo de cards',       desc:'Cards, topbar, modais, inputs' },
+    { key:'--sb-bg',  name:'Fundo da sidebar',     desc:'Painel de navegação lateral' },
+    { key:'--border', name:'Bordas & divisores',   desc:'Todas as linhas divisoras' },
+  ]},
+  { icon:'🔤', label:'Tipografia', vars:[
+    { key:'--td', name:'Texto primário',   desc:'Títulos, números, labels fortes' },
+    { key:'--tm', name:'Texto secundário', desc:'Botões, descrições' },
+    { key:'--tl', name:'Texto terciário',  desc:'Hints, subtítulos, ícones inativos' },
+  ]},
+  { icon:'🎨', label:'Cores de Acento', vars:[
+    { key:'--blue',     name:'Azul — primária',      desc:'Botões, links, foco, indicador ativo' },
+    { key:'--blue-l',   name:'Azul claro — hover',   desc:'Hover do botão primário' },
+    { key:'--green',    name:'Verde — sucesso',       desc:'Meta atingida, KPI realizado' },
+    { key:'--green-l',  name:'Verde claro — hover',  desc:'' },
+    { key:'--orange',   name:'Laranja — atenção',    desc:'Próximo da meta, projeção' },
+    { key:'--orange-l', name:'Laranja claro — hover',desc:'' },
+    { key:'--red',      name:'Vermelho — perigo',    desc:'Abaixo da meta, GAP crítico' },
+    { key:'--purple',   name:'Roxo — projeção',      desc:'Coluna Proj., gráficos de tendência' },
+    { key:'--teal',     name:'Teal — ativações',     desc:'KPI Ativações, barra de progresso' },
+    { key:'--teal-l',   name:'Teal claro — hover',   desc:'' },
+    { key:'--cyan',     name:'Cyan — logo',          desc:'Gradiente do logo na sidebar' },
+  ]},
+  { icon:'📊', label:'Tabela — Resultado por Time', vars:[
+    { key:'--ov-tot-bg',  name:'Total Geral — fundo',  desc:'Fundo da linha Total Geral (invertida)' },
+    { key:'--ov-tot-fg',  name:'Total Geral — texto',  desc:'Texto da linha Total Geral' },
+    { key:'--ov-real-fg', name:'Realizado — cor',      desc:'Números da coluna Realizado' },
+  ]},
+  { icon:'🏷️', label:'Badges de Status', vars:[
+    { key:'--badge-ok-bg',   name:'Badge verde — fundo', desc:'Meta ≥ 100%' },
+    { key:'--badge-ok-fg',   name:'Badge verde — texto', desc:'' },
+    { key:'--badge-warn-bg', name:'Badge laranja — fundo',desc:'Meta entre 80–99%' },
+    { key:'--badge-warn-fg', name:'Badge laranja — texto',desc:'' },
+    { key:'--badge-err-bg',  name:'Badge vermelho — fundo',desc:'Meta < 80%' },
+    { key:'--badge-err-fg',  name:'Badge vermelho — texto',desc:'' },
+    { key:'--badge-off-bg',  name:'Badge cinza — fundo', desc:'Sem dados' },
+    { key:'--badge-off-fg',  name:'Badge cinza — texto',  desc:'' },
+  ]},
+];
+
+const CORES_PRESETS = [
+  { name:'Padrão',   accent:'#2563eb', sb:'#0b0d17', bg:'#f0f2f8',
+    vars:{ '--blue':'#2563eb','--blue-l':'#3b82f6','--sb-bg':'#0b0d17','--bg':'#f0f2f8','--green':'#059669','--teal':'#0d9488','--purple':'#7c3aed' }},
+  { name:'Noite',    accent:'#818cf8', sb:'#020617', bg:'#0f172a',
+    vars:{ '--bg':'#1e293b','--white':'#0f172a','--sb-bg':'#020617','--border':'#1e293b','--td':'#f1f5f9','--tm':'#94a3b8','--tl':'#475569','--blue':'#818cf8','--blue-l':'#a5b4fc','--green':'#34d399','--teal':'#2dd4bf','--purple':'#c084fc','--orange':'#fb923c','--red':'#f87171' }},
+  { name:'Esmeralda',accent:'#059669', sb:'#064e3b', bg:'#f0fdf4',
+    vars:{ '--blue':'#059669','--blue-l':'#10b981','--sb-bg':'#064e3b','--bg':'#f0fdf4','--green':'#16a34a','--teal':'#0891b2','--purple':'#7c3aed' }},
+  { name:'Violeta',  accent:'#7c3aed', sb:'#1e1b4b', bg:'#f5f3ff',
+    vars:{ '--blue':'#7c3aed','--blue-l':'#8b5cf6','--sb-bg':'#1e1b4b','--bg':'#f5f3ff','--green':'#059669','--teal':'#0891b2','--purple':'#db2777' }},
+  { name:'Oceano',   accent:'#0891b2', sb:'#0c4a6e', bg:'#f0f9ff',
+    vars:{ '--blue':'#0891b2','--blue-l':'#06b6d4','--sb-bg':'#0c4a6e','--bg':'#f0f9ff','--green':'#059669','--teal':'#7c3aed','--purple':'#d97706' }},
+  { name:'Ardósia',  accent:'#475569', sb:'#1e293b', bg:'#f8fafc',
+    vars:{ '--blue':'#475569','--blue-l':'#64748b','--sb-bg':'#1e293b','--bg':'#f8fafc','--green':'#059669','--teal':'#0891b2','--purple':'#7c3aed' }},
+];
+
+function coresApply(vars){
+  const root = document.documentElement;
+  Object.entries(vars).forEach(([k,v])=>{ root.style.setProperty(k,v); });
+  // Atualiza glow vars derivados automaticamente
+  const toRgb = hex => {
+    const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : null;
+  };
+  const derivados = {
+    '--blue':'--blue-g','--green':'--green-g','--orange':'--orange-g','--teal':'--teal-g','--red':'--red-g'
+  };
+  Object.entries(derivados).forEach(([src,dst])=>{
+    const val = vars[src] || getComputedStyle(root).getPropertyValue(src).trim();
+    const rgb = toRgb(val);
+    if(rgb) root.style.setProperty(dst, `rgba(${rgb},.12)`);
+  });
+}
+
+function coresGet(key){
+  const inline = document.documentElement.style.getPropertyValue(key).trim();
+  if(inline) return inline;
+  return getComputedStyle(document.documentElement).getPropertyValue(key).trim();
+}
+
+function coresSalvar(){
+  const saved={};
+  Object.keys(CORES_DEFAULTS).forEach(k=>{ saved[k]=coresGet(k); });
+  localStorage.setItem('bi_tema',JSON.stringify(saved));
+  const lbl=document.getElementById('cores-saved-lbl');
+  if(lbl){ lbl.style.opacity='1'; setTimeout(()=>lbl.style.opacity='0',2200); }
+}
+
+function coresReset(){
+  coresApply(CORES_DEFAULTS);
+  localStorage.removeItem('bi_tema');
+  coresInitPage();
+}
+
+function coresCarregarSalvo(){
+  try{
+    const s=localStorage.getItem('bi_tema');
+    if(s){ coresApply(JSON.parse(s)); }
+  }catch(e){}
+}
+
+function coresInitPage(){
+  /* Presets */
+  const pc=document.getElementById('cores-presets');
+  if(pc){
+    pc.innerHTML=CORES_PRESETS.map((p,i)=>`
+      <div class="preset-chip" onclick="coresAplicarPreset(${i})" id="preset-chip-${i}">
+        <div class="preset-dots">
+          <div class="preset-dot" style="background:${p.sb}"></div>
+          <div class="preset-dot" style="background:${p.accent}"></div>
+          <div class="preset-dot" style="background:${p.bg}"></div>
+        </div>
+        ${p.name}
+      </div>`).join('');
+  }
+
+  /* Groups */
+  const grid=document.getElementById('cores-grid');
+  if(!grid) return;
+  grid.innerHTML=CORES_GROUPS.map(g=>`
+    <div class="cores-card">
+      <div class="cores-card-head">
+        <span>${g.icon}</span>${g.label}
+      </div>
+      ${g.vars.map(v=>{
+        const cur=coresGet(v.key)||CORES_DEFAULTS[v.key]||'#000000';
+        const hex=cur.startsWith('#')?cur:cur;
+        return `<div class="cores-row" id="row-${v.key.replace(/--/g,'').replace(/-/g,'_')}">
+          <div class="cores-swatch" style="background:${hex}" id="swatch-${v.key.replace(/--/g,'').replace(/-/g,'_')}" title="Clique para escolher cor">
+            <input type="color" value="${hex.length===4?hex:hex}"
+              oninput="coresOnPicker(this,'${v.key}')"
+              onchange="coresOnPicker(this,'${v.key}')">
+          </div>
+          <div class="cores-info">
+            <div class="cores-name">${v.name}</div>
+            ${v.desc?`<div class="cores-desc">${v.desc}</div>`:''}
+          </div>
+          <input class="cores-hex" type="text" value="${hex}" maxlength="9"
+            placeholder="#000000"
+            oninput="coresOnHex(this,'${v.key}')"
+            onblur="coresOnHexBlur(this,'${v.key}')">
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function coresOnPicker(inp, key){
+  const val=inp.value;
+  coresApply({[key]:val});
+  /* sync hex input */
+  const rowId='row-'+key.replace(/--/g,'').replace(/-/g,'_');
+  const row=document.getElementById(rowId);
+  if(row){
+    row.querySelector('.cores-hex').value=val;
+    row.querySelector('.cores-swatch').style.background=val;
+  }
+}
+
+function coresOnHex(inp, key){
+  const raw=inp.value.trim();
+  const val=raw.startsWith('#')?raw:'#'+raw;
+  if(/^#[0-9a-fA-F]{6}$/.test(val)||/^#[0-9a-fA-F]{3}$/.test(val)){
+    coresApply({[key]:val});
+    inp.style.color='var(--td)';
+    /* sync picker & swatch */
+    const rowId='row-'+key.replace(/--/g,'').replace(/-/g,'_');
+    const row=document.getElementById(rowId);
+    if(row){
+      row.querySelector('input[type=color]').value=val;
+      row.querySelector('.cores-swatch').style.background=val;
+    }
+  } else {
+    inp.style.color='var(--red)';
+  }
+}
+
+function coresOnHexBlur(inp, key){
+  const raw=inp.value.trim();
+  const val=raw.startsWith('#')?raw:'#'+raw;
+  if(!/^#[0-9a-fA-F]{6}$/.test(val)&&!/^#[0-9a-fA-F]{3}$/.test(val)){
+    /* revert */
+    inp.value=coresGet(key)||CORES_DEFAULTS[key]||'#000000';
+    inp.style.color='var(--td)';
+  }
+}
+
+function coresAplicarPreset(idx){
+  const p=CORES_PRESETS[idx];
+  if(!p) return;
+  /* Reset primeiro para defaults depois aplica o preset */
+  coresApply(CORES_DEFAULTS);
+  coresApply(p.vars);
+  /* Highlight chip ativo */
+  document.querySelectorAll('.preset-chip').forEach((c,i)=>{
+    c.classList.toggle('active', i===idx);
+  });
+  /* Re-render editor com novos valores */
+  coresInitPage();
+}
+
+/* Carrega tema salvo na inicialização */
+document.addEventListener('DOMContentLoaded',()=>{ coresCarregarSalvo(); });
+/* Re-renderiza editor ao entrar na página */
+document.addEventListener('click', e=>{
+  if(e.target.closest('#nav-cores')) setTimeout(coresInitPage, 50);
+});
 
 // ══════════════════════════════════════════════════════════
 //  M0 / M1 / M2 — Indicadores por HUB
