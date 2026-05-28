@@ -806,6 +806,19 @@ select.sel:focus{border-color:var(--blue);}
 .ov-tbl .tr-tot td.mono{font-size:15px!important;font-weight:900!important;color:var(--ov-tot-fg)!important;letter-spacing:-.5px;}
 .ov-tbl .tr-tot .gz{color:#6ee7b7!important;} /* 🎨 COR: GAP = zero (check verde) sobre fundo escuro */
 .ov-tbl .tr-tot .gn{color:#fca5a5!important;} /* 🎨 COR: GAP negativo (vermelho claro) sobre fundo escuro */
+/* ── Badges/displays na linha Total Geral: fundo branco ── */
+.ov-tbl .tr-tot .ov-badge-pill{background:#ffffff!important;}
+/* ── Inputs (m-inline-inp) e displays (m-val) na linha Total Geral: fundo branco ── */
+.ov-tbl .tr-tot .m-inline-inp,
+.ov-tbl .tr-tot .m-inline-inp.m-red,
+.ov-tbl .tr-tot .m-inline-inp.m-yellow,
+.ov-tbl .tr-tot .m-inline-inp.m-green,
+.ov-tbl .tr-tot .m-inline-inp.m-empty,
+.ov-tbl .tr-tot .m-val,
+.ov-tbl .tr-tot .m-val.m-red,
+.ov-tbl .tr-tot .m-val.m-yellow,
+.ov-tbl .tr-tot .m-val.m-green,
+.ov-tbl .tr-tot .m-val.m-empty{background:#ffffff!important;}
 
 /* ── Zebra ── */
 /* 🎨 COR: fundo das linhas pares (zebra) */
@@ -9129,6 +9142,19 @@ async function exportOverviewJpg(){
 
   /* 4. Captura */
   try{
+    /* Expande a zona para o tamanho total do conteúdo antes de capturar */
+    const origOverflow = zone.style.overflow;
+    const origWidth    = zone.style.width;
+    const origMaxWidth = zone.style.maxWidth;
+    const tbl          = zone.querySelector('table');
+    const origTblWidth = tbl ? tbl.style.width : null;
+    const fullW = zone.scrollWidth;
+    const fullH = zone.scrollHeight;
+    zone.style.overflow  = 'visible';
+    zone.style.width     = fullW + 'px';
+    zone.style.maxWidth  = 'none';
+    if(tbl){ tbl.style.width = fullW + 'px'; }
+
     const canvas=await html2canvas(zone,{
       scale:2.5,
       useCORS:true,
@@ -9137,18 +9163,30 @@ async function exportOverviewJpg(){
       removeContainer:true,
       scrollX:0,
       scrollY:0,
-      windowWidth:zone.scrollWidth,
-      windowHeight:zone.scrollHeight,
+      width:fullW,
+      height:fullH,
+      windowWidth:fullW,
+      windowHeight:fullH,
       onclone(doc){
         const z=doc.getElementById('ov-capture-zone');
         if(z){
           z.style.overflow='visible';
+          z.style.width=fullW+'px';
+          z.style.maxWidth='none';
           z.style.boxShadow='none';
           z.style.borderRadius='0';
           z.style.backgroundColor='#ffffff';
+          const t=z.querySelector('table');
+          if(t) t.style.width=fullW+'px';
         }
       },
     });
+
+    /* Restaura estado original da zona */
+    zone.style.overflow  = origOverflow;
+    zone.style.width     = origWidth;
+    zone.style.maxWidth  = origMaxWidth;
+    if(tbl && origTblWidth !== null) tbl.style.width = origTblWidth;
 
     /* 5. Download JPG */
     const period=(document.getElementById('ov-period')?.textContent||'overview')
