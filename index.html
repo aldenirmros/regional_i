@@ -12777,6 +12777,17 @@ function _psvPFsChg() {
   color:#f1f5f9;text-align:center;line-height:1.2;max-width:120px;
 }
 .t10-podio-card.rank-1 .t10-pname{font-size:13.5px;}
+.t10-phub{
+  font-family:'Outfit',sans-serif;font-size:9.5px;font-weight:600;
+  color:#475569;text-align:center;letter-spacing:.4px;
+  text-transform:uppercase;margin-top:2px;max-width:110px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.t10-row-hub{
+  font-family:'Outfit',sans-serif;font-size:9.5px;font-weight:600;
+  color:#334155;letter-spacing:.3px;text-transform:uppercase;
+  margin-top:1px;
+}
 .t10-pstats{font-family:'JetBrains Mono',monospace;text-align:center;}
 .t10-preal{font-size:20px;font-weight:700;line-height:1;color:#fbbf24;}
 .t10-podio-card.rank-1 .t10-preal{font-size:26px;}
@@ -12943,7 +12954,8 @@ function _psvPFsChg() {
       const real = sellerTotal(ymKey, s.id);
       const meta = getSellerMeta(ymKey, s.id) || 0;
       const pct  = meta > 0 ? real/meta : 0;
-      return {...s, real, meta, pct};
+      const hub  = (DB.times||[]).find(t=>t.id===s.timeId);
+      return {...s, real, meta, pct, hubName: hub?.nome || hub?.name || ''};
     })
     // Critério primário: maior quantidade de vendas no mês
     // Desempate: maior % da meta atingida
@@ -12976,6 +12988,7 @@ function _psvPFsChg() {
           <div class="t10-medal">${medals[rankIdx]}</div>
         </div>
         <div class="t10-pname">${s.name}</div>
+        ${s.hubName ? `<div class="t10-phub">${s.hubName}</div>` : ''}
         <div class="t10-pstats">
           <div class="t10-preal">${s.real}</div>
           <div class="t10-ppct">${_pctHtml(s.pct)} de ${s.meta}</div>
@@ -13000,6 +13013,7 @@ function _psvPFsChg() {
         </div>
         <div class="t10-row-info">
           <div class="t10-row-name">${s.name}</div>
+          ${s.hubName ? `<div class="t10-row-hub">${s.hubName}</div>` : ''}
           <div class="t10-row-meta">Meta: ${s.meta} conquistas</div>
           <div class="t10-row-bar-wrap"><div class="t10-row-bar-fill" style="width:${barW}%;background:linear-gradient(90deg,${col},${col}99)"></div></div>
         </div>
