@@ -7890,7 +7890,10 @@ function tablesToDB(tables) {
   db.psvDp = (tables.psv_detrator_promotor || []).map(r => ({
     userId     : String(r.userId       || 'default'),
     ymKey      : String(r.ymKey        || ''),
-    hubId      : String(r.hubId        || ''),
+    // CORREÇÃO P1: hubId pode chegar vazio quando salvo antes de o timeId ser definido.
+    // Preservamos a linha com hubId vazio — _restoreDpFields usará _getHubIdForPsv()
+    // para fazer o match correto em tempo de execução.
+    hubId      : (r.hubId != null && r.hubId !== '') ? String(r.hubId) : '',
     tipo       : String(r.tipo         || ''),
     safra      : String(r.safra        || ''),
     vendedorId : (r.vendedorId != null && r.vendedorId !== '')
@@ -7899,7 +7902,7 @@ function tablesToDB(tables) {
     nome_manual: String(r.nome_manual  || ''),
     valor      : (r.valor != null && r.valor !== '') ? String(r.valor) : null,
     photo      : r.photo ? String(r.photo) : '',
-  })).filter(r => r.ymKey && r.hubId);
+  })).filter(r => r.ymKey); // CORREÇÃO P1: remove apenas linhas sem ymKey (inválidas); hubId vazio é permitido
   {
     const _lastMap = new Map();
     db.psvDp.forEach(r => { _lastMap.set(`${r.userId}|${r.ymKey}|${r.hubId}|${r.tipo}|${r.safra}`, r); });
@@ -9913,6 +9916,7 @@ function _renderDPGrid(){
             <input type="text" id="dp-name-${type}-${mk}" placeholder="Ou digitar nome manualmente"
               style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--font);font-size:12px;color:var(--td);background:var(--bg);outline:none;margin-bottom:5px;box-sizing:border-box">
             <input type="text" inputmode="numeric" id="dp-val-${type}-${mk}" placeholder="R$ 0,00"
+              oninput="(function(el){var r=el.value.replace(/\D/g,'');el.value=r?_maskBRL(r):''})(this)"
               style="width:100%;border:1.5px solid var(--border);border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;font-weight:700;color:${color};background:var(--bg);outline:none;box-sizing:border-box">
           </div>
         </div>
@@ -10177,7 +10181,12 @@ function _restoreDpFields(){
         if(_s && ni) ni.value = _s.name; // sobrescreve com nome atual do cadastro
         // Se seller não existe mais no cadastro, mantém nome_manual como fallback histórico
       }
-      if(vi){ vi.value = d.val||''; if(d.val) vi.style.color = color; }
+      if(vi){
+        // Normaliza o valor salvo para o formato de máscara R$ 0.000,00
+        var _rawDp = d.val ? String(d.val).replace(/\D/g,'') : '';
+        vi.value = _rawDp ? _maskBRL(_rawDp) : '';
+        if(vi.value) vi.style.color = color;
+      }
       if(sel && d.sellerId) sel.value = d.sellerId;
 
       const photo = d.photo || _dpPhotos[photoKey] || null;
@@ -11063,7 +11072,9 @@ function _doRenderPSV(){
   psvLoadPlan();
   psvCarregarAgenda(); // carrega agenda do usuário logado
   _renderPlanTable();
-  setTimeout(_restoreDpFields, 0);
+  // CORREÇÃO P1: delay aumentado para 80ms garante que _renderDPGrid() finalizou
+  // a injeção do innerHTML antes de _restoreDpFields tentar acessar os inputs do DOM.
+  setTimeout(_restoreDpFields, 80);
   // PONTO 3 — aplica modo leitura APÓS renderização (inclui TPV, DP e Ativação)
   setTimeout(function(){ _setPsvReadOnlyUI(_psvIsReadOnly()); }, 50);
 }
@@ -12003,16 +12014,43 @@ function psvLimparAgenda() {
   psvSalvarAgenda();
 }
 
+// ── Normaliza a URL do Google Agenda com parâmetros fixos ───────────────────
+// Usa new URL() para evitar concatenações frágeis e garantir idempotência:
+// a função pode ser chamada múltiplas vezes com a mesma URL sem duplicar params.
+function _normalizeAgendaUrl(rawUrl) {
+  try {
+    var u = new URL(rawUrl.trim());
+    // 1. Modo semanal — sobrescreve qualquer valor anterior de 'mode'
+    u.searchParams.set('mode', 'WEEK');
+    // 2. Remove barra lateral de outras agendas (economiza ~200px de largura)
+    u.searchParams.set('showCalendars', '0');
+    // 3. Remove botão de impressão (evita poluição visual)
+    u.searchParams.set('showPrint', '0');
+    return u.toString();
+  } catch (e) {
+    // URL malformada → retorna original para não bloquear o carregamento
+    console.warn('[BI Vendas] URL de agenda inválida:', rawUrl, e);
+    return rawUrl;
+  }
+}
+
 // ── Aplica a URL ao iframe ou mostra o estado vazio ──────────────
 function _psvAplicarAgenda(url) {
   var iframe = document.getElementById('agenda-iframe');
+  var wrap   = document.getElementById('agenda-frame-wrap');
   var empty  = document.getElementById('agenda-empty');
   if (!iframe || !empty) return;
   if (url) {
-    iframe.src           = url;
+    // CORREÇÃO P3-a: normaliza parâmetros (mode=WEEK, showCalendars=0, showPrint=0)
+    var finalUrl = _normalizeAgendaUrl(url);
+    // CORREÇÃO P3-b: altura 650px exibe o intervalo 8h–18h sem cortes
+    if (wrap) wrap.style.height = '650px';
+    iframe.src           = finalUrl;
     iframe.style.display = 'block';
     empty.style.display  = 'none';
   } else {
+    // Restaura altura padrão ao limpar
+    if (wrap) wrap.style.height = '550px';
     iframe.src           = '';
     iframe.style.display = 'none';
     empty.style.display  = 'flex';
@@ -12315,28 +12353,115 @@ function _psvPMapa() {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  SLIDE 4 — Detrator & Promotor  (clone do DOM)
-//  Converte inputs em spans para exibição
+//  SLIDE 2 — Detrator & Promotor  (lê direto de DB.psvDp)
+//
+//  CORREÇÃO: a versão anterior clonava os inputs do #psv-dp-grid,
+//  mas _restoreDpFields (que preenche os values) roda em setTimeout,
+//  então a apresentação sempre via inputs vazios → exibia "—".
+//  Agora lemos diretamente de DB.psvDp, eliminando a dependência
+//  de timing e garantindo exibição correta independente do momento
+//  em que psvPlay() for chamado.
 // ════════════════════════════════════════════════════════════════
 function _psvPDp() {
   var dest = document.getElementById('psvp-dp-inner');
-  var src  = document.getElementById('psv-dp-grid');
-  if (!dest || !src) return;
-  if (!src.innerHTML.trim()) {
-    dest.innerHTML = '<div style="padding:32px;color:var(--tl);text-align:center;grid-column:1/-1">Sem dados de Detrator & Promotor.</div>';
+  if (!dest) return;
+
+  var ymKey = String(currentYM);
+  var hubId = _getHubIdForPsv();
+  var uid   = _getPsvOwnerUserId();
+
+  // Filtra as linhas do usuário/mês/hub atual
+  var rows = (DB.psvDp || []).filter(function(r) {
+    return String(r.userId || 'default') === uid &&
+           String(r.ymKey)               === ymKey &&
+           // Aceita hubId exato OU hubId vazio (registros salvos antes de timeId configurado)
+           (String(r.hubId) === hubId || r.hubId === '' || r.hubId == null);
+  });
+
+  var cols = [
+    { mk: 'M0', mc: '#2563eb' },
+    { mk: 'M1', mc: '#7c3aed' },
+    { mk: 'M2', mc: '#d97706' }
+  ];
+
+  // Verifica se há algum dado real para exibir
+  var temDados = rows.some(function(r) {
+    return (r.nome_manual && r.nome_manual.trim()) || r.vendedorId || r.photo;
+  });
+
+  if (!temDados) {
+    dest.innerHTML = '<div style="padding:32px;color:var(--tl);text-align:center;grid-column:1/-1">Sem dados de Detrator &amp; Promotor para este mês.</div>';
     return;
   }
-  dest.innerHTML = src.innerHTML;
-  // Converte inputs/selects em spans legíveis
-  dest.querySelectorAll('input, select').forEach(function(el){
-    var span = document.createElement('span');
-    span.textContent = el.value || el.placeholder || '—';
-    span.style.cssText = el.style.cssText + ';pointer-events:none;display:block;';
-    el.parentNode.replaceChild(span, el);
-  });
-  // Esconde file inputs e fotos clicáveis
-  dest.querySelectorAll('input[type=file]').forEach(function(el){ el.remove(); });
-  dest.querySelectorAll('[onclick]').forEach(function(el){ el.removeAttribute('onclick'); el.style.cursor='default'; });
+
+  // ── Helper: monta o bloco visual de um slot (promotor ou detrator) ──
+  function buildSlot(tipo, mk, label, color) {
+    var row = rows.find(function(r) { return r.tipo === tipo && r.safra === mk; });
+    if (!row) row = {};
+
+    // Resolve nome: vendedorId tem prioridade (nome atual do cadastro), depois nome_manual
+    var nome = '';
+    if (row.vendedorId) {
+      var sid = typeof row.vendedorId === 'number' ? row.vendedorId : parseInt(row.vendedorId);
+      var s   = isNaN(sid) ? null : (DB.sellers || []).find(function(x){ return x.id === sid; });
+      nome = s ? s.name : (row.nome_manual || '');
+    } else {
+      nome = row.nome_manual || '';
+    }
+
+    // Formata valor para R$ 0.000,00
+    // Usa _maskBRL (centavos inteiros) como caminho principal — garante
+    // comportamento idêntico ao input mascarado da tela de edição.
+    var valorRaw = row.valor ? String(row.valor).trim() : '';
+    var valorFmt = '';
+    if (valorRaw) {
+      var _dpDigits = valorRaw.replace(/\D/g, '');
+      valorFmt = _dpDigits ? _maskBRL(_dpDigits) : valorRaw;
+    }
+    var photo = row.photo || '';
+
+    // Avatar: foto base64 → img; nome → inicial colorida; vazio → ícone SVG
+    var avatarHtml;
+    if (photo) {
+      avatarHtml = '<img src="' + photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    } else if (nome) {
+      avatarHtml = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;'
+                 + 'background:' + color + '33;font-size:18px;font-weight:800;color:' + color + ';font-family:var(--font)">'
+                 + nome[0].toUpperCase() + '</div>';
+    } else {
+      avatarHtml = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="2">'
+                 + '<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
+    }
+
+    return '<div style="margin-bottom:14px">'
+         +   '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:' + color + ';margin-bottom:8px">' + label + '</div>'
+         +   '<div style="display:flex;align-items:center;gap:10px">'
+         +     '<div style="width:46px;height:46px;border-radius:50%;flex-shrink:0;border:2px solid ' + color + ';'
+         +          'display:flex;align-items:center;justify-content:center;overflow:hidden;background:' + color + '11">'
+         +       avatarHtml
+         +     '</div>'
+         +     '<div style="flex:1;min-width:0">'
+         +       '<div style="font-family:var(--font);font-size:13px;font-weight:700;color:var(--td);'
+         +            'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">'
+         +         (nome || '<span style="color:var(--tl);font-weight:400;font-style:italic">Não informado</span>')
+         +       '</div>'
+         +       (valorFmt
+         ?  '<div style="font-family:var(--mono);font-size:12px;font-weight:700;color:' + color + '">' + valorFmt + '</div>'
+         :  '<div style="font-size:11px;color:var(--tl)">—</div>')
+         +     '</div>'
+         +   '</div>'
+         + '</div>';
+  }
+
+  dest.innerHTML = cols.map(function(c, i) {
+    return '<div style="padding:16px 14px;' + (i < 2 ? 'border-right:1px solid var(--border)' : '') + '">'
+         +   '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:' + c.mc + ';margin-bottom:14px;display:flex;align-items:center;gap:6px">'
+         +     '<div style="width:8px;height:8px;border-radius:50%;background:' + c.mc + '"></div>' + c.mk
+         +   '</div>'
+         +   buildSlot('prom', c.mk, '👍 Promotor', '#059669')
+         +   buildSlot('det',  c.mk, '👎 Detrator', '#dc2626')
+         + '</div>';
+  }).join('');
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -12393,7 +12518,8 @@ function _psvPAgenda() {
   // Monta o iframe uma vez (reutilizamos o mesmo src nos dois containers)
   function makeIframe(agendaUrl) {
     var ifr = document.createElement('iframe');
-    ifr.src             = agendaUrl;
+    // CORREÇÃO P3: aplica os mesmos parâmetros na agenda da apresentação (consistência)
+    ifr.src             = _normalizeAgendaUrl(agendaUrl);
     ifr.frameBorder     = '0';
     ifr.allowFullscreen = true;
     ifr.style.cssText   = 'width:100%;height:100%;border:none;display:block;min-height:420px';
