@@ -1238,10 +1238,11 @@ select.sel:focus{border-color:var(--blue);}
 .ov-kpi-row{display:grid;grid-template-columns:repeat(5,0.78fr) 1.1fr 2.4fr;gap:12px;margin-bottom:20px;}
 /* ── TPV Médio card inputs ── */
 /* 4 colunas: rótulo (auto) + M0 + M1 + M2 */
-.tpv-grid{display:grid;grid-template-columns:auto repeat(3,1fr);gap:6px 10px;width:100%;align-items:center;}
-.tpv-col-head{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--purple);text-align:center;padding-bottom:4px;border-bottom:1px solid rgba(124,58,237,.2);}
-.tpv-row-lbl{font-size:10px;font-weight:700;color:var(--tl);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;padding-right:4px;}
-.tpv-inp{width:100%;min-width:0;background:rgba(124,58,237,.06);border:1.5px solid rgba(124,58,237,.22);border-radius:7px;padding:5px 4px;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--purple);outline:none;text-align:center;transition:border-color .14s,background .14s;box-sizing:border-box;}
+.tpv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;width:100%;}
+/* tpv-col-head e tpv-row-lbl mantidos para compatibilidade mas não usados no novo layout */
+.tpv-col-head{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--purple);text-align:center;}
+.tpv-row-lbl{font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.tpv-inp{width:100%;min-width:0;background:rgba(124,58,237,.06);border:1.5px solid rgba(124,58,237,.22);border-radius:6px;padding:4px 2px;font-family:var(--mono);font-size:15px;font-weight:900;color:var(--purple);outline:none;text-align:center;transition:border-color .15s,color .15s;box-sizing:border-box;}
 .tpv-inp:focus{border-color:var(--purple);background:rgba(124,58,237,.12);}
 .tpv-inp.tpv-proj{background:rgba(37,99,235,.05);border-color:rgba(37,99,235,.2);color:var(--blue);}
 .tpv-inp.tpv-proj:focus{border-color:var(--blue);background:rgba(37,99,235,.10);}
@@ -2631,41 +2632,91 @@ canvas { display:block; max-width:100%; }
         </div>
       </div>
 
-      <!-- ── CARD TPV MÉDIO ── -->
-      <div class="kc" style="border-left:4px solid var(--purple);padding:12px 14px;display:flex;flex-direction:column;gap:8px">
-        <div class="kc-lbl" style="width:100%;text-align:left">💰 TPV Médio</div>
-        <!-- Cabeçalho: célula vazia + M0 + M1 + M2 -->
-        <div class="tpv-grid">
-          <div></div>
-          <div class="tpv-col-head">M0</div>
-          <div class="tpv-col-head">M1</div>
-          <div class="tpv-col-head">M2</div>
+      <!-- ── CARD TPV MÉDIO — mesmo padrão visual da Safra PSV ── -->
+      <div class="kc" style="border-left:4px solid var(--purple);padding:0;display:flex;flex-direction:column;overflow:hidden">
+        <!-- Cabeçalho -->
+        <div style="padding:8px 14px 7px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:14px">💰</span>
+            <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--td)">TPV Médio</span>
+          </div>
+          <div style="display:flex;gap:4px">
+            <span style="font-size:8px;font-weight:800;padding:1px 7px;border-radius:99px;background:rgba(124,58,237,.12);color:var(--purple)">M0</span>
+            <span style="font-size:8px;font-weight:800;padding:1px 7px;border-radius:99px;background:rgba(124,58,237,.12);color:var(--purple)">M1</span>
+            <span style="font-size:8px;font-weight:800;padding:1px 7px;border-radius:99px;background:rgba(124,58,237,.12);color:var(--purple)">M2</span>
+          </div>
         </div>
-        <!-- Linha: TPV Médio Real -->
-        <div class="tpv-grid">
-          <div class="tpv-row-lbl">Real</div>
-          <input class="tpv-inp" id="tpv-real-M1" type="text" inputmode="numeric" placeholder="R$ 0"
-            onblur="saveTpvMedio(this,'tpv_real_M1')"
-            onkeydown="if(event.key==='Enter'){this.blur();}">
-          <input class="tpv-inp" id="tpv-real-M2" type="text" inputmode="numeric" placeholder="R$ 0"
-            onblur="saveTpvMedio(this,'tpv_real_M2')"
-            onkeydown="if(event.key==='Enter'){this.blur();}">
-          <input class="tpv-inp" id="tpv-real-M3" type="text" inputmode="numeric" placeholder="R$ 0"
-            onblur="saveTpvMedio(this,'tpv_real_M3')"
-            onkeydown="if(event.key==='Enter'){this.blur();}">
-        </div>
-        <!-- Linha: TPV Médio Projetado -->
-        <div class="tpv-grid">
-          <div class="tpv-row-lbl">Projetado</div>
-          <input class="tpv-inp tpv-proj" id="tpv-proj-M1" type="text" inputmode="numeric" placeholder="R$ 0"
-            onblur="saveTpvMedio(this,'tpv_proj_M1')"
-            onkeydown="if(event.key==='Enter'){this.blur();}">
-          <input class="tpv-inp tpv-proj" id="tpv-proj-M2" type="text" inputmode="numeric" placeholder="R$ 0"
-            onblur="saveTpvMedio(this,'tpv_proj_M2')"
-            onkeydown="if(event.key==='Enter'){this.blur();}">
-          <input class="tpv-inp tpv-proj" id="tpv-proj-M3" type="text" inputmode="numeric" placeholder="R$ 0"
-            onblur="saveTpvMedio(this,'tpv_proj_M3')"
-            onkeydown="if(event.key==='Enter'){this.blur();}">
+        <!-- 3 colunas: Real em cima, Proj. embaixo — micro-tag interna -->
+        <div class="tpv-grid" style="flex:1;border-bottom:none">
+          <!-- M0 -->
+          <div style="display:flex;flex-direction:column;border-right:1px solid var(--border)">
+            <div style="flex:1;display:flex;flex-direction:column;padding:5px 7px 4px;background:rgba(124,58,237,.04);border-bottom:1px solid rgba(124,58,237,.12)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                <span class="tpv-row-lbl" style="color:var(--tl)">Real</span>
+                <span style="font-size:7px;font-weight:700;color:var(--purple);opacity:.7">R$</span>
+              </div>
+              <input class="tpv-inp" id="tpv-real-M1" type="text" inputmode="numeric" placeholder="0,00"
+                onfocus="this.style.borderColor='var(--purple)'"
+                onblur="this.style.borderColor='';saveTpvMedio(this,'tpv_real_M1')"
+                onkeydown="if(event.key==='Enter'){this.blur();}">
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;padding:5px 7px 4px;background:rgba(37,99,235,.03)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                <span class="tpv-row-lbl" style="color:var(--blue)">Proj.</span>
+                <span style="font-size:7px;font-weight:700;color:var(--blue);opacity:.7">R$</span>
+              </div>
+              <input class="tpv-inp tpv-proj" id="tpv-proj-M1" type="text" inputmode="numeric" placeholder="0,00"
+                onfocus="this.style.borderColor='var(--blue)'"
+                onblur="this.style.borderColor='';saveTpvMedio(this,'tpv_proj_M1')"
+                onkeydown="if(event.key==='Enter'){this.blur();}">
+            </div>
+          </div>
+          <!-- M1 -->
+          <div style="display:flex;flex-direction:column;border-right:1px solid var(--border)">
+            <div style="flex:1;display:flex;flex-direction:column;padding:5px 7px 4px;background:rgba(124,58,237,.04);border-bottom:1px solid rgba(124,58,237,.12)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                <span class="tpv-row-lbl" style="color:var(--tl)">Real</span>
+                <span style="font-size:7px;font-weight:700;color:var(--purple);opacity:.7">R$</span>
+              </div>
+              <input class="tpv-inp" id="tpv-real-M2" type="text" inputmode="numeric" placeholder="0,00"
+                onfocus="this.style.borderColor='var(--purple)'"
+                onblur="this.style.borderColor='';saveTpvMedio(this,'tpv_real_M2')"
+                onkeydown="if(event.key==='Enter'){this.blur();}">
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;padding:5px 7px 4px;background:rgba(37,99,235,.03)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                <span class="tpv-row-lbl" style="color:var(--blue)">Proj.</span>
+                <span style="font-size:7px;font-weight:700;color:var(--blue);opacity:.7">R$</span>
+              </div>
+              <input class="tpv-inp tpv-proj" id="tpv-proj-M2" type="text" inputmode="numeric" placeholder="0,00"
+                onfocus="this.style.borderColor='var(--blue)'"
+                onblur="this.style.borderColor='';saveTpvMedio(this,'tpv_proj_M2')"
+                onkeydown="if(event.key==='Enter'){this.blur();}">
+            </div>
+          </div>
+          <!-- M2 -->
+          <div style="display:flex;flex-direction:column">
+            <div style="flex:1;display:flex;flex-direction:column;padding:5px 7px 4px;background:rgba(124,58,237,.04);border-bottom:1px solid rgba(124,58,237,.12)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                <span class="tpv-row-lbl" style="color:var(--tl)">Real</span>
+                <span style="font-size:7px;font-weight:700;color:var(--purple);opacity:.7">R$</span>
+              </div>
+              <input class="tpv-inp" id="tpv-real-M3" type="text" inputmode="numeric" placeholder="0,00"
+                onfocus="this.style.borderColor='var(--purple)'"
+                onblur="this.style.borderColor='';saveTpvMedio(this,'tpv_real_M3')"
+                onkeydown="if(event.key==='Enter'){this.blur();}">
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;padding:5px 7px 4px;background:rgba(37,99,235,.03)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+                <span class="tpv-row-lbl" style="color:var(--blue)">Proj.</span>
+                <span style="font-size:7px;font-weight:700;color:var(--blue);opacity:.7">R$</span>
+              </div>
+              <input class="tpv-inp tpv-proj" id="tpv-proj-M3" type="text" inputmode="numeric" placeholder="0,00"
+                onfocus="this.style.borderColor='var(--blue)'"
+                onblur="this.style.borderColor='';saveTpvMedio(this,'tpv_proj_M3')"
+                onkeydown="if(event.key==='Enter'){this.blur();}">
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2822,7 +2873,7 @@ canvas { display:block; max-width:100%; }
     </div>
 
     <!-- FAIXA TOPO: HC + KPIs + SAFRA numa só linha -->
-    <div id="psv-top-row" style="display:grid;grid-template-columns:1.6fr repeat(6,1fr) 1.8fr;gap:8px;margin-bottom:16px;align-items:stretch"></div>
+    <div id="psv-top-row" style="display:grid;grid-template-columns:1.6fr 1.4fr 1.2fr 1fr 1.1fr 1fr 2.6fr;gap:8px;margin-bottom:16px;align-items:stretch"></div>
 
     <!-- 2. Donut + Vendas por Dia lado a lado, ponta a ponta -->
     <div style="display:grid;grid-template-columns:240px 1fr;gap:16px;margin-bottom:16px">
@@ -8745,9 +8796,10 @@ function doLogout(){
 
 function applySession(){
   if(!currentUser) return;
-  // Restaura agendaUrl do localStorage antes de qualquer render
-  // (garante que o campo esteja disponível mesmo antes do pull terminar)
+  // Restaura agendaUrl e cnpj do localStorage antes de qualquer render
+  // (garante que os campos estejam disponíveis mesmo antes do pull terminar)
   _psvRestaurarAgendaLocal();
+  _psvRestaurarCnpjLocal();
   const u=currentUser;
   const isSuperUser = u.superAdmin===true || u.username==='aldenir';
   const colorMap={gerente:'#7c3aed',regional:'#2563eb',supervisor:'#059669'};
@@ -11231,12 +11283,66 @@ function _renderPSVKpis(ymKey, y, m, sellers){
   const pctProj = meta > 0 ? Math.round(proj / meta * 100) : 0;
   const pctAtv  = real > 0 ? (atv / real * 100).toFixed(1) : '0.0';
 
+  // ── CARD UNIFICADO: Meta Total + Realizado (empilhados) ───────────────────
+  {
+    const realColor = pctReal>=100?'#059669':pctReal>=80?'#d97706':'#dc2626';
+    const barW = Math.min(100, pctReal);
+    const barGrad = pctReal>=100
+      ? 'linear-gradient(90deg,#059669,#10b981)'
+      : pctReal>=80
+        ? 'linear-gradient(90deg,#d97706,#f59e0b)'
+        : 'linear-gradient(90deg,#dc2626,#f87171)';
+
+    const mrCd = document.createElement('div');
+    mrCd.className = 'kc kc-b';
+    mrCd.style.cssText = 'min-width:0;display:flex;flex-direction:column;padding:0;overflow:hidden;border:1.5px solid rgba(37,99,235,.18);box-shadow:0 0 0 3px rgba(37,99,235,.06);';
+    mrCd.innerHTML = `
+      <!-- faixa topo azul mais grossa para indicar card duplo -->
+      <div style="height:5px;background:linear-gradient(90deg,#2563eb,#60a5fa);flex-shrink:0"></div>
+
+      <!-- metade superior: META TOTAL -->
+      <div style="flex:1;padding:10px 14px 8px;background:rgba(37,99,235,.04);border-bottom:2px dashed rgba(37,99,235,.15);position:relative">
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
+          <span style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#fff;background:#2563eb;border-radius:4px;padding:1px 6px">META</span>
+          <span style="font-size:8.5px;color:var(--tl);font-weight:600">base do mês</span>
+        </div>
+        <div class="kc-val" id="psv-kpi-val-meta" style="color:#2563eb;font-size:26px;line-height:1;font-weight:900">${meta}</div>
+      </div>
+
+      <!-- faixa de progresso + % sobreposto ao divisor -->
+      <div style="position:relative;flex-shrink:0;height:18px;background:rgba(37,99,235,.06)">
+        <div style="position:absolute;inset:0;overflow:hidden">
+          <div style="height:100%;width:${barW}%;background:${barGrad};opacity:.25;transition:width .6s cubic-bezier(.4,0,.2,1)"></div>
+        </div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:4px">
+          <div style="height:2px;flex:1;background:var(--border);border-radius:99px;margin:0 8px;overflow:hidden">
+            <div style="height:100%;width:${barW}%;background:${barGrad};border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)"></div>
+          </div>
+          <span style="font-size:9px;font-weight:900;color:${realColor};white-space:nowrap;padding-right:8px">${pctReal}%</span>
+        </div>
+      </div>
+
+      <!-- metade inferior: REALIZADO -->
+      <div style="flex:1;padding:8px 14px 10px;background:rgba(${realColor==='#059669'?'5,150,105':realColor==='#d97706'?'217,119,6':'220,38,38'},.04);position:relative">
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
+          <span style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#fff;background:${realColor};border-radius:4px;padding:1px 6px">REAL</span>
+          <span style="font-size:8.5px;color:${realColor};font-weight:700">${pctReal}% da meta</span>
+        </div>
+        <div class="kc-val" id="psv-kpi-val-real" style="color:${realColor};font-size:26px;line-height:1;font-weight:900">${real}</div>
+      </div>
+    `;
+    row.appendChild(mrCd);
+    _kpiCount('psv-kpi-val-meta', meta);
+    _kpiCount('psv-kpi-val-real', real);
+  }
+
+  // ── Cards individuais restantes: GAP, Projeção, % Meta ──────────────────
   const kpis = [
-    {lbl:'Meta Total',val:meta,    color:'#2563eb', sub:'base do mês',                   subColor:'var(--tl)'},
-    {lbl:'Realizado', val:real,    color:'#059669', sub:`${pctReal}% da meta`,             subColor:pctReal>=100?'#059669':pctReal>=80?'#d97706':'#dc2626'},
-    {lbl:'GAP',       val:gap,     color:gap>0?'#dc2626':'#059669', sub:`${pctGap}% da meta`,subColor:gap>0?'#dc2626':'#059669'},
-    {lbl:'Projeção',  val:proj,    color:'#7c3aed', sub:`${pctProj}% da meta`,             subColor:pctProj>=100?'#059669':pctProj>=80?'#d97706':'#dc2626'},
-    {lbl:'% Meta',    val:pct+'%', color:pct>=100?'#059669':pct>=80?'#d97706':'#dc2626', sub:pct>=100?'✓ Meta atingida':pct>=80?'Quase lá':'Abaixo da meta', subColor:pct>=100?'#059669':pct>=80?'#d97706':'#dc2626'},
+    {lbl:'GAP',       val:gap,     color:gap>0?'#dc2626':'#059669', sub:`${pctGap}% da meta`,  subColor:gap>0?'#dc2626':'#059669', acc:'kc-r'},
+    {lbl:'Projeção',  val:proj,    color:'#7c3aed',                 sub:`${pctProj}% da meta`, subColor:pctProj>=100?'#059669':pctProj>=80?'#d97706':'#dc2626', acc:'kc-o'},
+    {lbl:'% Meta',    val:pct+'%', color:pct>=100?'#059669':pct>=80?'#d97706':'#dc2626',
+                                   sub:pct>=100?'✓ Meta atingida':pct>=80?'Quase lá':'Abaixo da meta',
+                                   subColor:pct>=100?'#059669':pct>=80?'#d97706':'#dc2626',    acc:'kc-g'},
   ];
 
   const tidsNoScope = [...new Set(sellers.map(s=>s.timeId).filter(Boolean))];
@@ -11266,35 +11372,121 @@ function _renderPSVKpis(ymKey, y, m, sellers){
   }
   function tpvColor(v){ if(!v||v<15000) return '#dc2626'; if(v<20000) return '#d97706'; return '#059669'; }
 
-  // ── Células KPI (5 células: Meta Total, Realizado, GAP, Projeção, % Meta) ──
-  kpis.forEach((k, ki)=>{
-    const d = document.createElement('div');
-    // Reutiliza exatamente as mesmas classes .kc do Dashboard
-    const accentClass = ['kc-b','kc-g','kc-r','kc-o','kc-g'][ki];
-    d.className = `kc ${accentClass}`;
-    d.style.cssText = 'min-width:0;display:flex;flex-direction:column;justify-content:space-between;';
+  // ── Card unificado: GAP + Projeção (empilhados) ─────────────────────────────
+  {
+    const gapColor  = gap > 0 ? '#dc2626' : '#059669';
+    const projColor = '#7c3aed';
+    const projFill  = Math.min(100, pctProj);
+    const projGrad  = pctProj >= 100
+      ? 'linear-gradient(90deg,#059669,#10b981)'
+      : pctProj >= 80
+        ? 'linear-gradient(90deg,#d97706,#f59e0b)'
+        : 'linear-gradient(90deg,#7c3aed,#a78bfa)';
+    const projSubColor = pctProj >= 100 ? '#059669' : pctProj >= 80 ? '#d97706' : '#dc2626';
 
-    // Barra de progresso slim com glow (só para Realizado e Projeção)
-    const showBar = ki === 1 || ki === 3;
-    const barPct  = ki === 1 ? Math.min(100, pctReal)
-                  : ki === 3 ? Math.min(100, pctProj)
-                  : 0;
-    const barFillCls = ki === 1 ? 'kc-pf' : 'kc-pf';
+    const gpCd = document.createElement('div');
+    gpCd.className = 'kc kc-r';
+    gpCd.style.cssText = 'min-width:0;display:flex;flex-direction:column;padding:0;overflow:hidden;border:1.5px solid rgba(124,58,237,.18);box-shadow:0 0 0 3px rgba(124,58,237,.06);';
+    gpCd.innerHTML = `
+      <!-- faixa topo split: vermelho/roxo indicando card duplo -->
+      <div style="height:5px;background:linear-gradient(90deg,${gapColor},${gapColor} 50%,#7c3aed 50%,#a78bfa);flex-shrink:0"></div>
 
-    const isNumeric = typeof k.val === 'number';
-    const uid = `psv-kpi-val-${ki}`;
+      <!-- metade superior: GAP -->
+      <div style="flex:1;padding:10px 14px 8px;background:rgba(${gapColor==='#dc2626'?'220,38,38':'5,150,105'},.05);border-bottom:2px dashed rgba(124,58,237,.15);position:relative">
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
+          <span style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#fff;background:${gapColor};border-radius:4px;padding:1px 6px">GAP</span>
+          <span style="font-size:8.5px;color:${gapColor};font-weight:700">${pctGap}% da meta</span>
+        </div>
+        <div class="kc-val" id="psv-kpi-val-gap" style="color:${gapColor};font-size:26px;line-height:1;font-weight:900">${gap}</div>
+      </div>
 
-    d.innerHTML = `
+      <!-- faixa de progresso da projeção -->
+      <div style="position:relative;flex-shrink:0;height:18px;background:rgba(124,58,237,.06)">
+        <div style="position:absolute;inset:0;overflow:hidden">
+          <div style="height:100%;width:${projFill}%;background:${projGrad};opacity:.25;transition:width .6s cubic-bezier(.4,0,.2,1)"></div>
+        </div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:4px">
+          <div style="height:2px;flex:1;background:var(--border);border-radius:99px;margin:0 8px;overflow:hidden">
+            <div style="height:100%;width:${projFill}%;background:${projGrad};border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)"></div>
+          </div>
+          <span style="font-size:9px;font-weight:900;color:${projSubColor};white-space:nowrap;padding-right:8px">${pctProj}%</span>
+        </div>
+      </div>
+
+      <!-- metade inferior: PROJEÇÃO -->
+      <div style="flex:1;padding:8px 14px 10px;background:rgba(124,58,237,.05);position:relative">
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
+          <span style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#fff;background:#7c3aed;border-radius:4px;padding:1px 6px">PROJ.</span>
+          <span style="font-size:8.5px;color:${projSubColor};font-weight:700">${pctProj}% da meta</span>
+        </div>
+        <div class="kc-val" id="psv-kpi-val-proj" style="color:#7c3aed;font-size:26px;line-height:1;font-weight:900">${proj}</div>
+      </div>
+    `;
+    row.appendChild(gpCd);
+    _kpiCount('psv-kpi-val-gap', gap);
+    _kpiCount('psv-kpi-val-proj', proj);
+  }
+
+  // ── Card % Meta (individual) ──────────────────────────────────────────────
+  {
+    const pctColor = pct>=100?'#059669':pct>=80?'#d97706':'#dc2626';
+    const pctSub   = pct>=100?'✓ Meta atingida':pct>=80?'Quase lá':'Abaixo da meta';
+    const pmCd = document.createElement('div');
+    pmCd.className = 'kc kc-g';
+    pmCd.style.cssText = 'min-width:0;display:flex;flex-direction:column;justify-content:space-between;';
+    pmCd.innerHTML = `
       <div class="kc-bar"></div>
-      <div class="kc-lbl">${k.lbl}</div>
-      <div class="kc-val" id="${uid}" style="color:${k.color};font-size:28px">${k.val}</div>
-      ${showBar ? `<div class="kc-prog"><div class="kc-pf" style="width:${barPct}%;background:${ki===1?'linear-gradient(90deg,var(--green),var(--green-l))':'linear-gradient(90deg,var(--orange),var(--orange-l))'}"></div></div>` : ''}
-      <div class="kc-sub" style="color:${k.subColor}">${k.sub}</div>`;
-    row.appendChild(d);
+      <div class="kc-lbl">% Meta</div>
+      <div class="kc-val" id="psv-kpi-val-pct" style="color:${pctColor};font-size:28px">${pct}%</div>
+      <div class="kc-sub" style="color:${pctColor}">${pctSub}</div>`;
+    row.appendChild(pmCd);
+  }
 
-    // Anima apenas os valores numéricos
-    if(isNumeric) _kpiCount(uid, k.val);
-  });
+  // ── Célula CNPJ % — input numérico de percentual, idêntico ao padrão Ativado ──
+  {
+    const _cnpjUser   = currentUser;
+    const _cnpjDbUser = (DB.users||[]).find(x => String(x.id) === String(_cnpjUser?.id));
+    // Valor salvo como número (0–100). Null = não preenchido.
+    const _cnpjRaw  = (_cnpjDbUser?.cnpj ?? _cnpjUser?.cnpj ?? null);
+    const _cnpjNum  = (_cnpjRaw !== null && _cnpjRaw !== '') ? parseFloat(_cnpjRaw) : null;
+    const _cnpjFill = _cnpjNum !== null ? Math.min(100, Math.max(0, _cnpjNum)).toFixed(1) : '0.0';
+    const _cnpjPctTxt = _cnpjNum !== null ? _cnpjNum.toFixed(1) : '0.0';
+    // Cor dinâmica: verde ≥80%, laranja ≥60%, vermelho <60%
+    const _cnpjColor = _cnpjNum === null ? 'var(--tl)'
+                     : _cnpjNum >= 80    ? 'var(--green)'
+                     : _cnpjNum >= 60    ? 'var(--orange)'
+                     : 'var(--red)';
+    const _cnpjGrad  = _cnpjNum === null || _cnpjNum < 60
+                     ? 'linear-gradient(90deg,var(--red),#f87171)'
+                     : _cnpjNum < 80
+                       ? 'linear-gradient(90deg,var(--orange),var(--orange-l))'
+                       : 'linear-gradient(90deg,var(--green),var(--green-l))';
+
+    const cnpjCd = document.createElement('div');
+    cnpjCd.className = 'kc kc-b';
+    cnpjCd.style.cssText = 'border-left:4px solid #0891b2;min-width:0;display:flex;flex-direction:column;justify-content:space-between;';
+    cnpjCd.innerHTML = `
+      <div class="kc-bar"></div>
+      <div class="kc-lbl" style="color:#0891b2">CNPJ %</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <input type="number" id="psv-cnpj-input" min="0" max="100" step="0.1"
+          placeholder="0"
+          value="${_cnpjNum !== null ? _cnpjNum : ''}"
+          style="width:72px;background:rgba(8,145,178,.08);border:2px solid rgba(8,145,178,.3);border-radius:8px;padding:4px 8px;font-family:var(--mono);font-size:20px;font-weight:800;color:#0891b2;outline:none;text-align:center;-moz-appearance:textfield;"
+          oninput="previewPsvCnpj()"
+          onkeydown="if(event.key==='Enter'){psvSalvarCnpj();this.blur();event.preventDefault()}">
+        <button onclick="psvSalvarCnpj()" class="atv-save-btn" style="background:#0891b2">✓</button>
+      </div>
+      <div class="atv-pct-row" style="margin-top:0">
+        <div class="atv-bar">
+          <div class="atv-fill" id="psv-cnpj-fill" style="width:${_cnpjFill}%;background:${_cnpjGrad}"></div>
+        </div>
+        <span id="psv-cnpj-pct" class="atv-lbl" style="color:#0891b2">${_cnpjPctTxt}%</span>
+      </div>
+      <div id="psv-cnpj-sub" class="kc-sub" style="color:${_cnpjColor}">${_cnpjNum !== null ? _cnpjNum.toFixed(1)+'% de CNPJ' : '—'}</div>
+    `;
+    row.appendChild(cnpjCd);
+  }
 
   // ── Célula ATIVADO — espelha o card do Dashboard (input + barra + %) ──
   const _atvUserId2 = String(currentUser?.id || 'default');
@@ -11328,51 +11520,88 @@ function _renderPSVKpis(ymKey, y, m, sellers){
     <div id="psv-atv-sub" class="kc-sub">${atvVal2} de ${real} (${atvPctTxt2}%)</div>`
   row.appendChild(atvCd);
 
-  // ── Célula SAFRA ──
-  const safraCd=document.createElement('div');
+  // ── Célula SAFRA — redesign moderno com espaço extra ────────────────────────
+  const safraCd = document.createElement('div');
   safraCd.className = 'kc';
-  safraCd.style.cssText='border-left:4px solid #78716c;padding:0;min-width:0;overflow:hidden;display:flex;flex-direction:column;';
-  safraCd.innerHTML=`
-    <div style="padding:7px 10px 5px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tl);border-bottom:1px solid var(--border)">🌾 SAFRA</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;flex:1">
-      ${safraCols.map(s=>`
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;background:${s.bg};border-right:1px solid ${s.border}">
-          <div style="font-size:24px;font-weight:900;font-family:var(--mono);color:${s.c};line-height:1">${s.v||0}</div>
-          <div style="font-size:9px;font-weight:800;letter-spacing:.8px;color:${s.c};margin-top:2px;opacity:.85">${s.k}</div>
-        </div>`).join('')}
-    </div>
-    <div style="border-top:1px solid var(--border);background:var(--bg)">
-      <div style="padding:3px 8px 2px;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tl)">TPV médio real</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
-        ${safraCols.map(s=>{
-          const cur=getTpvVal(s.k,'valor_real'); const c=tpvColor(cur);
-          return `<div style="padding:3px 4px 4px;border-right:1px solid ${s.border};text-align:center">
-            <div style="font-size:9px;color:var(--tl);font-weight:600;margin-bottom:1px">R$</div>
-            <input type="text" inputmode="numeric" id="psv-tpv-${s.k}" value="${cur?fmtBRL(cur):''}" placeholder="0,00"
-              style="width:100%;text-align:center;border:1px solid var(--border);border-radius:4px;padding:3px 1px;font-family:var(--mono);font-size:11px;font-weight:800;color:${c};background:var(--white);outline:none;"
-              oninput="formatTpvInput(this);this.style.color='var(--tl)'"
-              onkeydown="if(event.key==='Enter'){savePsvTpv(this,'${s.k}','${ymKey}');this.blur();event.preventDefault()}"
-              onblur="savePsvTpv(this,'${s.k}','${ymKey}')">
-          </div>`;
-        }).join('')}
+  safraCd.style.cssText = 'border-left:4px solid #78716c;padding:0;min-width:0;overflow:hidden;display:flex;flex-direction:column;';
+  safraCd.innerHTML = `
+    <!-- Cabeçalho -->
+    <div style="padding:8px 14px 7px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:14px">🌾</span>
+        <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--td)">Safra</span>
       </div>
+      <div style="font-size:9px;color:var(--tl);font-weight:600">${ymKey?.replace('-','/')??''}</div>
     </div>
-    <div style="border-top:1px solid var(--border);background:rgba(124,58,237,.04)">
-      <div style="padding:3px 8px 2px;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#7c3aed">TPV projetado</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr">
-        ${safraCols.map(s=>{
-          const cur=getTpvVal(s.k,'valor_proj'); const c=tpvColor(cur);
-          return `<div style="padding:3px 4px 6px;border-right:1px solid ${s.border};text-align:center">
-            <div style="font-size:9px;color:#7c3aed;font-weight:600;margin-bottom:1px">R$</div>
-            <input type="text" inputmode="numeric" id="psv-tpvproj-${s.k}" value="${cur?fmtBRL(cur):''}" placeholder="0,00"
-              style="width:100%;text-align:center;border:1px solid rgba(124,58,237,.3);border-radius:4px;padding:3px 1px;font-family:var(--mono);font-size:11px;font-weight:800;color:${c};background:var(--white);outline:none;"
+
+    <!-- Contadores de safra — destaque principal -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border)">
+      ${safraCols.map(s => {
+        const total = safraM0 + safraM1 + safraM2;
+        const pctBar = total > 0 ? Math.round((s.v||0) / total * 100) : 0;
+        return `
+        <div style="display:flex;flex-direction:column;align-items:center;padding:10px 6px 8px;background:${s.bg};border-right:1px solid ${s.border};position:relative;overflow:hidden">
+          <!-- badge safra -->
+          <div style="font-size:9px;font-weight:800;letter-spacing:.7px;color:${s.c};background:${s.border};border-radius:99px;padding:1px 7px;margin-bottom:5px">${s.k}</div>
+          <!-- número principal -->
+          <div style="font-size:30px;font-weight:900;font-family:var(--mono);color:${s.c};line-height:1">${s.v||0}</div>
+          <!-- mini barra de participação -->
+          <div style="width:100%;margin-top:6px;height:3px;background:rgba(0,0,0,.08);border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:${pctBar}%;background:${s.c};border-radius:99px;opacity:.7"></div>
+          </div>
+          <div style="font-size:8px;color:${s.c};font-weight:700;margin-top:3px;opacity:.8">${pctBar}%</div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- TPV real + projetado: 3 colunas, label como micro-tag no canto, input grande -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;flex:1;border-top:1px solid var(--border)">
+      ${safraCols.map(s => {
+        const curR = getTpvVal(s.k,'valor_real'); const cR = tpvColor(curR);
+        const curP = getTpvVal(s.k,'valor_proj'); const cP = tpvColor(curP);
+        return `
+        <div style="display:flex;flex-direction:column;border-right:1px solid ${s.border}">
+
+          <!-- TPV Real -->
+          <div style="flex:1;display:flex;flex-direction:column;padding:5px 6px 4px;background:rgba(255,255,255,.4);border-bottom:1px solid ${s.border}">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--tl);opacity:.7">Real</span>
+              <span style="font-size:7px;font-weight:700;color:${s.c};opacity:.8">R$</span>
+            </div>
+            <input type="text" inputmode="numeric" id="psv-tpv-${s.k}"
+              value="${curR ? fmtBRL(curR) : ''}" placeholder="0,00"
+              style="width:100%;text-align:center;border:1.5px solid ${curR ? s.border : 'var(--border)'};
+                     border-radius:6px;padding:4px 2px;font-family:var(--mono);
+                     font-size:15px;font-weight:900;color:${cR};background:var(--white);outline:none;
+                     transition:border-color .15s,color .15s;"
+              onfocus="this.style.borderColor='${s.c}'"
+              onblur="this.style.borderColor='${curR ? s.border : 'var(--border)'}';savePsvTpv(this,'${s.k}','${ymKey}')"
               oninput="formatTpvInput(this);this.style.color='var(--tl)'"
-              onkeydown="if(event.key==='Enter'){savePsvTpvProj(this,'${s.k}','${ymKey}');this.blur();event.preventDefault()}"
-              onblur="savePsvTpvProj(this,'${s.k}','${ymKey}')">
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
+              onkeydown="if(event.key==='Enter'){savePsvTpv(this,'${s.k}','${ymKey}');this.blur();event.preventDefault()}">
+          </div>
+
+          <!-- TPV Projetado -->
+          <div style="flex:1;display:flex;flex-direction:column;padding:5px 6px 4px;background:rgba(124,58,237,.04)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+              <span style="font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#7c3aed;opacity:.8">Proj.</span>
+              <span style="font-size:7px;font-weight:700;color:#7c3aed;opacity:.7">R$</span>
+            </div>
+            <input type="text" inputmode="numeric" id="psv-tpvproj-${s.k}"
+              value="${curP ? fmtBRL(curP) : ''}" placeholder="0,00"
+              style="width:100%;text-align:center;border:1.5px solid ${curP ? 'rgba(124,58,237,.35)' : 'rgba(124,58,237,.15)'};
+                     border-radius:6px;padding:4px 2px;font-family:var(--mono);
+                     font-size:15px;font-weight:900;color:${cP};background:var(--white);outline:none;
+                     transition:border-color .15s,color .15s;"
+              onfocus="this.style.borderColor='#7c3aed'"
+              onblur="this.style.borderColor='${curP ? 'rgba(124,58,237,.35)' : 'rgba(124,58,237,.15)'}';savePsvTpvProj(this,'${s.k}','${ymKey}')"
+              oninput="formatTpvInput(this);this.style.color='var(--tl)'"
+              onkeydown="if(event.key==='Enter'){savePsvTpvProj(this,'${s.k}','${ymKey}');this.blur();event.preventDefault()}">
+          </div>
+
+        </div>`;
+      }).join('')}
+    </div>
+  `;
   row.appendChild(safraCd);
 }
 
@@ -12014,6 +12243,88 @@ function psvLimparAgenda() {
   psvSalvarAgenda();
 }
 
+// ════════════════════════════════════════════════════════════════
+//  CNPJ % PSV — percentual editável por usuário
+//  Mesmo padrão de persistência do Ativado + agendaUrl.
+//  Valor armazenado: número float (ex: 87.5)
+// ════════════════════════════════════════════════════════════════
+
+// Prévia em tempo real da barra + % enquanto o usuário digita (igual ao previewPsvAtivacao)
+function previewPsvCnpj() {
+  var inp  = document.getElementById('psv-cnpj-input');
+  var fill = document.getElementById('psv-cnpj-fill');
+  var pct  = document.getElementById('psv-cnpj-pct');
+  var sub  = document.getElementById('psv-cnpj-sub');
+  if (!inp) return;
+  var v = parseFloat(inp.value);
+  if (isNaN(v) || inp.value === '') {
+    if (fill) fill.style.width = '0%';
+    if (pct)  pct.textContent  = '0%';
+    if (sub)  sub.textContent  = '—';
+    return;
+  }
+  v = Math.min(100, Math.max(0, v));
+  var grad = v >= 80
+    ? 'linear-gradient(90deg,var(--green),var(--green-l))'
+    : v >= 60
+      ? 'linear-gradient(90deg,var(--orange),var(--orange-l))'
+      : 'linear-gradient(90deg,var(--red),#f87171)';
+  var color = v >= 80 ? 'var(--green)' : v >= 60 ? 'var(--orange)' : 'var(--red)';
+  if (fill) { fill.style.width = v.toFixed(1) + '%'; fill.style.background = grad; }
+  if (pct)  pct.textContent  = v.toFixed(1) + '%';
+  if (sub)  { sub.textContent = v.toFixed(1) + '% de CNPJ'; sub.style.color = color; }
+}
+
+// Salva o valor % em DB.users + currentUser + sessionStorage + localStorage
+function psvSalvarCnpj() {
+  var inp = document.getElementById('psv-cnpj-input');
+  if (!inp) return;
+  var raw = inp.value.trim();
+  var num = raw !== '' ? parseFloat(raw) : null;
+  // Clamp 0–100
+  if (num !== null) num = Math.min(100, Math.max(0, num));
+  var val = num !== null ? String(num) : '';
+  var u   = currentUser;
+  if (!u) return;
+
+  // 1. DB.users
+  var dbUser = (DB.users || []).find(function(x) { return String(x.id) === String(u.id); });
+  if (dbUser) dbUser.cnpj = val;
+
+  // 2. currentUser em memória
+  currentUser.cnpj = val;
+
+  // 3. sessionStorage
+  setSession(currentUser);
+
+  // 4. localStorage por userId
+  try {
+    var lsKey = 'bi_cnpj_' + String(u.id);
+    if (val) localStorage.setItem(lsKey, val);
+    else     localStorage.removeItem(lsKey);
+  } catch(e) {}
+
+  saveDB();
+  previewPsvCnpj();
+  if (val) toast('CNPJ % salvo: ' + num.toFixed(1) + '%', '🏢');
+}
+
+// Restaura CNPJ % do localStorage se DB.users ainda não tem (chamado na inicialização)
+function _psvRestaurarCnpjLocal() {
+  var u = currentUser;
+  if (!u) return;
+  try {
+    var lsKey = 'bi_cnpj_' + String(u.id);
+    var local = localStorage.getItem(lsKey);
+    if (local && !currentUser.cnpj) {
+      currentUser.cnpj = local;
+      setSession(currentUser);
+      var dbUser = (DB.users || []).find(function(x){ return String(x.id) === String(u.id); });
+      if (dbUser && !dbUser.cnpj) dbUser.cnpj = local;
+    }
+  } catch(e) {}
+}
+
 // ── Normaliza a URL do Google Agenda com parâmetros fixos ───────────────────
 // Usa new URL() para evitar concatenações frágeis e garantir idempotência:
 // a função pode ser chamada múltiplas vezes com a mesma URL sem duplicar params.
@@ -12627,7 +12938,7 @@ function _psvPFsChg() {
         KPIs &amp; Indicadores de Performance
       </div>
       <!-- KPIs row -->
-      <div id="psvp-kpi-wrap" style="display:grid;grid-template-columns:1.6fr repeat(6,1fr) 1.8fr;gap:8px;align-items:stretch;flex-shrink:0"></div>
+      <div id="psvp-kpi-wrap" style="display:grid;grid-template-columns:1.6fr 1.4fr 1.2fr 1fr 1.1fr 1fr 2.6fr;gap:8px;align-items:stretch;flex-shrink:0"></div>
       <!-- Gráficos Donut + Linha abaixo dos KPIs -->
       <div style="display:grid;grid-template-columns:260px 1fr;gap:14px;flex:1;min-height:0">
         <div class="card" style="display:flex;flex-direction:column;min-height:0">
