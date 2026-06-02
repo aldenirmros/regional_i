@@ -986,7 +986,7 @@ select.sel:focus{border-color:var(--blue);}
 .gbf{height:100%;border-radius:99px;}
 
 /* ── CHARTS GRID ── */
-.charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:18px;}
+.charts-row{display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:18px;align-items:stretch;}
 
 /* ── DIAS MANUAL CONFIG ── */
 .dias-config{background:var(--white);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);padding:12px 18px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
@@ -1361,7 +1361,7 @@ canvas { display:block; max-width:100%; }
   .psv-plan-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 
   /* ── Gráficos mobile: alturas ajustadas (sem ultrapassar container) ── */
-  #ch-donut,#ch-bar,#ch-line{max-height:220px;}
+  #ch-donut,#ch-line{max-height:220px;}
 
   /* ── PSV dp grid: 1 coluna ── */
   #psv-dp-grid{grid-template-columns:1fr!important;}
@@ -1870,7 +1870,7 @@ canvas { display:block; max-width:100%; }
           <div class="li"><div class="ll"><div class="ld" style="background:var(--border)"></div>Restante</div><div class="lv fg-l" id="leg-g">0</div></div>
         </div>
       </div>
-      <div class="card">
+      <div class="card" style="display:flex;flex-direction:column;">
         <div class="card-head">
           <div class="card-title"><div class="ctd" style="background:var(--cyan)"></div>Vendas por Dia</div>
           <div style="display:flex;align-items:center;gap:6px">
@@ -1878,15 +1878,9 @@ canvas { display:block; max-width:100%; }
             <button class="chart-maximize-btn" onclick="maximizeChart('line')" title="Maximizar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
           </div>
         </div>
-        <div style="padding:14px;height:300px"><canvas id="ch-line"></canvas></div>
+        <div style="padding:14px;flex:1;min-height:260px;"><canvas id="ch-line"></canvas></div>
       </div>
-      <div class="card">
-        <div class="card-head">
-          <div class="card-title"><div class="ctd" style="background:var(--purple)"></div>Realizado vs Projeção</div>
-          <button class="chart-maximize-btn" onclick="maximizeChart('bar')" title="Maximizar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button>
-        </div>
-        <div style="padding:14px;height:250px"><canvas id="ch-bar"></canvas></div>
-      </div>
+
     </div>
 
     <!-- MAPA SEMANAL DE VENDAS -->
@@ -4399,7 +4393,7 @@ function goPage(name, el){
       renderDash();
       requestAnimationFrame(()=>requestAnimationFrame(()=>{
         if(typeof chartDonut!=='undefined'&&chartDonut){try{chartDonut.resize();}catch(e){}}
-        if(typeof chartBar  !=='undefined'&&chartBar  ){try{chartBar.resize();  }catch(e){}}
+        // bar é HTML puro, sem resize necessário
         if(typeof chartLine !=='undefined'&&chartLine ){try{chartLine.resize(); }catch(e){}}
       }));
     };
@@ -5027,65 +5021,124 @@ function buildDonut(real,gap){
   ,animation:{animateRotate:true,duration:900}}});
 }
 
+// ── Dados do buildBar salvos para maximize ──
+let _barParams = null;
+
 function buildBar(stats, sid, duPass, duTotal){
-  const ctx=document.getElementById('ch-bar').getContext('2d');
-  if(chartBar) chartBar.destroy();
+  if(chartBar){ try{ chartBar.destroy(); }catch(e){} chartBar=null; }
   const data = sid ? stats.filter(s=>s.id===sid) : stats;
+  _barParams = {data, duPass, duTotal};
+  _renderBarPanel(data, duPass, duTotal);
+}
 
-  // Plugin: números em cima de cada barra
-  const barNumberPlugin = {
-    id:'barNumber',
-    afterDatasetsDraw(chart){
-      const {ctx} = chart;
-      chart.data.datasets.forEach((_ds,di)=>{
-        const meta = chart.getDatasetMeta(di);
-        if(meta.hidden) return;
-        meta.data.forEach((bar,i)=>{
-          const val = chart.data.datasets[di].data[i];
-          if(!val) return;
-          ctx.save();
-          ctx.fillStyle = '#475569';
-          ctx.font = `700 10px "JetBrains Mono",monospace`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
-          ctx.fillText(val, bar.x, bar.y - 3);
-          ctx.restore();
-        });
-      });
-    }
-  };
+function _renderBarPanel(data, duPass, duTotal, targetId){
+  const wrap = document.getElementById(targetId || 'ch-bar-wrap');
+  if(!wrap) return;
 
-  chartBar=new Chart(ctx,{
-    type:'bar',
-    data:{
-      labels:data.map(s=>s.name),
-      datasets:[
-        {label:'Realizado', data:data.map(s=>s.real),             backgroundColor:data.map(s=>s.color+'cc'),borderRadius:10,borderRadiusTopLeft:10,borderRadiusTopRight:10,barPercentage:.5},
-        {label:'Projeção',  data:data.map(s=>+(s.proj.toFixed(0))),backgroundColor:data.map(s=>s.color+'44'),borderRadius:10,barPercentage:.5,borderWidth:1.5,borderColor:data.map(s=>s.color+'99')}
-      ]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:18}},
-      plugins:{
-        legend:{labels:{font:{family:'Outfit',size:11},color:'#475569'},position:'top'},
-        tooltip:{
-          mode:'index',intersect:false,
-          backgroundColor:'rgba(15,23,42,0.9)',
-          titleColor:'#e2e8f0',bodyColor:'#94a3b8',
-          borderColor:'rgba(255,255,255,0.08)',borderWidth:1,
-          cornerRadius:10,padding:10
-        },
-        barNumber:{}
-      },
-      scales:{
-        x:{grid:{display:false},ticks:{font:{family:'Outfit',size:11},color:'#94a3b8'}},
-        y:{grid:{color:'#f1f5f9'},ticks:{font:{family:'JetBrains Mono',size:10},color:'#94a3b8'},beginAtZero:true}
-      },
-      animation:{duration:700}
-    },
-    plugins:[barNumberPlugin]
-  });
+  const maxVal = Math.max(1, ...data.map(s => Math.max(s.real, +(s.proj.toFixed(0)))));
+
+  function perfColor(pct){
+    if(pct >= 1)    return {solid:'#059669', bg:'rgba(5,150,105,.10)', border:'rgba(5,150,105,.25)', text:'#059669'};
+    if(pct >= 0.75) return {solid:'#16a34a', bg:'rgba(22,163,74,.10)',  border:'rgba(22,163,74,.25)',  text:'#16a34a'};
+    if(pct >= 0.5)  return {solid:'#d97706', bg:'rgba(217,119,6,.10)',  border:'rgba(217,119,6,.25)',  text:'#d97706'};
+    return                 {solid:'#dc2626', bg:'rgba(220,38,38,.10)',  border:'rgba(220,38,38,.25)',  text:'#dc2626'};
+  }
+
+  const rows = data.map((s, i) => {
+    const proj    = +(s.proj.toFixed(0));
+    const real    = s.real;
+    const meta    = s.meta;
+    const pct     = meta > 0 ? real / meta : 0;
+    const pctMeta = Math.min(100, pct * 100);
+    const realBar = Math.min(100, (real / maxVal) * 100);
+    const projBar = Math.min(100, (proj / maxVal) * 100);
+    const clr     = s.color || '#2563eb';
+    const pc      = perfColor(pct);
+    const pctTxt  = (pct * 100).toFixed(1) + '%';
+    const delta   = real - proj;
+    const deltaSign = delta >= 0 ? '+' : '';
+    const aboveProj = delta >= 0;
+
+    // Avatar / inicial
+    const avatar = s.photo
+      ? `<img src="${s.photo}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid ${clr};flex-shrink:0">`
+      : `<div style="width:28px;height:28px;border-radius:50%;background:${clr}18;border:2px solid ${clr}55;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${clr};flex-shrink:0">${s.name.charAt(0)}</div>`;
+
+    const rank = i + 1;
+    const rankBadge = rank===1 ? '🥇' : rank===2 ? '🥈' : rank===3 ? '🥉'
+      : `<span style="font-size:9px;font-weight:800;color:#94a3b8">#${rank}</span>`;
+
+    return `
+    <div style="display:grid;grid-template-columns:18px 32px minmax(0,1fr) 68px;align-items:center;gap:8px;padding:7px 0;${i < data.length-1 ? 'border-bottom:1px solid var(--border);' : ''}">
+
+      <!-- Rank -->
+      <div style="text-align:center;font-size:14px;line-height:1">${rankBadge}</div>
+
+      <!-- Avatar -->
+      ${avatar}
+
+      <!-- Barras + nome -->
+      <div style="min-width:0;display:flex;flex-direction:column;gap:3px">
+        <div style="font-size:10.5px;font-weight:800;color:var(--td);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px">${s.name.split(' ').slice(0,2).join(' ')}</div>
+
+        <!-- Barra Realizado -->
+        <div style="position:relative;height:9px;background:${clr}15;border-radius:99px;overflow:hidden">
+          <div style="position:absolute;inset:0;width:${realBar.toFixed(1)}%;background:linear-gradient(90deg,${pc.solid}dd,${pc.solid}99);border-radius:99px;transition:width .5s ease"></div>
+        </div>
+
+        <!-- Barra Projeção -->
+        <div style="position:relative;height:6px;background:#f1f5f9;border-radius:99px;overflow:hidden">
+          <div style="position:absolute;inset:0;width:${projBar.toFixed(1)}%;background:${clr}55;border-radius:99px;transition:width .5s ease"></div>
+          <div style="position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:7px;font-weight:700;color:#94a3b8;font-family:var(--mono)">proj</div>
+        </div>
+      </div>
+
+      <!-- Valores -->
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:15px;font-weight:900;font-family:var(--mono);color:${pc.solid};line-height:1">${real}</div>
+        <div style="font-size:8.5px;font-weight:600;color:#94a3b8;font-family:var(--mono);margin-top:1px">↗${proj}</div>
+        <div style="display:inline-flex;align-items:center;background:${pc.bg};border:1px solid ${pc.border};border-radius:99px;padding:1px 6px;margin-top:3px">
+          <span style="font-size:9px;font-weight:800;color:${pc.text};font-family:var(--mono)">${pctTxt}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Total geral
+  const totReal = data.reduce((a,s)=>a+s.real,0);
+  const totProj = data.reduce((a,s)=>a+(+(s.proj.toFixed(0))),0);
+  const totMeta = data.reduce((a,s)=>a+s.meta,0);
+  const totPct  = totMeta > 0 ? totReal/totMeta : 0;
+  const pc      = (function(pct){
+    if(pct >= 1)    return {solid:'#059669',bg:'rgba(5,150,105,.10)',border:'rgba(5,150,105,.25)',text:'#059669'};
+    if(pct >= 0.75) return {solid:'#16a34a',bg:'rgba(22,163,74,.10)',border:'rgba(22,163,74,.25)',text:'#16a34a'};
+    if(pct >= 0.5)  return {solid:'#d97706',bg:'rgba(217,119,6,.10)',border:'rgba(217,119,6,.25)',text:'#d97706'};
+    return                 {solid:'#dc2626',bg:'rgba(220,38,38,.10)',border:'rgba(220,38,38,.25)',text:'#dc2626'};
+  })(totPct);
+
+  wrap.innerHTML = `
+    <!-- Legenda topo -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:5px">
+        <div style="width:22px;height:7px;border-radius:99px;background:linear-gradient(90deg,#059669,#16a34a88)"></div>
+        <span style="font-size:10px;font-weight:600;color:var(--tl)">Realizado</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px">
+        <div style="width:22px;height:5px;border-radius:99px;background:#94a3b855"></div>
+        <span style="font-size:10px;font-weight:600;color:var(--tl)">Projeção</span>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+        <span style="font-size:9px;font-weight:700;color:var(--tl)">EQUIPE</span>
+        <span style="font-size:14px;font-weight:900;font-family:var(--mono);color:${pc.solid}">${totReal}</span>
+        <span style="font-size:9px;color:#94a3b8;font-family:var(--mono)">↗${totProj}</span>
+        <div style="background:${pc.bg};border:1px solid ${pc.border};border-radius:99px;padding:2px 8px">
+          <span style="font-size:9.5px;font-weight:800;color:${pc.text};font-family:var(--mono)">${(totPct*100).toFixed(1)}%</span>
+        </div>
+      </div>
+    </div>
+    <!-- Linhas por vendedor -->
+    ${rows}
+  `;
 }
 
 // ── Helpers compartilhados: gráfico de linha com bolinhas numeradas ──
@@ -5152,7 +5205,7 @@ const numberLabelPlugin = {
   }
 };
 
-function makeLineConfig(labels, dataReal, pointColors){
+function makeLineConfig(labels, dataReal, pointColors, sellersPerDay){
   // Build gradient fill for area below line
   const gradientFill = (context) => {
     const chart = context.chart;
@@ -5178,11 +5231,24 @@ function makeLineConfig(labels, dataReal, pointColors){
       plugins:{
         legend:{display:false},
         tooltip:{
-          callbacks:{label:c=>`Vendas: ${c.raw??'—'}`},
-          backgroundColor:'rgba(15,23,42,0.9)',
+          callbacks:{
+            label:c=>`  Vendas: ${c.raw??'—'}`,
+            afterBody: function(items){
+              if(!sellersPerDay) return [];
+              const idx = items[0]?.dataIndex;
+              if(idx==null) return [];
+              const names = sellersPerDay[idx];
+              if(!names||!names.length) return [];
+              const lines = ['', '  Vendedores:'];
+              names.forEach(n=>lines.push(`  · ${n}`));
+              return lines;
+            }
+          },
+          backgroundColor:'rgba(15,23,42,0.92)',
           titleColor:'#e2e8f0',bodyColor:'#94a3b8',
           borderColor:'rgba(255,255,255,0.08)',borderWidth:1,
-          cornerRadius:10,padding:10
+          cornerRadius:10,padding:12,
+          boxPadding:4
         },
         numberLabel:{}
       },
@@ -5202,6 +5268,7 @@ function buildLine(ymKey,y,m,sid){
   const dias=getDiasComSabado(y,m), t=today();
   const labels=dias.map(d=>`${d.getDate()}/${m+1}`);
   const scopedIds=getScopedSellers().map(s=>s.id);
+  const sellers=getScopedSellers();
   const vendas=getVendas(ymKey);
   const dataReal=dias.map(d=>{
     if(d>t) return null;
@@ -5210,10 +5277,20 @@ function buildLine(ymKey,y,m,sid){
     return (sid ? vs.filter(v=>v.sellerId===sid) : vs.filter(v=>scopedIds.includes(v.sellerId)))
       .reduce((a,v)=>a+v.qty,0);
   });
+  const sellersPerDay=dias.map(d=>{
+    if(d>t) return [];
+    const ds=fmtD(d);
+    const ids=[...new Set(vendas.filter(v=>v.date===ds&&(sid?v.sellerId===sid:scopedIds.includes(v.sellerId))).map(v=>v.sellerId))];
+    return ids.map(id=>{
+      const s=sellers.find(x=>x.id===id);
+      const qty=vendas.filter(v=>v.date===ds&&v.sellerId===id).reduce((a,v)=>a+v.qty,0);
+      return s?`${s.name} (${qty})`:'';
+    }).filter(Boolean).sort();
+  });
   const maxVal=Math.max(0,...dataReal.filter(v=>v!==null));
   const pointColors=dias.map((d,i)=>d.getDay()===6?'#94a3b8':linePointColor(dataReal[i],maxVal));
-  _lineParams={labels,dataReal,pointColors};
-  chartLine=new Chart(ctx,makeLineConfig(labels,dataReal,pointColors));
+  _lineParams={labels,dataReal,pointColors,sellersPerDay};
+  chartLine=new Chart(ctx,makeLineConfig(labels,dataReal,pointColors,sellersPerDay));
 }
 
 // ══════════════════════════════════════════════════════════
@@ -6545,9 +6622,10 @@ const CHART_META = {
 };
 
 function maximizeChart(type){
-  const srcMap = { donut: chartDonut, line: chartLine, bar: chartBar };
-  const src = srcMap[type];
-  if(!src) return;
+  // Bar não depende de chartBar (agora é HTML puro)
+  const srcMap = { donut: chartDonut, line: chartLine };
+  const src    = srcMap[type];
+  if(type !== 'bar' && !src) return;
 
   const meta = CHART_META[type];
   document.getElementById('chart-modal-title').textContent = meta.title;
@@ -6556,12 +6634,31 @@ function maximizeChart(type){
 
   if(_modalChart){ _modalChart.destroy(); _modalChart=null; }
 
+  const canvasWrap = document.querySelector('.chart-modal-canvas');
+
+  // ── Bar: injeta painel HTML no modal ──
+  if(type==='bar'){
+    if(!_barParams) return;
+    // Troca canvas por div temporário no modal
+    canvasWrap.innerHTML = '<div id="ch-modal-bar" style="height:100%;overflow-y:auto;padding:4px 8px"></div>';
+    const wrap = document.getElementById('ch-modal-bar');
+    if(!wrap) return;
+    const {data, duPass, duTotal} = _barParams;
+    // Reutiliza _renderBarPanel mas aponta para o div do modal
+    _renderBarPanel(data, duPass, duTotal, 'ch-modal-bar');
+    return;
+  }
+
+  // Restaura canvas se foi substituído antes
+  if(!document.getElementById('ch-modal')){
+    canvasWrap.innerHTML = '<canvas id="ch-modal"></canvas>';
+  }
   const canvas = document.getElementById('ch-modal');
 
-  // Gráfico de linha: reconstrói com bolinhas numeradas e escala vermelho→verde
+  // Gráfico de linha
   if(type==='line'){
     const cfg = _lineParams
-      ? makeLineConfig(_lineParams.labels, _lineParams.dataReal, _lineParams.pointColors)
+      ? makeLineConfig(_lineParams.labels, _lineParams.dataReal, _lineParams.pointColors, _lineParams.sellersPerDay)
       : JSON.parse(JSON.stringify(src.config));
     cfg.options.maintainAspectRatio = false;
     cfg.options.responsive = true;
@@ -6570,10 +6667,8 @@ function maximizeChart(type){
     return;
   }
 
-  // Copia config do gráfico original (donut/bar)
+  // Donut
   const origCfg = src.config;
-
-  // Deep clone via JSON (remove funções, reapplica depois)
   const newCfg = {
     type: origCfg.type,
     data: JSON.parse(JSON.stringify(origCfg.data)),
@@ -6581,7 +6676,6 @@ function maximizeChart(type){
   };
   newCfg.options.maintainAspectRatio = false;
   newCfg.options.responsive = true;
-  // Restaura callbacks de tooltip que se perdem no JSON
   if(type==='donut'){
     newCfg.options.plugins = newCfg.options.plugins||{};
     newCfg.options.plugins.legend = {display:true, position:'right', labels:{font:{size:13},color:'#475569'}};
@@ -6593,6 +6687,11 @@ function maximizeChart(type){
 function closeChartModal(){
   document.getElementById('chart-modal').classList.remove('show');
   if(_modalChart){ _modalChart.destroy(); _modalChart=null; }
+  // Restaura canvas se modal de bar substituiu por div
+  const cw = document.querySelector('.chart-modal-canvas');
+  if(cw && !document.getElementById('ch-modal')){
+    cw.innerHTML = '<canvas id="ch-modal"></canvas>';
+  }
 }
 
 // Fecha modal com ESC
@@ -11026,8 +11125,8 @@ function psvMaximize(type, title){
       new Chart(ctx,{type:'doughnut',data:{datasets:[{data:[real,gap],backgroundColor:[fill,'#e2e8f0'],borderWidth:0}]},options:{cutout:'70%',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const l=['Realizado','Restante'];return ` ${l[c.dataIndex]}: ${c.raw}`;}}}},animation:{animateRotate:true}},plugins:[plug]});
     }
     else if(type==='line' && _psvLineParams){
-      const {labels,data,colors}=_psvLineParams;
-      new Chart(ctx, makeLineConfig(labels, data, colors));
+      const {labels,data,colors,sellersPerDay}=_psvLineParams;
+      new Chart(ctx, makeLineConfig(labels, data, colors, sellersPerDay));
     }
     else if(type==='sellers' && _psvSellersParams){
       const{labels,vendas,compr,proj,colors}=_psvSellersParams;
@@ -11737,14 +11836,26 @@ function _renderPSVCharts(ymKey,y,m,sellers){
   // Line (vendas por dia) — Seg–Sáb, sábados cinza
   const diasLn=getDiasComSabado(y,m);
   const lb=diasLn.map(d=>`${d.getDate()}/${m+1}`);
-  const dl=diasLn.map(d=>d>t?null:getVendas(ymKey).filter(v=>v.date===fmtD(d)&&sellers.some(s=>s.id===v.sellerId)).reduce((a,v)=>a+v.qty,0));
+  const vendasMes=getVendas(ymKey);
+  const dl=diasLn.map(d=>d>t?null:vendasMes.filter(v=>v.date===fmtD(d)&&sellers.some(s=>s.id===v.sellerId)).reduce((a,v)=>a+v.qty,0));
+  // Monta lista de vendedores por dia para o tooltip
+  const sellersPerDay=diasLn.map(d=>{
+    if(d>t) return [];
+    const ds=fmtD(d);
+    const ids=[...new Set(vendasMes.filter(v=>v.date===ds&&sellers.some(s=>s.id===v.sellerId)).map(v=>v.sellerId))];
+    return ids.map(id=>{
+      const s=sellers.find(x=>x.id===id);
+      const qty=vendasMes.filter(v=>v.date===ds&&v.sellerId===id).reduce((a,v)=>a+v.qty,0);
+      return s ? `${s.name} (${qty})` : '';
+    }).filter(Boolean).sort();
+  });
   const mx=Math.max(0,...dl.filter(v=>v!==null));
   const lColors=diasLn.map((d,i)=>d.getDay()===6?'#94a3b8':linePointColor(dl[i],mx));
   if(_psvCharts.line) _psvCharts.line.destroy();
   const lctx=document.getElementById('psv-ch-line')?.getContext('2d');
   if(lctx){
-    _psvLineParams={labels:lb,data:dl,colors:lColors};
-    _psvCharts.line=new Chart(lctx,makeLineConfig(lb,dl,lColors));
+    _psvLineParams={labels:lb,data:dl,colors:lColors,sellersPerDay};
+    _psvCharts.line=new Chart(lctx,makeLineConfig(lb,dl,lColors,sellersPerDay));
   }
 }
 
@@ -12613,7 +12724,7 @@ function _psvPLine() {
   if (_psvP.ch.line) { try{_psvP.ch.line.destroy();}catch(e){} }
   var p = _psvLineParams;
   if (!p) return;
-  var cfg = makeLineConfig(p.labels, p.data, p.colors);
+  var cfg = makeLineConfig(p.labels, p.data, p.colors, p.sellersPerDay);
   _psvP.ch.line = new Chart(canvas.getContext('2d'), cfg);
 }
 
