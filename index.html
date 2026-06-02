@@ -11612,6 +11612,7 @@ function _renderHCGrid(sellers){
 
   const times  = (DB.times||[]).filter(t=>sellers.some(s=>s.timeId===t.id));
   const mC     = {m0:'#2563eb',m1:'#7c3aed',m2:'#d97706',full:'#059669'};
+  const mLabel = {m0:'M0',m1:'M1',m2:'M2',full:'Full'};
 
   // ── Card 1: HC ──
   let hcBody='';
@@ -11624,18 +11625,27 @@ function _renderHCGrid(sellers){
       ts.forEach(s=>cnt[sellerMaturity(s)]++);
       const rg=(DB.regionais||[]).find(r=>r.id===t.regionalId);
       const ac=rg?.color||'#2563eb';
-      hcBody+=`<div style="margin-bottom:9px">
-        <div style="font-size:11px;font-weight:800;color:${ac};display:flex;align-items:center;gap:4px;margin-bottom:6px">
-          <div style="width:6px;height:6px;border-radius:50%;background:${ac};flex-shrink:0"></div>
-          ${t.nome}
-          <span style="font-size:17px;font-weight:900;font-family:var(--mono);color:${ac};margin-left:2px">${ts.length}</span>
-          <span style="font-size:9px;color:var(--tl)">HC</span>
+      const totalTs = ts.length;
+      hcBody+=`
+      <div style="flex:1;display:flex;flex-direction:column;background:rgba(5,150,105,.035);border-radius:11px;padding:11px 12px;border:1px solid rgba(5,150,105,.12);min-height:0">
+        <!-- Cabeçalho: nome + total HC -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:6px;min-width:0">
+            <div style="width:8px;height:8px;border-radius:50%;background:${ac};flex-shrink:0;box-shadow:0 0 0 3px ${ac}22"></div>
+            <span style="font-size:11px;font-weight:800;color:var(--td);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px">${t.nome}</span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:3px;flex-shrink:0;background:${ac}12;border-radius:8px;padding:3px 8px;border:1px solid ${ac}25">
+            <span style="font-size:20px;font-weight:900;font-family:var(--mono);color:${ac};line-height:1">${totalTs}</span>
+            <span style="font-size:9px;font-weight:700;color:${ac};opacity:.7;letter-spacing:.3px">HC</span>
+          </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+        <!-- Grid 4 safras — expande para preencher espaço restante -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;flex:1;min-height:0">
           ${['m0','m1','m2','full'].map(k=>`
-            <div style="display:flex;align-items:center;gap:5px;background:${mC[k]}12;border-radius:5px;padding:4px 7px;border:1px solid ${mC[k]}30">
-              <span style="font-size:17px;font-weight:900;font-family:var(--mono);color:${mC[k]};line-height:1">${cnt[k]}</span>
-              <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:${mC[k]};opacity:.85">${k}</span>
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;background:${mC[k]}0d;border-radius:8px;padding:6px 3px;border:1px solid ${mC[k]}25;gap:3px;min-height:0">
+              <span style="font-size:22px;font-weight:900;font-family:var(--mono);color:${mC[k]};line-height:1">${cnt[k]}</span>
+              <div style="width:24px;height:2px;border-radius:99px;background:${mC[k]};opacity:.35"></div>
+              <span style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:${mC[k]};opacity:.8">${mLabel[k]}</span>
             </div>`).join('')}
         </div>
       </div>`;
@@ -11644,8 +11654,17 @@ function _renderHCGrid(sellers){
 
   const hcEl=document.createElement('div');
   hcEl.className='kc kc-g';
-  hcEl.style.cssText='padding:12px 14px;min-width:0;overflow:hidden;';
-  hcEl.innerHTML=`<div class="kc-bar"></div><div class="kc-lbl" style="color:#059669;margin-bottom:8px">👥 HC por Safra</div>${hcBody}`;
+  hcEl.style.cssText='padding:14px 16px;min-width:0;overflow:hidden;display:flex;flex-direction:column;height:100%;box-sizing:border-box;';
+  hcEl.innerHTML=`
+    <div class="kc-bar"></div>
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-shrink:0">
+      <div style="width:24px;height:24px;border-radius:7px;background:rgba(5,150,105,.12);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;box-shadow:0 0 0 3px rgba(5,150,105,.06)">👥</div>
+      <span class="kc-lbl" style="color:#059669;margin-bottom:0;font-size:10px">HC por Safra</span>
+    </div>
+    <!-- Times: flex column que ocupa todo o espaço restante -->
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-height:0;">${hcBody || '<div style="font-size:11px;color:var(--tl)">Nenhum HUB</div>'}</div>
+  `;
   row.appendChild(hcEl);
 }
 
