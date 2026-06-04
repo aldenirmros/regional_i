@@ -7322,9 +7322,19 @@ async function _runSync() {
       const toPush = JSON.parse(JSON.stringify(toSend));
       toPush.deleted = {userIds:[], sellerIds:[], timeIds:[], regionalIds:[]};
 
+      // ── SEGURANÇA: inclui o id do usuário logado para validação server-side ──
+      // O Google Apps Script vai verificar na aba 'users' do Sheets se este id
+      // realmente tem permissão de admin antes de aceitar escritas em tabelas
+      // privilegiadas (sellers, times, config etc.). Não confiar no campo role
+      // que poderia ser adulterado no localStorage/sessionStorage do cliente.
+      const tablesPayload = dbToTables(toPush);
+      if (currentUser && currentUser.id) {
+        tablesPayload._requestUserId = currentUser.id;
+      }
+
       // Serializa para envio — texto puro (não URL-encoded) para evitar
       // triplicar o tamanho do payload e corrupção em e.parameter do GAS
-      const jsonBody = JSON.stringify(dbToTables(toPush));
+      const jsonBody = JSON.stringify(tablesPayload);
 
       let postOk = false;
       try {
