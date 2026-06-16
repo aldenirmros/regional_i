@@ -3191,8 +3191,11 @@ canvas { display:block; max-width:100%; }
         <input type="file" id="au-photo-file" accept="image/*" style="display:none" onchange="previewUserPhoto(event,'au')">
       </div>
     </div>
+    <div class="mf">
+      <label>Perfil *</label>
       <select id="au-role" onchange="onAuRoleChange()" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;transition:border-color .14s;cursor:pointer;">
         <option value="gerente">🎯 Gerente — acesso total ao sistema</option>
+        <option value="regional">🗺️ Regional — acesso à sua Regional</option>
         <option value="supervisor">👥 Supervisor — acesso ao seu HUB</option>
       </select>
     </div>
@@ -3207,6 +3210,16 @@ canvas { display:block; max-width:100%; }
       <select id="au-regional-au" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:13px;color:var(--td);outline:none;transition:border-color .14s;cursor:pointer;">
         <option value="">— Selecione a Regional —</option>
       </select>
+    </div>
+    <div class="mf">
+      <label>URL da Agenda Google <span style="font-weight:400;color:var(--tl);font-size:11px">(opcional)</span></label>
+      <input type="text" id="au-agenda-url"
+             placeholder="https://calendar.google.com/calendar/embed?src=..."
+             autocomplete="off"
+             style="width:100%;box-sizing:border-box;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);font-size:12px;color:var(--td);outline:none;transition:border-color .14s;"
+             onfocus="this.style.borderColor='var(--accent)'"
+             onblur="this.style.borderColor='var(--border)'">
+      <div style="font-size:11px;color:var(--tl);margin-top:4px">Cole o link de incorporação da agenda do Google (Google Agenda → opções → Integrar agenda).</div>
     </div>
     <div class="modal-warn" id="au-warn"></div>
     <div class="modal-acts">
@@ -7041,7 +7054,7 @@ function downloadModeloExcel(){
 const CLOUD_LS   = 'bi_cloud_v2';
 // URL do Google Apps Script gravada diretamente no HTML — mesmo banco em TODOS os dispositivos
 // Substitua pela URL do seu Web App depois de implantar o Apps Script
-const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbw_-thwnuht8D4MWAQG9hSH_TXk1mE9nO7Z7cn1_tuE2TWnxkPCrwN3LQerwagWFRAn/exec';
+const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbxNzUBiDw5yhbck8qbMDgTq5-1ItTlNgtnVb8rfqwBYl3mHmVFyJ9L2XVNT5YZ_ur9p/exec';
 
 function getCfg(){
   try{
@@ -7063,7 +7076,7 @@ async function exportHtmlWithGsUrl(){
   try{
     const res  = await fetch(window.location.href);
     let   html = await res.text();
-    html = html.replace(/const HARDCODED_GS_URL = '[^']*';/, `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbw_-thwnuht8D4MWAQG9hSH_TXk1mE9nO7Z7cn1_tuE2TWnxkPCrwN3LQerwagWFRAn/exec';`);
+    html = html.replace(/const HARDCODED_GS_URL = '[^']*';/, `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbxNzUBiDw5yhbck8qbMDgTq5-1ItTlNgtnVb8rfqwBYl3mHmVFyJ9L2XVNT5YZ_ur9p/exec';`);
     const blob = new Blob([html],{type:'text/html'});
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -7072,7 +7085,7 @@ async function exportHtmlWithGsUrl(){
     toast('✅ HTML baixado com URL embutida!');
   } catch(e){
     toast('Para embutir a URL, edite manualmente a linha HARDCODED_GS_URL no HTML.','⚠️');
-    prompt('Substitua a linha HARDCODED_GS_URL no HTML por:', `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbw_-thwnuht8D4MWAQG9hSH_TXk1mE9nO7Z7cn1_tuE2TWnxkPCrwN3LQerwagWFRAn/exec';`);
+    prompt('Substitua a linha HARDCODED_GS_URL no HTML por:', `const HARDCODED_GS_URL = 'https://script.google.com/macros/s/AKfycbxNzUBiDw5yhbck8qbMDgTq5-1ItTlNgtnVb8rfqwBYl3mHmVFyJ9L2XVNT5YZ_ur9p/exec';`);
   }
 }
 function setCfg(c){ localStorage.setItem(CLOUD_LS, JSON.stringify(c)); }
@@ -8384,7 +8397,9 @@ async function gsCreateBackup(){
   try{
     const params = new URLSearchParams();
     params.append('action', 'backup');
-    params.append('data',   JSON.stringify(dbToTables(DB)));
+    const backupPayload = dbToTables(DB);
+    if(currentUser && currentUser.id) backupPayload._requestUserId = currentUser.id;
+    params.append('data',   JSON.stringify(backupPayload));
     params.append('label',  label);
     await fetch(cfg.gsUrl, { method:'POST', body:params });
     toast('✅ Backup "' + label + '" criado!');
@@ -8692,7 +8707,9 @@ async function bkDoRestore(){
     if(cfg.gsUrl){
       step('Enviando para o Google Sheets…');
       const params = new URLSearchParams();
-      params.append('data', JSON.stringify(DB));
+      const restorePayload = dbToTables(DB);
+      if(currentUser && currentUser.id) restorePayload._requestUserId = currentUser.id;
+      params.append('data', JSON.stringify(restorePayload));
       const postRes = await fetch(cfg.gsUrl, { method:'POST', body:params });
       if(!postRes.ok) throw new Error('Servidor retornou HTTP ' + postRes.status);
       const result = await postRes.json().catch(()=>null);
@@ -10845,6 +10862,8 @@ function openAldenirUserModal(){
   document.getElementById('au-password').value='';
   document.getElementById('au-nome').value='';
   document.getElementById('au-role').value='gerente';
+  const agInp = document.getElementById('au-agenda-url');
+  if(agInp) agInp.value='';
   document.getElementById('au-warn').style.display='none';
   _newUserPhoto=null;
   const auPrev=document.getElementById('au-photo-preview');
@@ -10857,32 +10876,41 @@ function closeAldenirUserModal(){
   document.getElementById('aldenir-user-modal').classList.remove('show');
 }
 function onAuRoleChange(){
-  const role = document.getElementById('au-role').value;
-  document.getElementById('au-hub-wrap').style.display      = role==='supervisor'?'':'none';
-  document.getElementById('au-regional-wrap').style.display = role==='supervisor'?'':'none';
+  const role = document.getElementById('au-role')?.value || '';
+  const hubWrap      = document.getElementById('au-hub-wrap');
+  const regionalWrap = document.getElementById('au-regional-wrap');
+  if(hubWrap)      hubWrap.style.display      = role==='supervisor' ? '' : 'none';
+  if(regionalWrap) regionalWrap.style.display = (role==='supervisor'||role==='regional') ? '' : 'none';
 }
 function saveAldenirUser(){
-  const username   = document.getElementById('au-username').value.trim().toLowerCase();
-  const password   = document.getElementById('au-password').value;
-  const nome       = document.getElementById('au-nome').value.trim();
-  const role       = document.getElementById('au-role').value;
-  const timeId     = parseInt(document.getElementById('au-time').value)||null;
-  const regionalId = parseInt(document.getElementById('au-regional-au').value)||null;
+  const username   = (document.getElementById('au-username')?.value||'').trim().toLowerCase();
+  const password   = document.getElementById('au-password')?.value||'';
+  const nome       = (document.getElementById('au-nome')?.value||'').trim();
+  const role       = document.getElementById('au-role')?.value||'';
+  const timeRaw    = document.getElementById('au-time')?.value||'';
+  const regRaw     = document.getElementById('au-regional-au')?.value||'';
+  const agendaUrl  = (document.getElementById('au-agenda-url')?.value||'').trim();
+  const timeId     = timeRaw    ? (parseInt(timeRaw,10)||null)    : null;
+  const regionalId = regRaw     ? (parseInt(regRaw,10)||null)     : null;
   const warn       = document.getElementById('au-warn');
-  const showWarn   = msg=>{ warn.style.display='block'; warn.textContent=msg; };
+  const showWarn   = msg=>{ if(warn){ warn.style.display='block'; warn.textContent=msg; } };
   if(!username){ showWarn('⚠️ Informe o nome de usuário.'); return; }
   if(!password||password.length<4){ showWarn('⚠️ A senha precisa ter no mínimo 4 caracteres.'); return; }
+  if(!role){ showWarn('⚠️ Selecione o perfil do usuário.'); return; }
   if(role==='supervisor'&&!timeId){ showWarn('⚠️ Selecione o HUB para o Supervisor.'); return; }
+  if(role==='regional'&&!regionalId){ showWarn('⚠️ Selecione a Regional para o usuário Regional.'); return; }
+  if(agendaUrl && !agendaUrl.includes('calendar.google.com')){ showWarn('⚠️ URL de agenda inválida. Use um link do Google Agenda.'); return; }
   if(!DB.users) DB.users=[];
   if(DB.users.find(u=>(u.username||'').toLowerCase()===username)){ showWarn('⚠️ Já existe um usuário com este nome.'); return; }
-  const colorMap={gerente:'#7c3aed',supervisor:'#059669'};
+  const colorMap={gerente:'#7c3aed',supervisor:'#059669',regional:'#2563eb'};
   const newAuUser={
     id:Date.now(), username, password, role,
     nome:nome||username,
-    photo: _newUserPhoto||null,
-    regionalId: role==='supervisor'?regionalId:null,
-    timeId:     role==='supervisor'?timeId:null,
-    color: colorMap[role]||'#2563eb'
+    photo:      _newUserPhoto||null,
+    agendaUrl:  agendaUrl||null,
+    regionalId: (role==='supervisor'||role==='regional') ? regionalId : null,
+    timeId:     role==='supervisor' ? timeId : null,
+    color:      colorMap[role]||'#2563eb'
   };
   DB.users.push(newAuUser);
   _newUserPhoto=null;
